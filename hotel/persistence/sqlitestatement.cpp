@@ -6,6 +6,8 @@ namespace persistence {
 SqliteStatement::SqliteStatement(sqlite3 *db, const std::string &query)
 {
   sqlite3_prepare_v2(db, query.c_str(), -1, &_statement, nullptr);
+  if (_statement == nullptr)
+    std::cerr << "Cannot create prepared statement for query: " << query << std::endl;
 }
 
 SqliteStatement::SqliteStatement(SqliteStatement &&that)
@@ -28,16 +30,24 @@ SqliteStatement::~SqliteStatement()
     sqlite3_finalize(_statement);
 }
 
-void SqliteStatement::prepareForQuery()
+bool SqliteStatement::prepareForQuery()
 {
-  if (_lastResult == SQLITE_DONE)
+  if (_statement == nullptr)
   {
-    sqlite3_reset(_statement);
-    _lastResult = SQLITE_OK;
+    std::cerr << "Cannot query nullptr statement" << std::endl;
+    return false;
   }
 
+  if (_lastResult == SQLITE_DONE)
+    _lastResult = sqlite3_reset(_statement);
+
   if (_lastResult != SQLITE_OK)
-    std::cerr << "Should not query statement, which is in " << _lastResult << " state";
+  {
+    std::cerr << "Should not query statement, which is in " << _lastResult << " state" << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 void SqliteStatement::bindArgument(int pos, const char *text)

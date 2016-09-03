@@ -7,16 +7,15 @@ namespace persistence {
 
 namespace {
 
-  void executeSQL(sqlite3 *db, const std::string &sql)
+  void executeSQL(sqlite3* db, const std::string& sql)
   {
-    auto rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
-    if (rc)
-      std::cerr << "Cannot execute query: " << sql << std::endl;
+    if (!SqliteStatement(db, sql).execute())
+      std::cerr << "Cannot execute query: " << sql;
   }
 
 }
 
-SqliteStorage::SqliteStorage(const std::string &file)
+SqliteStorage::SqliteStorage(const std::string& file)
   : _db(nullptr)
 {
   if (sqlite3_open(file.c_str(), &_db))
@@ -26,8 +25,8 @@ SqliteStorage::SqliteStorage(const std::string &file)
     _db = nullptr;
   }
 
-  if (_db) prepareQueries();
   if (_db) recreateSchema();
+  if (_db) prepareQueries();
 }
 
 bool SqliteStorage::storeNewReservationAndAtoms(Reservation &reservation)

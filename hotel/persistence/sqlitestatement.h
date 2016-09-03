@@ -29,16 +29,18 @@ public:
    * The parameters are sequentially bound to the prepared statement.
    */
   template<typename... Args>
-  void execute(Args... args)
+  bool execute(Args... args)
   {
-    prepareForQuery();
+    if (!prepareForQuery()) return false;
     bindArguments(args...);
     _lastResult = sqlite3_step(_statement);
+    return true;
   }
-  void execute()
+  bool execute()
   {
-    prepareForQuery();
+    if (!prepareForQuery()) return false;
     _lastResult = sqlite3_step(_statement);
+    return true;
   }
 
   /**
@@ -59,7 +61,7 @@ public:
 
 private:
   // Prepares the statement to be queried again and checks some simple preconditions
-  void prepareForQuery();
+  bool prepareForQuery();
 
   void bindArgument(int pos, const char *text);
   void bindArgument(int pos, const std::string &text);
