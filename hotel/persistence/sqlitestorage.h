@@ -1,6 +1,7 @@
 #ifndef HOTEL_PERSISTENCE_SQLITESTORAGE_H
 #define HOTEL_PERSISTENCE_SQLITESTORAGE_H
 
+#include "hotel/hotel.h"
 #include "hotel/reservation.h"
 #include "hotel/persistence/sqlitestatement.h"
 
@@ -21,7 +22,8 @@ class SqliteStorage
 public:
   SqliteStorage(const std::string& file);
 
-  bool storeNewReservationAndAtoms(hotel::Reservation &reservation);
+  bool storeNewHotel(hotel::Hotel& hotel);
+  bool storeNewReservationAndAtoms(hotel::Reservation& reservation);
 
   void getReservation();
 

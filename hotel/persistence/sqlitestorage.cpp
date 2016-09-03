@@ -29,6 +29,27 @@ SqliteStorage::SqliteStorage(const std::string& file)
   if (_db) prepareQueries();
 }
 
+bool SqliteStorage::storeNewHotel(Hotel& hotel)
+{
+  // First, store the hotel
+  query("hotel.insert").execute(hotel.name());
+  hotel.setId(lastInsertId());
+
+  // Store all of the categories
+  for (auto& category : hotel.categories())
+  {
+    query("room_category.insert").execute(category->shortCode(), category->name());
+    category->setId(lastInsertId());
+  }
+
+  // Store all of the rooms
+  for (auto& room : hotel.rooms())
+  {
+    query("room.insert").execute(hotel.id(), room->category()->id(), room->name());
+    room->setId(lastInsertId());
+  }
+}
+
 bool SqliteStorage::storeNewReservationAndAtoms(Reservation &reservation)
 {
   query("reservation.insert").execute(reservation._description);
@@ -81,6 +102,10 @@ void SqliteStorage::commitTransaction()
 
 void SqliteStorage::prepareQueries()
 {
+  _statements.emplace("hotel.insert", SqliteStatement(_db, "INSERT INTO h_hotel (name) VALUES (?);"));
+  _statements.emplace("room_category.insert", SqliteStatement(_db, "INSERT INTO h_room_category (short_code, name) VALUES (?, ?);"));
+  _statements.emplace("room.insert", SqliteStatement(_db, "INSERT INTO h_room (hotel_id, category_id, name) VALUES (?, ?, ?);"));
+
   _statements.emplace("reservation.get", SqliteStatement(_db, "SELECT date_from, date_to FROM h_reservation_atom LIMIT 1;"));
   _statements.emplace("reservation.insert", SqliteStatement(_db, "INSERT INTO h_reservation (description) VALUES (?);"));
   _statements.emplace("reservation_atom.insert", SqliteStatement(_db, "INSERT INTO h_reservation_atom (reservation_id, room_id, date_from, date_to) VALUES (?, ?, ?, ?);"));
@@ -94,15 +119,28 @@ void SqliteStorage::recreateSchema()
   executeSQL(_db, "DROP TABLE IF EXISTS h_room;");
   executeSQL(_db, "DROP TABLE IF EXISTS h_room_category;");
 
+  executeSQL(_db, "CREATE TABLE h_hotel ("
+                  "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                  "name TEXT NOT NULL);");
+  executeSQL(_db, "CREATE TABLE h_room_category ("
+                  "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                  "short_code TEXT NOT NULL,"
+                  "name TEXT NOT NULL);");
+  executeSQL(_db, "CREATE TABLE h_room ("
+                  "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                  "hotel_id INTEGER NOT NULL," // Foreign key
+                  "category_id INTEGER NOT NULL," // Foreign key
+                  "name TEXT NOT NULL);");
+
   executeSQL(_db, "CREATE TABLE h_reservation ("
-                      "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
-                      "description TEXT NOT NULL);");
+                  "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                  "description TEXT NOT NULL);");
   executeSQL(_db, "CREATE TABLE h_reservation_atom ("
-                      "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
-                      "reservation_id INTEGER NOT NULL," // Foreign key
-                      "room_id TEXT NOT NULL,"
-                      "date_from TEXT NOT NULL,"
-                      "date_to TEXT NOT NULL);");
+                  "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                  "reservation_id INTEGER NOT NULL," // Foreign key
+                  "room_id TEXT NOT NULL,"
+                  "date_from TEXT NOT NULL,"
+                  "date_to TEXT NOT NULL);");
 }
 
 

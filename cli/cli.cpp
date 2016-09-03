@@ -4,22 +4,32 @@
 
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 
 int main(int argc, char **argv)
 {
   // Get us some random test data
-  std::mt19937 rng;
+
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::mt19937 rng(seed);
   auto hotels = cli::createTestHotels(rng);
   auto planning = cli::createTestPlanning(rng, hotels);
 
+  // Store it into the database
+
   hotel::persistence::SqliteStorage storage("test.db");
+  storage.beginTransaction();
+  for (auto& hotel : hotels)
+    storage.storeNewHotel(*hotel);
+  storage.commitTransaction();
+
   storage.beginTransaction();
   for (auto& reservation : planning->reservations())
     storage.storeNewReservationAndAtoms(*reservation);
   storage.commitTransaction();
 
-  storage.getReservation();
+  // Generate an HTML file displaying the test data
 
   std::ofstream output("out.html");
 
