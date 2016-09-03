@@ -3,64 +3,62 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
+#include "hotel/persistentobject.h"
 
 namespace hotel {
 
-  class RoomCategory
+  /**
+   * @brief The RoomCategory class contains information shared by a set of rooms.
+   */
+  class RoomCategory : public PersistentObject
   {
   public:
-    RoomCategory(const std::string& id, const std::string& name);
-    ~RoomCategory() = default;
+    RoomCategory(const std::string& shortCode, const std::string& name);
 
-    const std::string& id() const;
+    const std::string& shortCode() const;
     const std::string& name() const;
 
   private:
-    std::string _id;
+    std::string _shortCode;
     std::string _name;
   };
 
-  class HotelRoom
+  class HotelRoom : public PersistentObject
   {
   public:
-    HotelRoom(const std::string& id, const std::string& categoryId, const std::string& name);
-    ~HotelRoom() = default;
+    HotelRoom(const std::string& name);
 
-    const std::string& id() const;
-    const std::string& categoryId() const;
+    void setCategory(const RoomCategory* category);
+
+    const RoomCategory* category() const;
     const std::string& name() const;
 
   private:
-    std::string _id;
-    std::string _categoryId;
+    const RoomCategory* _category;
     std::string _name;
   };
 
-  class Hotel
+  class Hotel : public PersistentObject
   {
   public:
-    Hotel(const std::string& id, const std::string& name);
-    Hotel(const Hotel& that) = delete;
-    Hotel& operator=(const Hotel& that) = delete;
-    ~Hotel() = default;
+    Hotel(const std::string& name);
 
-    const std::string& id() const;
     const std::string& name() const;
-    const std::vector<HotelRoom>& rooms() const;
+    const std::vector<std::unique_ptr<HotelRoom>>& rooms() const;
+    const std::vector<std::unique_ptr<RoomCategory>>& categories() const;
 
-    void addRoomCategory(RoomCategory category);
-    void addRoom(HotelRoom room);
-
-
+    void addRoomCategory(std::unique_ptr<RoomCategory> category);
+    void addRoom(std::unique_ptr<HotelRoom> room, const std::string& categoryShortCode);
 
   private:
-    std::vector<RoomCategory>::iterator getCategoryById(const std::string& categoryId);
+    std::vector<std::unique_ptr<RoomCategory>>::iterator getCategoryById(int id);
+    std::vector<std::unique_ptr<RoomCategory>>::iterator getCategoryByShortCode(const std::string& shortCode);
 
-    std::string _id;
     std::string _name;
-
-    std::vector<RoomCategory> _categories;
-    std::vector<HotelRoom> _rooms;
+    std::vector<std::unique_ptr<RoomCategory>> _categories;
+    std::vector<std::unique_ptr<HotelRoom>> _rooms;
   };
 
 } // namespace hotel

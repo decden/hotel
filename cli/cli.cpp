@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   {
     for (auto& room : hotel->rooms())
     {
-      roomY[room.name()] = y;
+      roomY[room->name()] = y;
       y += 24;
     }
     y += 5;

@@ -19,11 +19,11 @@ namespace cli {
     int numOfHotels = hotels_dist(rng);
     for (auto i : boost::irange(0, numOfHotels))
     {
-      auto hotel = std::make_unique<hotel::Hotel>("hot" + std::to_string(i), "Hotel " + std::to_string(i));
+      auto hotel = std::make_unique<hotel::Hotel>("Hotel " + std::to_string(i));
       auto numOfFloors = floors_dist(rng);
       auto numOfCategories = numOfFloors + 1;
       for (auto c : boost::irange(0, numOfCategories))
-        hotel->addRoomCategory({"cat" + std::to_string(c), "Category " + std::to_string(c)});
+        hotel->addRoomCategory(std::make_unique<hotel::RoomCategory>("cat" + std::to_string(c), "Category " + std::to_string(c)));
 
       auto category_dist = std::uniform_int_distribution<>(0, numOfCategories-1);
       for (auto f : boost::irange(0, numOfFloors))
@@ -33,7 +33,7 @@ namespace cli {
         {
           auto category = "cat" + std::to_string(category_dist(rng));
           auto roomNumber = std::to_string(i) + "_" + std::to_string(100*(1+f) + r + 1);
-          hotel->addRoom(hotel::HotelRoom(roomNumber, category, roomNumber));
+          hotel->addRoom(std::make_unique<hotel::HotelRoom>(roomNumber), category);
         }
       }
       result.push_back(std::move(hotel));
@@ -68,7 +68,7 @@ namespace cli {
       if (!period.contains(resPeriod))
         continue;
 
-      auto roomId = hotel.rooms()[roomDist(rng)].name();
+      auto roomId = hotel.rooms()[roomDist(rng)]->name();
       if (!planning.isFree(roomId, resPeriod))
       {
         // Try to add it with room change
@@ -87,7 +87,7 @@ namespace cli {
       {
         startDate = endDate;
         if (additionalDays == 0) break;
-        roomId = hotel.rooms()[roomDist(rng)].name();
+        roomId = hotel.rooms()[roomDist(rng)]->name();
         auto availableDays = std::min(additionalDays, planning.getAvailableDaysFrom(roomId, startDate));
         if (availableDays != 0)
         {
@@ -113,7 +113,7 @@ namespace cli {
 
     for (auto& hotel : hotels)
       for (auto& room : hotel->rooms())
-        planning->addRoom(room.name());
+        planning->addRoom(room->name());
 
     for (auto& hotel : hotels)
       addRandomReservations(rng, *hotel, *planning, 200 * hotel->rooms().size(), period);

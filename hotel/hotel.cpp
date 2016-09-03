@@ -5,65 +5,71 @@
 
 namespace hotel {
 
+RoomCategory::RoomCategory(const std::string &shortCode, const std::string &name)
+  : _shortCode(shortCode)
+  , _name(name)
+{
+}
 
-  RoomCategory::RoomCategory(const std::string& id, const std::string& name)
-    : _id(id)
-    , _name(name)
+const std::string &RoomCategory::shortCode() const { return _shortCode; }
+const std::string &RoomCategory::name() const { return _name; }
+
+HotelRoom::HotelRoom(const std::string &name)
+  : _category(nullptr)
+  , _name(name)
+{
+}
+
+void HotelRoom::setCategory(const RoomCategory *category) { _category = category; }
+const RoomCategory *HotelRoom::category() const { return _category; }
+const std::string &HotelRoom::name() const { return _name; }
+
+Hotel::Hotel(const std::string& name)
+  : _name(name)
+{
+}
+
+const std::string& Hotel::name() const { return _name; }
+const std::vector<std::unique_ptr<HotelRoom>> &Hotel::rooms() const { return _rooms; }
+const std::vector<std::unique_ptr<RoomCategory>> &Hotel::categories() const { return _categories; }
+
+void Hotel::addRoomCategory(std::unique_ptr<RoomCategory> category)
+{
+  auto existingCategory = getCategoryByShortCode(category->shortCode());
+  if (existingCategory != _categories.end())
+    std::cerr << "Category already registered! Category short code: " << category->shortCode() << ", name: " << (*existingCategory)->name() << std::endl;
+  else
+    _categories.push_back(std::move(category));
+}
+
+void Hotel::addRoom(std::unique_ptr<HotelRoom> room, const std::string &categoryShortCode)
+{
+  auto category = getCategoryByShortCode(categoryShortCode);
+  if (category == _categories.end())
   {
+    std::cerr << "Unknown category " << categoryShortCode << std::endl;
+    return;
   }
 
-  const std::string& RoomCategory::id() const { return _id; }
-  const std::string& RoomCategory::name() const { return _name; }
+  room->setCategory(category->get());
+  _rooms.push_back(std::move(room));
+}
 
-  HotelRoom::HotelRoom(const std::string& id, const std::string& categoryId, const std::string& name)
-    : _id(id)
-    , _categoryId(categoryId)
-    , _name(name)
-  {
-  }
+std::vector<std::unique_ptr<RoomCategory>>::iterator Hotel::getCategoryById(int id)
+{
+  return std::find_if(_categories.begin(), _categories.end(),
+    [id](const std::unique_ptr<RoomCategory>& category) {
+      return category->id() == id;
+  });
+}
 
-  const std::string& HotelRoom::id() const { return _id; }
-  const std::string& HotelRoom::categoryId() const { return _categoryId; }
-  const std::string& HotelRoom::name() const { return _name; }
-
-  Hotel::Hotel(const std::string& id, const std::string& name)
-    : _id(id)
-    , _name(name)
-  {
-  }
-
-  const std::string& Hotel::id() const { return _id; }
-  const std::string& Hotel::name() const { return _name; }
-  const std::vector<HotelRoom> &Hotel::rooms() const { return _rooms; }
-
-  void Hotel::addRoomCategory(RoomCategory category)
-  {
-    auto existingCategory = getCategoryById(category.id());
-    if (existingCategory != _categories.end())
-      std::cerr << "Category already registered! Category id: " << category.id() << std::endl;
-    else
-      _categories.push_back(category);
-  }
-
-  void Hotel::addRoom(HotelRoom room)
-  {
-    auto category = getCategoryById(room.categoryId());
-    if (category == _categories.end())
-    {
-      std::cerr << "Unknown category " << room.categoryId() << std::endl;
-      return;
-    }
-
-    _rooms.push_back(room);
-  }
-
-  std::vector<RoomCategory>::iterator Hotel::getCategoryById(const std::string& categoryId)
-  {
-    return std::find_if(_categories.begin(), _categories.end(),
-      [&](const RoomCategory& category) {
-        return category.id() == categoryId;
-      });
-  }
+std::vector<std::unique_ptr<RoomCategory>>::iterator Hotel::getCategoryByShortCode(const std::string &shortCode)
+{
+  return std::find_if(_categories.begin(), _categories.end(),
+    [shortCode](const std::unique_ptr<RoomCategory>& category) {
+      return category->shortCode() == shortCode;
+  });
+}
 
 
 } // namespace hotel
