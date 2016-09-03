@@ -9,6 +9,8 @@
 
 namespace hotel {
 
+  class Hotel;
+
   /**
    * @brief The RoomCategory class contains information shared by a set of rooms.
    */
@@ -17,10 +19,13 @@ namespace hotel {
   public:
     RoomCategory(const std::string& shortCode, const std::string& name);
 
+    void setHotel(const Hotel* hotel);
+
     const std::string& shortCode() const;
     const std::string& name() const;
 
   private:
+    const Hotel* _hotel;
     std::string _shortCode;
     std::string _name;
   };
@@ -52,8 +57,9 @@ namespace hotel {
     void addRoomCategory(std::unique_ptr<RoomCategory> category);
     void addRoom(std::unique_ptr<HotelRoom> room, const std::string& categoryShortCode);
 
+    RoomCategory* getCategoryById(int id);
+
   private:
-    std::vector<std::unique_ptr<RoomCategory>>::iterator getCategoryById(int id);
     std::vector<std::unique_ptr<RoomCategory>>::iterator getCategoryByShortCode(const std::string& shortCode);
 
     std::string _name;

@@ -7,7 +7,7 @@ SqliteStatement::SqliteStatement(sqlite3 *db, const std::string &query)
 {
   sqlite3_prepare_v2(db, query.c_str(), -1, &_statement, nullptr);
   if (_statement == nullptr)
-    std::cerr << "Cannot create prepared statement for query: " << query << std::endl;
+    std::cerr << "Cannot create prepared statement for query: " << query << ": " << std::endl;
 }
 
 SqliteStatement::SqliteStatement(SqliteStatement &&that)
@@ -68,6 +68,25 @@ void SqliteStatement::bindArgument(int pos, int64_t value)
 void SqliteStatement::bindArgument(int pos, boost::gregorian::date date)
 {
   bindArgument(pos, boost::gregorian::to_iso_string(date));
+}
+
+void SqliteStatement::readArg(int pos, std::__cxx11::string &val)
+{
+  auto text = (const char*)sqlite3_column_text(_statement, pos);
+  if (text != nullptr)
+    val = text;
+}
+
+void SqliteStatement::readArg(int pos, int &val)
+{
+  val = sqlite3_column_int(_statement, pos);
+}
+
+void SqliteStatement::readArg(int pos, boost::gregorian::date &date)
+{
+  std::string val;
+  readArg(pos, val);
+  date = boost::gregorian::from_undelimited_string(val);
 }
 
 } // namespace persistence

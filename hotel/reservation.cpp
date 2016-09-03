@@ -2,13 +2,13 @@
 
 namespace hotel {
 
-hotel::Reservation::Reservation(const std::__cxx11::string &description, const std::__cxx11::string &room, boost::gregorian::date_period dateRange)
+hotel::Reservation::Reservation(const std::string &description, int roomId, boost::gregorian::date_period dateRange)
   : _description(description)
 {
-  _atoms.push_back(std::make_unique<ReservationAtom>(this, room, dateRange));
+  _atoms.push_back(std::make_unique<ReservationAtom>(this, roomId, dateRange));
 }
 
-ReservationAtom *Reservation::addContinuation(const std::string &room, boost::gregorian::date date)
+ReservationAtom *Reservation::addContinuation(int room, boost::gregorian::date date)
 {
   auto& lastAtom = *_atoms.rbegin();
 

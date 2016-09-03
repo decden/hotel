@@ -68,12 +68,9 @@ private:
   void bindArgument(int pos, int64_t value);
   void bindArgument(int pos, boost::gregorian::date date);
 
-  void readArg(int pos, std::string &val)
-  {
-    auto text = (const char*)sqlite3_column_text(_statement, pos);
-    if (text != nullptr)
-      val = text;
-  }
+  void readArg(int pos, std::string &val);
+  void readArg(int pos, int &val);
+  void readArg(int pos, boost::gregorian::date &date);
 
   template<int Pos>
   void readRowInternal() {}

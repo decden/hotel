@@ -6,11 +6,13 @@
 namespace hotel {
 
 RoomCategory::RoomCategory(const std::string &shortCode, const std::string &name)
-  : _shortCode(shortCode)
+  : _hotel(nullptr)
+  , _shortCode(shortCode)
   , _name(name)
 {
 }
 
+void RoomCategory::setHotel(const Hotel* hotel) { _hotel = hotel; }
 const std::string &RoomCategory::shortCode() const { return _shortCode; }
 const std::string &RoomCategory::name() const { return _name; }
 
@@ -39,7 +41,10 @@ void Hotel::addRoomCategory(std::unique_ptr<RoomCategory> category)
   if (existingCategory != _categories.end())
     std::cerr << "Category already registered! Category short code: " << category->shortCode() << ", name: " << (*existingCategory)->name() << std::endl;
   else
+  {
+    category->setHotel(this);
     _categories.push_back(std::move(category));
+  }
 }
 
 void Hotel::addRoom(std::unique_ptr<HotelRoom> room, const std::string &categoryShortCode)
@@ -55,12 +60,16 @@ void Hotel::addRoom(std::unique_ptr<HotelRoom> room, const std::string &category
   _rooms.push_back(std::move(room));
 }
 
-std::vector<std::unique_ptr<RoomCategory>>::iterator Hotel::getCategoryById(int id)
+RoomCategory* Hotel::getCategoryById(int id)
 {
-  return std::find_if(_categories.begin(), _categories.end(),
+  auto it = std::find_if(_categories.begin(), _categories.end(),
     [id](const std::unique_ptr<RoomCategory>& category) {
       return category->id() == id;
   });
+  if (it != _categories.end())
+    return it->get();
+  else
+    return nullptr;
 }
 
 std::vector<std::unique_ptr<RoomCategory>>::iterator Hotel::getCategoryByShortCode(const std::string &shortCode)

@@ -68,7 +68,7 @@ namespace cli {
       if (!period.contains(resPeriod))
         continue;
 
-      auto roomId = hotel.rooms()[roomDist(rng)]->name();
+      auto roomId = hotel.rooms()[roomDist(rng)]->id();
       if (!planning.isFree(roomId, resPeriod))
       {
         // Try to add it with room change
@@ -87,7 +87,7 @@ namespace cli {
       {
         startDate = endDate;
         if (additionalDays == 0) break;
-        roomId = hotel.rooms()[roomDist(rng)]->name();
+        roomId = hotel.rooms()[roomDist(rng)]->id();
         auto availableDays = std::min(additionalDays, planning.getAvailableDaysFrom(roomId, startDate));
         if (availableDays != 0)
         {
@@ -113,7 +113,7 @@ namespace cli {
 
     for (auto& hotel : hotels)
       for (auto& room : hotel->rooms())
-        planning->addRoom(room->name());
+        planning->addRoomId(room->id());
 
     for (auto& hotel : hotels)
       addRandomReservations(rng, *hotel, *planning, 200 * hotel->rooms().size(), period);

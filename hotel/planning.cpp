@@ -3,9 +3,9 @@
 namespace hotel
 {
 
-ReservationAtom::ReservationAtom(Reservation *reservation, const std::string &room, boost::gregorian::date_period dateRange)
+ReservationAtom::ReservationAtom(Reservation *reservation, const int room, boost::gregorian::date_period dateRange)
   : _reservation(reservation)
-  , _room(room)
+  , _roomId(room)
   , _dateRange(dateRange)
 {
 }
@@ -30,7 +30,7 @@ void PlanningBoard::removeReservation(const Reservation *reservation)
 {
   for(auto& atom : reservation->atoms())
   {
-    auto& roomAtoms = _rooms[atom->_room];
+    auto& roomAtoms = _rooms[atom->_roomId];
     auto atomIt = std::find(roomAtoms.begin(), roomAtoms.end(), atom.get());
     if (atomIt != roomAtoms.end())
       roomAtoms.erase(atomIt);
@@ -43,45 +43,45 @@ void PlanningBoard::removeReservation(const Reservation *reservation)
     _reservations.erase(reservationIt);
 }
 
-void PlanningBoard::addRoom(const std::string &room)
+void PlanningBoard::addRoomId(int roomId)
 {
   // This will insert a new item "room" if it does not yet exist
-  _rooms[room];
+  _rooms[roomId];
 }
 
 bool PlanningBoard::canAddReservation(const Reservation &reservation) const
 {
   auto& atoms = reservation.atoms();
   return std::all_of(atoms.begin(), atoms.end(), [this](auto& atom) {
-    return this->isFree(atom->_room, atom->_dateRange);
+    return this->isFree(atom->_roomId, atom->_dateRange);
   });
 }
 
-bool PlanningBoard::isFree(const std::string &room, boost::gregorian::date_period period) const
+bool PlanningBoard::isFree(int roomId, boost::gregorian::date_period period) const
 {
-  if (!hasRoom(room))
+  if (!hasRoom(roomId))
     return false;
 
   // TODO: This can be made more efficient! log(n) instead of linear
-  auto& roomAtoms = _rooms.find(room)->second;
+  auto& roomAtoms = _rooms.find(roomId)->second;
   return std::none_of(roomAtoms.begin(), roomAtoms.end(), [&period](auto x) {
     return x->_dateRange.intersects(period);
   });
 }
 
-bool PlanningBoard::hasRoom(const std::string &room) const
+bool PlanningBoard::hasRoom(int roomId) const
 {
-  return _rooms.find(room) != _rooms.end();
+  return _rooms.find(roomId) != _rooms.end();
 }
 
-int PlanningBoard::getAvailableDaysFrom(const std::string &room, boost::gregorian::date date) const
+int PlanningBoard::getAvailableDaysFrom(int roomId, boost::gregorian::date date) const
 {
-  if (!hasRoom(room))
+  if (!hasRoom(roomId))
     return 0;
 
   // Find the first element which would influence the number of available days: i.e.
   // atom.period.end > date
-  auto& roomAtoms = _rooms.find(room)->second;
+  auto& roomAtoms = _rooms.find(roomId)->second;
   auto it = std::upper_bound(roomAtoms.begin(), roomAtoms.end(), date, [](auto date, auto& x) {
     return date < x->_dateRange.end();
   });
@@ -100,7 +100,7 @@ const std::vector<std::unique_ptr<Reservation>> &PlanningBoard::reservations() c
 void PlanningBoard::insertAtom(const ReservationAtom *atom)
 {
   // TODO: This can be made more efficient! Linear instead of n*log(n)
-  auto& roomAtoms = _rooms[atom->_room];
+  auto& roomAtoms = _rooms[atom->_roomId];
   roomAtoms.push_back(atom);
   std::sort(roomAtoms.begin(), roomAtoms.end(), [](auto x, auto y) {
     return x->_dateRange.begin() < y->_dateRange.begin();

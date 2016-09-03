@@ -26,10 +26,10 @@ class PlanningBoard
 {
 public:
   /**
-   * @brief addRoom Adds a room on the planning board
-   * @param room the room to add
+   * @brief addRoomId Adds a room on the planning board
+   * @param roomId the id of the room to add
    */
-  void addRoom(const std::string& room);
+  void addRoomId(int roomId);
   /**
    * @brief addReservation tries to add the given reservation to the planning board
    * @param reservation the reservation to add
@@ -47,8 +47,8 @@ public:
    */
   bool canAddReservation(const Reservation& reservation) const;
 
-  bool isFree(const std::string& room, boost::gregorian::date_period period) const;
-  bool hasRoom(const std::string& room) const;
+  bool isFree(int roomId, boost::gregorian::date_period period) const;
+  bool hasRoom(int roomId) const;
 
   /**
    * @brief getAvailableDaysFrom computes the number of days in which the given room is available from the given date
@@ -56,7 +56,7 @@ public:
    * @return the number of days for which the room is free. If the room is unavailable 0 is returend. If the room is
    *         always available max is returned.
    */
-  int getAvailableDaysFrom(const std::string& room, boost::gregorian::date date) const;
+  int getAvailableDaysFrom(int roomId, boost::gregorian::date date) const;
 
   const std::vector<std::unique_ptr<Reservation>>& reservations() const;
 
@@ -68,7 +68,7 @@ private:
   void insertAtom(const ReservationAtom* atom); // TODO: Make this more efficient
 
   std::vector<std::unique_ptr<Reservation>> _reservations;
-  std::map<std::string, std::vector<const ReservationAtom*>> _rooms;
+  std::map<int, std::vector<const ReservationAtom*>> _rooms;
 };
 
 } // namespace hotel

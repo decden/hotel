@@ -2,6 +2,7 @@
 #define HOTEL_PERSISTENCE_SQLITESTORAGE_H
 
 #include "hotel/hotel.h"
+#include "hotel/planning.h"
 #include "hotel/reservation.h"
 #include "hotel/persistence/sqlitestatement.h"
 
@@ -21,6 +22,12 @@ class SqliteStorage
 {
 public:
   SqliteStorage(const std::string& file);
+  ~SqliteStorage();
+
+  void deleteAll();
+
+  std::vector<std::unique_ptr<hotel::Hotel>> loadHotels();
+  std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int> &roomIds);
 
   bool storeNewHotel(hotel::Hotel& hotel);
   bool storeNewReservationAndAtoms(hotel::Reservation& reservation);
@@ -35,7 +42,7 @@ private:
   int64_t lastInsertId();
 
   void prepareQueries();
-  void recreateSchema();
+  void createSchema();
 
   sqlite3 *_db;
   std::map<std::string, SqliteStatement> _statements;
