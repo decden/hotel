@@ -1,6 +1,7 @@
 #include "cli/testdata.h"
 
 #include "hotel/persistence/sqlitestorage.h"
+#include "hotel/persistence/jsonserializer.h"
 
 #include <mongoose.h>
 
