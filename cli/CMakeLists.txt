@@ -3,4 +3,4 @@ add_executable(hotel_cli
                testdata.cpp
               )
 
-target_link_libraries(hotel_cli hotel)
+target_link_libraries(hotel_cli hotel mongoose)
