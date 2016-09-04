@@ -21,6 +21,9 @@ ReservationAtom *Reservation::addContinuation(int room, boost::gregorian::date d
   _atoms.push_back(std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
 }
 
+const std::string &Reservation::description() { return _description; }
+const std::vector<std::unique_ptr<ReservationAtom> > &Reservation::atoms() const { return _atoms; }
+
 const int Reservation::length() const
 {
   return (_atoms[_atoms.size()-1]->_dateRange.end() - _atoms[0]->_dateRange.begin()).days();

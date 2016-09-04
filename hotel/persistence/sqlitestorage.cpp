@@ -128,6 +128,7 @@ std::unique_ptr<PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int
     {
       current->addContinuation(roomId, dateTo);
     }
+    (*current->atoms().rbegin())->setId(atomId);
   }
   if (current) result->addReservation(std::move(current));
 
@@ -157,7 +158,7 @@ bool SqliteStorage::storeNewHotel(Hotel& hotel)
 
 bool SqliteStorage::storeNewReservationAndAtoms(Reservation &reservation)
 {
-  query("reservation.insert").execute(reservation._description);
+  query("reservation.insert").execute(reservation.description());
   reservation.setId(lastInsertId());
   for (auto& atom : reservation.atoms())
   {

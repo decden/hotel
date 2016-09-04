@@ -6,6 +6,7 @@ add_library(hotel
             planning.cpp
             reservation.cpp
 
+            persistence/jsonserializer.cpp
             persistence/sqlitestorage.cpp
             persistence/sqlitestatement.cpp
            )

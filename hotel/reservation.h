@@ -35,10 +35,11 @@ public:
 
   ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
-  const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const { return _atoms; }
+  const std::string& description();
+  const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
   const int length() const;
 
-public: // TODO: Public for now...
+private:
   std::string _description;
   std::vector<std::unique_ptr<ReservationAtom>> _atoms;
 };
@@ -52,6 +53,10 @@ class ReservationAtom : public PersistentObject
 {
 public:
   ReservationAtom(Reservation* reservation, const int room, boost::gregorian::date_period dateRange);
+
+  const Reservation* reservation() const { return _reservation; }
+  int roomId() const { return _roomId; }
+  boost::gregorian::date_period dateRange() const { return _dateRange; }
 
   bool isFirst() const { return this == _reservation->atoms().begin()->get(); }
   bool isLast() const { return this == _reservation->atoms().rbegin()->get(); }
