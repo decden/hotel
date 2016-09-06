@@ -1,5 +1,5 @@
-#ifndef __CLI_TESTDATA_H__
-#define __CLI_TESTDATA_H__
+#ifndef CLI_TESTDATA_H
+#define CLI_TESTDATA_H
 
 #include "hotel/hotel.h"
 #include "hotel/planning.h"
@@ -15,4 +15,4 @@ namespace cli {
 
 } // namespaec cli
 
-#endif // __CLI_TESTDATA_H__
+#endif // CLI_TESTDATA_H

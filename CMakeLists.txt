@@ -3,5 +3,6 @@ project (hotel)
 set (CMAKE_CXX_STANDARD 14)
 
 include_directories (.)
-add_subdirectory (hotel)
 add_subdirectory (cli)
+add_subdirectory (hotel)
+add_subdirectory (webapi)
