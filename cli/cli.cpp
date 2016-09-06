@@ -1,13 +1,13 @@
 #include "cli/testdata.h"
 
-#include "hotel/persistence/sqlitestorage.h"
 #include "hotel/persistence/jsonserializer.h"
+#include "hotel/persistence/sqlitestorage.h"
 
 #include "webapi/server.h"
 
-#include <iostream>
-#include <fstream>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
 void createTestDatabase(const std::string& db)
 {
@@ -32,7 +32,7 @@ void createTestDatabase(const std::string& db)
   storage.commitTransaction();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   // Fill the test.db with randomly generated test data
   createTestDatabase("test.db");
@@ -42,8 +42,8 @@ int main(int argc, char **argv)
   auto hotels = storage.loadHotels();
 
   std::vector<int> roomIds;
-  for(auto& hotel : hotels)
-    for(auto& room : hotel->rooms())
+  for (auto& hotel : hotels)
+    for (auto& room : hotel->rooms())
       roomIds.push_back(room->id());
   auto planning = storage.loadPlanning(roomIds);
 

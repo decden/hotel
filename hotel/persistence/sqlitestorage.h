@@ -2,54 +2,53 @@
 #define HOTEL_PERSISTENCE_SQLITESTORAGE_H
 
 #include "hotel/hotel.h"
+#include "hotel/persistence/sqlitestatement.h"
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
-#include "hotel/persistence/sqlitestatement.h"
 
 #include <sqlite3.h>
 
 #include <cstdint>
-#include <string>
 #include <map>
 #include <memory>
+#include <string>
 
-namespace hotel {
-namespace persistence {
-
-
-
-class SqliteStorage
+namespace hotel
 {
-public:
-  SqliteStorage(const std::string& file);
-  ~SqliteStorage();
+  namespace persistence
+  {
 
-  void deleteAll();
+    class SqliteStorage
+    {
+    public:
+      SqliteStorage(const std::string& file);
+      ~SqliteStorage();
 
-  std::vector<std::unique_ptr<hotel::Hotel>> loadHotels();
-  std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int> &roomIds);
+      void deleteAll();
 
-  bool storeNewHotel(hotel::Hotel& hotel);
-  bool storeNewReservationAndAtoms(hotel::Reservation& reservation);
+      std::vector<std::unique_ptr<hotel::Hotel>> loadHotels();
+      std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);
 
-  void getReservation();
+      bool storeNewHotel(hotel::Hotel& hotel);
+      bool storeNewReservationAndAtoms(hotel::Reservation& reservation);
 
-  void beginTransaction();
-  void commitTransaction();
+      void getReservation();
 
-private:
-  SqliteStatement &query(const std::string &key);
-  int64_t lastInsertId();
+      void beginTransaction();
+      void commitTransaction();
 
-  void prepareQueries();
-  void createSchema();
+    private:
+      SqliteStatement& query(const std::string& key);
+      int64_t lastInsertId();
 
-  sqlite3 *_db;
-  std::map<std::string, SqliteStatement> _statements;
-};
+      void prepareQueries();
+      void createSchema();
 
-} // namespace persistence
+      sqlite3* _db;
+      std::map<std::string, SqliteStatement> _statements;
+    };
+
+  } // namespace persistence
 } // namespace hotel
-
 
 #endif // HOTEL_PERSISTENCE_SQLITESTORAGE_H

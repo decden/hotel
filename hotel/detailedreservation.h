@@ -1,14 +1,14 @@
 #ifndef HOTEL_DETAILEDRESERVATION_H
 #define HOTEL_DETAILEDRESERVATION_H
 
-
-namespace hotel {
-
-class DetailedReservation
+namespace hotel
 {
-public:
-  DetailedReservation();
-};
+
+  class DetailedReservation
+  {
+  public:
+    DetailedReservation();
+  };
 
 } // namespace hotel
 

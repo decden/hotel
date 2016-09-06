@@ -1,13 +1,14 @@
 #ifndef HOTEL_HOTEL_H
 #define HOTEL_HOTEL_H
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "hotel/persistentobject.h"
 
-namespace hotel {
+namespace hotel
+{
 
   class Hotel;
 

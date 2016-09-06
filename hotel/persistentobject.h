@@ -1,18 +1,18 @@
 #ifndef HOTEL_PERSISTENTOBJECT_H
 #define HOTEL_PERSISTENTOBJECT_H
 
-namespace hotel {
-
-class PersistentObject
+namespace hotel
 {
-public:
 
-  int id() const;
-  void setId(int id);
+  class PersistentObject
+  {
+  public:
+    int id() const;
+    void setId(int id);
 
-private:
-  int _id = 0;
-};
+  private:
+    int _id = 0;
+  };
 
 } // namespace hotel
 

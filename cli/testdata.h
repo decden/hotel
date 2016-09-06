@@ -5,13 +5,15 @@
 #include "hotel/planning.h"
 
 #include <memory>
-#include <vector>
 #include <random>
+#include <vector>
 
-namespace cli {
+namespace cli
+{
 
-  std::vector<std::unique_ptr<hotel::Hotel>> createTestHotels(std::mt19937 &rng);
-  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937 &rng, std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
+  std::vector<std::unique_ptr<hotel::Hotel>> createTestHotels(std::mt19937& rng);
+  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng,
+                                                           std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
 
 } // namespaec cli
 

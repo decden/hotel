@@ -5,7 +5,8 @@
 
 #include <memory>
 
-namespace webapi {
+namespace webapi
+{
 
   class Server
   {

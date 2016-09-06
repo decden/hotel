@@ -4,19 +4,21 @@
 #include "hotel/hotel.h"
 #include "hotel/planning.h"
 
-namespace hotel {
-namespace persistence {
-
-class JsonSerializer
+namespace hotel
 {
-public:
-  JsonSerializer();
+  namespace persistence
+  {
 
-  std::string serializeHotels(const std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
-  std::string serializePlanning(const std::unique_ptr<hotel::PlanningBoard>& planning);
-};
+    class JsonSerializer
+    {
+    public:
+      JsonSerializer();
 
-} // namespace persistence
+      std::string serializeHotels(const std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
+      std::string serializePlanning(const std::unique_ptr<hotel::PlanningBoard>& planning);
+    };
+
+  } // namespace persistence
 } // namespace hotel
 
 #endif // HOTEL_PERSISTENCE_JSONSERIALIZER_H
