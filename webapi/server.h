@@ -1,7 +1,7 @@
 #ifndef WEBAPI_SERVER_H
 #define WEBAPI_SERVER_H
 
-#include <mongoose.h>
+#include "mongoose.h"
 
 #include <memory>
 
@@ -21,6 +21,7 @@ namespace webapi
     mg_mgr _mongooseManager;
     mg_serve_http_opts _httpServerSettings;
     mg_connection* _connection;
+    const char* _errorStringPtr;
   };
 
 } // namespaec webapi

@@ -1,14 +1,16 @@
 #include "webapi/server.h"
 
+#include <iostream>
+
 namespace webapi
 {
-  static void handleServerEvent(mg_connection* nc, int ev, void* p)
+  void handleServerEvent(mg_connection* nc, int ev, void* p)
   {
     auto server = (Server*)nc->user_data;
     server->handleEvent(nc, ev, p);
   }
 
-  Server::Server() : _connection(nullptr)
+  Server::Server() : _connection(nullptr), _errorStringPtr(nullptr)
   {
     _mongooseManager = {};
     _httpServerSettings = {};
@@ -20,10 +22,17 @@ namespace webapi
   {
     mg_mgr_init(&_mongooseManager, nullptr);
 
-    mg_bind_opts opts;
+    mg_bind_opts opts = {};
     opts.user_data = this;
+    opts.error_string = &_errorStringPtr;
 
     _connection = mg_bind_opt(&_mongooseManager, "8080", handleServerEvent, opts);
+    if (_connection == nullptr)
+    {
+      std::cerr << "Cannot establish connection: " << _errorStringPtr << std::endl;
+      return;
+    }
+    mg_set_protocol_http_websocket(_connection);
 
     for (;;)
     {
