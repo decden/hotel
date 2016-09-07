@@ -1,5 +1,5 @@
 add_library(mongoose
-            ../mongoose/mongoose.c)
+            ../extern/mongoose/mongoose.c)
 
 add_library(hotel_webapi
             server.cpp
