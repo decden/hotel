@@ -4,6 +4,7 @@ set (CMAKE_CXX_STANDARD 14)
 
 include_directories (.)
 include_directories(./extern/mongoose)
+include_directories(./extern/nlohmann_json)
 add_subdirectory (cli)
 add_subdirectory (hotel)
 add_subdirectory (webapi)

@@ -1,5 +1,7 @@
 #include "webapi/server.h"
 
+#include "json.hpp"
+
 #include <iostream>
 
 namespace webapi
@@ -44,6 +46,24 @@ namespace webapi
 
   void Server::handleEvent(mg_connection* nc, int ev, void* p)
   {
+    if (ev == MG_EV_WEBSOCKET_HANDSHAKE_DONE)
+    {
+      auto msg = (http_message*)p;
+      using json = nlohmann::json;
+
+      json jsonObj = {
+        {"status", "ok"},
+        {"api", "core"},
+        {"data", {
+         {"version", "0.01"}
+        }}
+      };
+
+      std::string result  = jsonObj.dump(0);
+
+      mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, result.c_str(), result.length());
+    }
+
     if (ev == MG_EV_HTTP_REQUEST)
     {
       mg_serve_http(nc, (http_message*)p, _httpServerSettings);
