@@ -38,20 +38,10 @@ int main(int argc, char** argv)
   createTestDatabase("test.db");
 
   // Reopen the database
-  hotel::persistence::SqliteStorage storage("test.db");
-  auto hotels = storage.loadHotels();
+  auto storage = std::make_unique<hotel::persistence::SqliteStorage>("test.db");
 
-  std::vector<int> roomIds;
-  for (auto& hotel : hotels)
-    for (auto& room : hotel->rooms())
-      roomIds.push_back(room->id());
-  auto planning = storage.loadPlanning(roomIds);
-
-  hotel::persistence::JsonSerializer jsonSerializer;
-  std::ofstream("hotels.json") << jsonSerializer.serializeHotels(hotels) << std::endl;
-  std::ofstream("planning.json") << jsonSerializer.serializePlanning(planning) << std::endl;
-
-  webapi::Server server;
+  // Create the server and start the application
+  webapi::Server server(std::move(storage));
   server.start();
 
   return 0;

@@ -1,18 +1,30 @@
 #include "webapi/server.h"
 
+#include "hotel/persistence/jsonserializer.h"
+
 #include "json.hpp"
 
 #include <iostream>
 
 namespace webapi
 {
+
+  WebsocketConnection::WebsocketConnection(mg_connection* connection) : _connection(connection) {}
+  mg_connection* WebsocketConnection::connection() { return _connection; }
+
+  void WebsocketConnection::sendText(const std::string& text)
+  {
+    mg_send_websocket_frame(_connection, WEBSOCKET_OP_TEXT, text.c_str(), text.length());
+  }
+
   void handleServerEvent(mg_connection* nc, int ev, void* p)
   {
     auto server = (Server*)nc->user_data;
     server->handleEvent(nc, ev, p);
   }
 
-  Server::Server() : _connection(nullptr), _errorStringPtr(nullptr)
+  Server::Server(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
+      : _serverConnection(nullptr), _errorStringPtr(nullptr), _wsConnections(), _storage(std::move(storage))
   {
     _mongooseManager = {};
     _httpServerSettings = {};
@@ -28,13 +40,13 @@ namespace webapi
     opts.user_data = this;
     opts.error_string = &_errorStringPtr;
 
-    _connection = mg_bind_opt(&_mongooseManager, "8080", handleServerEvent, opts);
-    if (_connection == nullptr)
+    _serverConnection = mg_bind_opt(&_mongooseManager, "8080", handleServerEvent, opts);
+    if (_serverConnection == nullptr)
     {
       std::cerr << "Cannot establish connection: " << _errorStringPtr << std::endl;
       return;
     }
-    mg_set_protocol_http_websocket(_connection);
+    mg_set_protocol_http_websocket(_serverConnection);
 
     for (;;)
     {
@@ -48,20 +60,20 @@ namespace webapi
   {
     if (ev == MG_EV_WEBSOCKET_HANDSHAKE_DONE)
     {
-      auto msg = (http_message*)p;
+      auto newWsConnection = std::make_unique<WebsocketConnection>(nc);
       using json = nlohmann::json;
 
-      json jsonObj = {
-        {"status", "ok"},
-        {"api", "core"},
-        {"data", {
-         {"version", "0.01"}
-        }}
-      };
+      auto serializer = hotel::persistence::JsonSerializer();
+      auto hotels = _storage->loadHotels();
+      newWsConnection->sendText(serializer.serializeHotels(hotels));
+      _wsConnections.push_back(std::move(newWsConnection));
+    }
 
-      std::string result  = jsonObj.dump(0);
-
-      mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, result.c_str(), result.length());
+    if (ev == MG_EV_CLOSE)
+    {
+      _wsConnections.erase(std::remove_if(_wsConnections.begin(), _wsConnections.end(),
+                                          [nc](auto& conn) { return conn->connection() == nc; }),
+                           _wsConnections.end());
     }
 
     if (ev == MG_EV_HTTP_REQUEST)
