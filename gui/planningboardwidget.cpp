@@ -59,11 +59,12 @@ namespace gui
   void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
   {
     auto itemRect = rect().adjusted(1, 1, 0, -1);
-    auto itemColor = QColor(0xfffafafa);
+    const auto itemColor = QColor(0xfffafafa);
+    const auto selectionColor = _layout->selectionColor;
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setBrush(itemColor);
+    painter->setBrush(isSelected() ? selectionColor : itemColor);
     painter->setPen(itemColor.darker(200));
     painter->drawRoundedRect(itemRect.adjusted(-0.5, -0.5, -0.5, -0.5), 5, 5, Qt::AbsoluteSize);
 
@@ -75,10 +76,22 @@ namespace gui
     painter->restore();
   }
 
+  QVariant PlanningBoardAtomItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value)
+  {
+    // Apply change locally
+    auto newValue = QGraphicsRectItem::itemChange(change, value);
+
+    // Propagate selection changes to the parent, i.e. the PlanningBoardReservationItem
+    if (change == QGraphicsItem::ItemSelectedChange)
+      static_cast<PlanningBoardReservationItem*>(parentItem())->setReservationSelected(value.toBool());
+    return newValue;
+  }
+
   PlanningBoardReservationItem::PlanningBoardReservationItem(PlanningBoardLayout* layout,
                                                              const hotel::Reservation* reservation,
                                                              QGraphicsItem* parent)
-      : QGraphicsItem(parent), _layout(layout), _reservation(reservation), _isSelected(false)
+      : QGraphicsItem(parent), _layout(layout), _reservation(reservation), _isSelected(false),
+        _isUpdatingSelection(false)
   {
     for (auto& atom : _reservation->atoms())
     {
@@ -89,7 +102,7 @@ namespace gui
 
   void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
   {
-    if (_isSelected || true)
+    if (_isSelected)
     {
       // Draw the connection links between items
       auto children = childItems();
@@ -108,7 +121,7 @@ namespace gui
 
           // Draw the two rectangular handles
           const int handleSize = 3;
-          const int linkOverhang = 15;
+          const int linkOverhang = 10;
           const QColor& handleColor = _layout->selectionColor;
           painter->fillRect(QRect(x1, y1 - handleSize, handleSize, handleSize * 2), handleColor);
           painter->fillRect(QRect(x2 - handleSize + 1, y2 - handleSize, handleSize, handleSize * 2), handleColor);
@@ -124,6 +137,28 @@ namespace gui
         }
       }
     }
+  }
+
+  QRectF PlanningBoardReservationItem::boundingRect() const { return childrenBoundingRect(); }
+
+  void PlanningBoardReservationItem::setReservationSelected(bool select)
+  {
+    // Avoid reentrance
+    if (_isUpdatingSelection)
+      return;
+    if (_isSelected == select)
+      return;
+    _isUpdatingSelection = true;
+    _isSelected = select;
+
+    // Update selection of the children
+    for (auto child : childItems())
+      child->setSelected(select);
+
+    // If items are selected pop them in the foreground
+    setZValue(select ? 1 : 0);
+
+    _isUpdatingSelection = false;
   }
 
   PlanningBoardWidget::PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
@@ -149,6 +184,15 @@ namespace gui
     auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
     auto right = _layout.getDatePositionX(dateRange.end()) + 10;
     _scene.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
+  }
+
+  void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation> > &reservations)
+  {
+    for (auto& reservation : reservations)
+    {
+      auto item = new PlanningBoardReservationItem(&_layout, reservation.get());
+      _scene.addItem(item);
+    }
   }
 
 } // namespace gui

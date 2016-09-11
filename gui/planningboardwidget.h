@@ -65,7 +65,11 @@ namespace gui
 
     void updateAppearance();
 
-    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget);
+    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+  protected:
+    //! @brief Reacts on selection changes and propagates them to the parent PlanningBoardReservationItem
+    virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
   private:
     PlanningBoardLayout* _layout;
@@ -87,15 +91,27 @@ namespace gui
     PlanningBoardReservationItem(PlanningBoardLayout* layout, const hotel::Reservation* reservation,
                                  QGraphicsItem* parent = nullptr);
 
-    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = nullptr) override;
+    // QGraphicsItem interface
+    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+    virtual QRectF boundingRect() const override;
 
-    virtual QRectF boundingRect() const override { return childrenBoundingRect(); }
+    /**
+     * @brief setReservationSelected marks this item and all of its children as selected
+     */
+    void setReservationSelected(bool select);
 
   private:
     // parent
     PlanningBoardLayout* _layout;
     const hotel::Reservation* _reservation;
     bool _isSelected;
+    /**
+     * @brief Set to true during a setReservationSelected() call to avoid reentrance and infinite recursion.
+     *
+     * This is necessary, since the individual atoms can trigger the selection of the whole reservation, and the
+     * reservation can trigger the selection of all of the atoms.
+     */
+    bool _isUpdatingSelection;
   };
 
   /**
