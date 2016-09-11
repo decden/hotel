@@ -9,11 +9,56 @@ namespace hotel
 
     namespace
     {
-
       void executeSQL(sqlite3* db, const std::string& sql)
       {
         if (!SqliteStatement(db, sql).execute())
           std::cerr << "Cannot execute query: " << sql;
+      }
+
+      std::string serializeReservationStatus(hotel::Reservation::ReservationStatus status)
+      {
+        using Status = hotel::Reservation::ReservationStatus;
+
+        switch (status)
+        {
+        case Status::Unknown:
+          return "unknown";
+        case Status::New:
+          return "new";
+        case Status::Confirmed:
+          return "confirmed";
+        case Status::CheckedIn:
+          return "checked-in";
+        case Status::CheckedOut:
+          return "checked-out";
+        case Status::Archived:
+          return "archived";
+        default:
+          std::cerr << "Unknown reservation status: " << status;
+          assert(false);
+          return "unknown";
+        };
+      }
+
+      hotel::Reservation::ReservationStatus parseReservationStatus(const std::string& str) {
+        using Status = hotel::Reservation::ReservationStatus;
+
+        if (str == "unknown")
+          return Status::Unknown;
+        if (str == "new")
+          return Status::New;
+        if (str == "confirmed")
+          return Status::Confirmed;
+        if (str == "checked-in")
+          return Status::CheckedIn;
+        if (str == "checked-out")
+          return Status::CheckedOut;
+        if (str == "archived")
+          return Status::Archived;
+
+        assert(false);
+        std::cerr << "Unknown reservation status: " << str;
+        return Status::Unknown;
       }
     }
 
@@ -121,11 +166,12 @@ namespace hotel
       {
         int reservationId;
         std::string description;
+        std::string reservationStatus;
         int atomId;
         int roomId;
         boost::gregorian::date dateFrom;
         boost::gregorian::date dateTo;
-        reservationsQuery.readRow(reservationId, description, atomId, roomId, dateFrom, dateTo);
+        reservationsQuery.readRow(reservationId, description, reservationStatus, atomId, roomId, dateFrom, dateTo);
 
         if (current == nullptr || current->id() != reservationId)
         {
@@ -134,6 +180,7 @@ namespace hotel
           current = std::make_unique<hotel::Reservation>(description, roomId,
                                                          boost::gregorian::date_period(dateFrom, dateTo));
           current->setId(reservationId);
+          current->setStatus(parseReservationStatus(reservationStatus));
         }
         else
         {
@@ -170,25 +217,14 @@ namespace hotel
 
     bool SqliteStorage::storeNewReservationAndAtoms(Reservation& reservation)
     {
-      query("reservation.insert").execute(reservation.description());
+      auto reservationStatus = serializeReservationStatus(reservation.status());
+      query("reservation.insert").execute(reservation.description(), reservationStatus);
       reservation.setId(lastInsertId());
       for (auto& atom : reservation.atoms())
       {
         auto& q = query("reservation_atom.insert");
         q.execute(reservation.id(), atom->_roomId, atom->_dateRange.begin(), atom->_dateRange.end());
         atom->setId(lastInsertId());
-      }
-    }
-
-    void SqliteStorage::getReservation()
-    {
-      auto& q = query("reservation.get");
-      q.execute();
-      while (q.hasResultRow())
-      {
-        std::string a, b;
-        q.readRow(a, b);
-        std::cout << a << " - " << b << std::endl;
       }
     }
 
@@ -213,8 +249,9 @@ namespace hotel
     {
       _statements.emplace("hotel.insert", SqliteStatement(_db, "INSERT INTO h_hotel (name) VALUES (?);"));
       _statements.emplace("hotel.all", SqliteStatement(_db, "SELECT id, name FROM h_hotel;"));
-      _statements.emplace("room_category.insert",
-                          SqliteStatement(_db, "INSERT INTO h_room_category (hotel_id, short_code, name) VALUES (?, ?, ?);"));
+      _statements.emplace(
+          "room_category.insert",
+          SqliteStatement(_db, "INSERT INTO h_room_category (hotel_id, short_code, name) VALUES (?, ?, ?);"));
       _statements.emplace("room_category.by_hotel_id",
                           SqliteStatement(_db, "SELECT id, short_code, name FROM h_room_category WHERE hotel_id = ?;"));
       _statements.emplace("room.insert",
@@ -222,19 +259,16 @@ namespace hotel
       _statements.emplace("room.by_hotel_id",
                           SqliteStatement(_db, "SELECT id, category_id, name FROM h_room WHERE hotel_id = ?;"));
 
-      _statements.emplace("reservation_and_atoms.all",
-                          SqliteStatement(_db, "SELECT r.id, r.description, a.id, a.room_id, a.date_from, a.date_to "
-                                               "FROM h_reservation as r, h_reservation_atom as a WHERE "
-                                               "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
-      _statements.emplace("reservation.get",
-                          SqliteStatement(_db, "SELECT date_from, date_to FROM h_reservation_atom LIMIT 1;"));
-      _statements.emplace("reservation.insert",
-                          SqliteStatement(_db, "INSERT INTO h_reservation (description) VALUES (?);"));
       _statements.emplace(
-          "reservation_atom.insert",
-          SqliteStatement(
-              _db,
-              "INSERT INTO h_reservation_atom (reservation_id, room_id, date_from, date_to) VALUES (?, ?, ?, ?);"));
+          "reservation_and_atoms.all",
+          SqliteStatement(_db, "SELECT r.id, r.description, r.status, a.id, a.room_id, a.date_from, a.date_to "
+                               "FROM h_reservation as r, h_reservation_atom as a WHERE "
+                               "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
+      _statements.emplace("reservation.insert",
+                          SqliteStatement(_db, "INSERT INTO h_reservation (description, status) VALUES (?, ?);"));
+      _statements.emplace("reservation_atom.insert",
+                          SqliteStatement(_db, "INSERT INTO h_reservation_atom (reservation_id, room_id, "
+                                               "date_from, date_to) VALUES (?, ?, ?, ?);"));
     }
 
     void SqliteStorage::createSchema()
@@ -255,7 +289,8 @@ namespace hotel
 
       executeSQL(_db, "CREATE TABLE IF NOT EXISTS h_reservation ("
                       "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
-                      "description TEXT NOT NULL);");
+                      "description TEXT NOT NULL, "
+                      "status TEXT NOT NULL);");
       executeSQL(_db, "CREATE TABLE IF NOT EXISTS h_reservation_atom ("
                       "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
                       "reservation_id INTEGER NOT NULL," // Foreign key

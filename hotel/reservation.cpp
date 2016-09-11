@@ -4,10 +4,12 @@ namespace hotel
 {
 
   hotel::Reservation::Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange)
-      : _description(description)
+      : _status(Unknown), _description(description)
   {
     _atoms.push_back(std::make_unique<ReservationAtom>(this, roomId, dateRange));
   }
+
+  void Reservation::setStatus(Reservation::ReservationStatus status) { _status = status; }
 
   ReservationAtom* Reservation::addContinuation(int room, boost::gregorian::date date)
   {
@@ -20,9 +22,11 @@ namespace hotel
       return nullptr;
     }
 
-    _atoms.push_back( std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
+    _atoms.push_back(
+        std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
   }
 
+  Reservation::ReservationStatus Reservation::status() const { return _status; }
   const std::string& Reservation::description() const { return _description; }
   const std::vector<std::unique_ptr<ReservationAtom>>& Reservation::atoms() const { return _atoms; }
 

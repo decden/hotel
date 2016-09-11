@@ -32,10 +32,22 @@ namespace hotel
   class Reservation : public PersistentObject
   {
   public:
+    enum ReservationStatus
+    {
+      Unknown,
+      New,
+      Confirmed,
+      CheckedIn,
+      CheckedOut,
+      Archived
+    };
+
     Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange);
 
+    void setStatus(ReservationStatus status);
     ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
+    ReservationStatus status() const;
     const std::string& description() const;
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
 
@@ -43,6 +55,7 @@ namespace hotel
     const int length() const;
 
   private:
+    ReservationStatus _status;
     std::string _description;
     std::vector<std::unique_ptr<ReservationAtom>> _atoms;
   };

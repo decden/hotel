@@ -103,7 +103,22 @@ namespace cli
 
       // If we manage to account for all of the requested days
       if (additionalDays == 0)
+      {
+        // Set the reservation status
+        auto today = boost::gregorian::day_clock::local_day();
+        if (reservation->dateRange().contains(today))
+          reservation->setStatus(hotel::Reservation::CheckedIn);
+        else if (reservation->dateRange().end() < today + boost::gregorian::days(-5))
+          reservation->setStatus(hotel::Reservation::Archived);
+        else if (reservation->dateRange().end() <= today)
+          reservation->setStatus(hotel::Reservation::CheckedOut);
+        else if (percentageDist(rng) < 90)
+          reservation->setStatus(hotel::Reservation::Confirmed);
+        else
+          reservation->setStatus(hotel::Reservation::New);
+
         planning.addReservation(std::move(reservation));
+      }
     }
   }
 
@@ -112,7 +127,7 @@ namespace cli
   {
     using namespace boost::gregorian;
     auto today = day_clock::local_day();
-    auto periodFrom = today + days(-7);
+    auto periodFrom = today + days(-14);
     auto periodTo = today + days(600);
 
     auto period = boost::gregorian::date_period(periodFrom, periodTo);

@@ -72,24 +72,29 @@ namespace gui
 
   QColor PlanningBoardAtomItem::getItemColor() const
   {
+    using ReservationStatus = hotel::Reservation::ReservationStatus;
+
     auto& appearance = _layout->appearance();
-    auto today = boost::gregorian::day_clock::local_day();
     if (isSelected())
     {
-      if (_atom->reservation()->dateRange().is_before(today))
+      if (_atom->reservation()->status() == ReservationStatus::CheckedOut ||
+          _atom->reservation()->status() == ReservationStatus::Archived)
         return appearance.atomArchivedSelectedColor;
 
       return appearance.atomSelectedColor;
     }
     else
     {
-      if (_atom->reservation()->dateRange().is_before(today))
+      if (_atom->reservation()->status() == ReservationStatus::Archived)
         return appearance.atomArchivedColor;
 
-      if (_atom->reservation()->dateRange().contains(today))
+      if (_atom->reservation()->status() == ReservationStatus::CheckedOut)
+        return appearance.atomCheckedOutColor;
+
+      if (_atom->reservation()->status() == ReservationStatus::CheckedIn)
         return appearance.atomCheckedInColor;
 
-      if (_atom->reservation()->id() % 30 == 0)
+      if (_atom->reservation()->status() == ReservationStatus::New)
         return appearance.atomUnconfirmedColor;
 
       return appearance.atomDefaultColor;

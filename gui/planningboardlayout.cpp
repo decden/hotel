@@ -20,7 +20,8 @@ namespace gui
     const int hotelSeparatorHeight = 20;
 
     _rows.clear();
-    int y = 0;
+    _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, 0, hotelSeparatorHeight});
+    int y = hotelSeparatorHeight;
     for (auto& hotel : hotels)
     {
       for (auto& room : hotel->rooms())

@@ -54,6 +54,7 @@ namespace gui
     // Atom colors
     QColor atomDefaultColor = QColor(0xE0D5B3);
     QColor atomCheckedInColor = QColor(0x9EC2A9);
+    QColor atomCheckedOutColor = QColor(0xC0BFBB);
     QColor atomUnconfirmedColor = QColor(0xD4885C);
     QColor atomArchivedColor = QColor(0xECEBE8);
     QColor atomSelectedColor = QColor(0xD33682);
