@@ -253,12 +253,25 @@ namespace gui
     {
       if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
       {
-        auto background = QColor(0x353F41);
-        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()-1), background);
+        auto separatorColor = appearance.boardSeparatorColor;
+        QLinearGradient grad(0, row.top(), 0, row.bottom());
+        grad.setColorAt(0.0, separatorColor.darker(200));
+        grad.setColorAt(0.5, QColor(0x353F41));
+
+        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()-1), grad);
         painter->setPen(appearance.boardEvenRowColor);
         painter->drawLine(rect.left(), row.bottom()-1, rect.width(), row.bottom()-1);
       }
     }
+  }
+
+  void PlanningBoardWidget::drawForeground(QPainter *painter, const QRectF &rect)
+  {
+    // Draw the bar indicating the current day
+    auto today = boost::gregorian::day_clock::local_day();
+    auto x = _layout.getDatePositionX(today);
+    auto todayRect = QRect(x-2, rect.top(), 3, rect.height());
+    painter->fillRect(todayRect, _layout.appearance().boardTodayBar);
   }
 
   void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)

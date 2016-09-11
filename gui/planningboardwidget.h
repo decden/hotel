@@ -99,7 +99,8 @@ namespace gui
     PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
 
   protected:
-    void drawBackground(QPainter* painter, const QRectF& rect);
+    virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
+    virtual void drawForeground(QPainter* painter, const QRectF& rect) override;
 
   private:
     void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);

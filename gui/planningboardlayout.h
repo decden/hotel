@@ -72,6 +72,8 @@ namespace gui
     QColor boardWeekdayColumnColor = QColor(0xE3D9BA);
     QColor boardSaturdayColumnColor = QColor(0xE3D097);
     QColor boardSundayColumnColor = QColor(0xE3D097);
+    QColor boardTodayBar = QColor(0x26, 0x8B, 0xD2, 0xA0);
+    QColor boardSeparatorColor = QColor(0x353F41);
   };
 
   /**
