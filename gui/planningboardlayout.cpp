@@ -2,11 +2,17 @@
 
 namespace gui
 {
+
+  PlanningBoardRowGeometry::PlanningBoardRowGeometry(PlanningBoardRowGeometry::RowType type, int top, int height, int id)
+      : _type(type), _id(id), _top(top), _height(height)
+  {
+  }
+
   PlanningBoardLayout::PlanningBoardLayout()
   {
     _originDate = boost::gregorian::day_clock::local_day();
-    _roomRowHeight = 24;
-    _dateColumnWidth = 30;
+    _roomRowHeight = 22;
+    _dateColumnWidth = 26;
   }
 
   void PlanningBoardLayout::updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels)
@@ -49,6 +55,12 @@ namespace gui
   int PlanningBoardLayout::getDatePositionX(boost::gregorian::date date) const
   {
     return (date - _originDate).days() * _dateColumnWidth;
+  }
+
+  std::pair<boost::gregorian::date, int> PlanningBoardLayout::getNearestDatePosition(int positionX) const
+  {
+    auto dateIndex = (positionX + _dateColumnWidth / 2) / _dateColumnWidth;
+    return std::make_pair(_originDate + boost::gregorian::days(dateIndex), dateIndex * _dateColumnWidth);
   }
 
   int PlanningBoardLayout::getHeight() const

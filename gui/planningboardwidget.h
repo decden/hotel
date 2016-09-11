@@ -35,7 +35,6 @@ namespace gui
                           QGraphicsItem* parent = nullptr);
 
     void updateAppearance();
-
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
   protected:
@@ -43,7 +42,9 @@ namespace gui
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
   private:
+    QString getDisplayedText() const;
     QColor getItemColor() const;
+    QColor getItemTextColor() const;
 
     PlanningBoardLayout* _layout;
     const hotel::ReservationAtom* _atom;
@@ -98,21 +99,7 @@ namespace gui
     PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
 
   protected:
-    void drawBackground(QPainter* painter, const QRectF& rect)
-    {
-      painter->fillRect(rect, _layout.widgetBackground);
-
-      int i = 0;
-      for (auto row : _layout.rowGeometries())
-      {
-        if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
-        {
-          auto background = (i % 2) ? _layout.evenBackgroundRow : _layout.oddBackgroundRow;
-          painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()), background);
-        }
-        i++;
-      }
-    }
+    void drawBackground(QPainter* painter, const QRectF& rect);
 
   private:
     void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);

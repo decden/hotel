@@ -41,14 +41,11 @@ namespace gui
       path.addRect(borderRect.adjusted(cornerRadius, 0, 0, 0));
     painter->drawPath(path.simplified());
 
+    // Draw the text
     painter->setClipRect(itemRect);
-    if (itemColor.lightness() > 200)
-      painter->setPen(QColor(0x586E75));
-    else
-      painter->setPen(QColor(0xffffff));
-    // painter->setFont()
-    auto description = QString::fromStdString(_atom->reservation()->description());
-    painter->drawText(itemRect.adjusted(5, 2, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, description);
+    painter->setPen(getItemTextColor());
+    painter->setFont(_layout->appearance().atomTextFont);
+    painter->drawText(itemRect.adjusted(5, 2, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, getDisplayedText());
     painter->restore();
   }
 
@@ -63,28 +60,50 @@ namespace gui
     return newValue;
   }
 
+  QString PlanningBoardAtomItem::getDisplayedText() const
+  {
+    auto description = QString::fromStdString(_atom->reservation()->description());
+    description += QString(" (%1)").arg(_atom->reservation()->length());
+
+    if (!_atom->isFirst())
+      description = "\u25B8 " + description;
+    return description;
+  }
+
   QColor PlanningBoardAtomItem::getItemColor() const
   {
-    const auto defaultItemColor = QColor(0xE0D5B3);
-    const auto selectedItemColor = QColor(0xD33682);
-    const auto checkedInItemColor = QColor(0x9EC2A9); // QColor(0x2AA198);
-
-    const auto archivedItemColor = QColor(0xECEBE8);
-    const auto archivedSelectedItemColor = selectedItemColor.lighter(150);
-
-
+    auto& appearance = _layout->appearance();
     auto today = boost::gregorian::day_clock::local_day();
-    if (_atom->reservation()->dateRange().is_before(today))
-      return isSelected() ? archivedSelectedItemColor : archivedItemColor;
+    if (isSelected())
+    {
+      if (_atom->reservation()->dateRange().is_before(today))
+        return appearance.atomArchivedSelectedColor;
 
-    if (_atom->reservation()->dateRange().contains(today))
-      return isSelected() ? selectedItemColor : checkedInItemColor;
+      return appearance.atomSelectedColor;
+    }
+    else
+    {
+      if (_atom->reservation()->dateRange().is_before(today))
+        return appearance.atomArchivedColor;
 
-    if (_atom->reservation()->id() % 30 == 0)
-      return isSelected() ? selectedItemColor : QColor(0xD4885C);
+      if (_atom->reservation()->dateRange().contains(today))
+        return appearance.atomCheckedInColor;
 
-    return isSelected() ? selectedItemColor : defaultItemColor;
+      if (_atom->reservation()->id() % 30 == 0)
+        return appearance.atomUnconfirmedColor;
 
+      return appearance.atomDefaultColor;
+    }
+  }
+
+  QColor PlanningBoardAtomItem::getItemTextColor() const
+  {
+    auto& appearance = _layout->appearance();
+    auto itemColor = getItemColor();
+    if (itemColor.lightness() > 200)
+      return appearance.atomDarkTextColor;
+    else
+      return appearance.atomLightTextColor;
   }
 
   PlanningBoardReservationItem::PlanningBoardReservationItem(PlanningBoardLayout* layout,
@@ -105,6 +124,7 @@ namespace gui
     if (_isSelected)
     {
       // Draw the connection links between items
+      auto& appearance = _layout->appearance();
       auto children = childItems();
       if (children.size() > 1)
       {
@@ -120,9 +140,9 @@ namespace gui
           auto y2 = nextBox.top() + nextBox.height() / 2;
 
           // Draw the two rectangular handles
-          const int handleSize = 3;
-          const int linkOverhang = 10;
-          const QColor& handleColor = _layout->selectionColor;
+          const int handleSize = appearance.atomConnectionHandleSize;
+          const int linkOverhang = appearance.atomConnectionOverhang;
+          const QColor& handleColor = appearance.selectionColor;
           painter->fillRect(QRect(x1 - handleSize, y1 - handleSize, handleSize * 2, handleSize * 2), handleColor);
           painter->fillRect(QRect(x2 - handleSize, y2 - handleSize, handleSize * 2, handleSize * 2), handleColor);
 
@@ -184,6 +204,61 @@ namespace gui
     auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
     auto right = _layout.getDatePositionX(dateRange.end()) + 10;
     _scene.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
+  }
+
+  void PlanningBoardWidget::drawBackground(QPainter* painter, const QRectF& rect)
+  {
+    auto& appearance = _layout.appearance();
+    painter->fillRect(rect, appearance.widgetBackground);
+
+    // Draw the horizontal alternating rows
+    bool isRowEven = true;
+    for (auto row : _layout.rowGeometries())
+    {
+      if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
+      {
+        auto background = (isRowEven) ? appearance.boardEvenRowColor : appearance.boardOddRowColor;
+        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()), background);
+      }
+      isRowEven = !isRowEven;
+    }
+
+    // Get the horizontal date range
+    auto leftDatePos = _layout.getNearestDatePosition(rect.left() - _layout.dateColumnWidth());
+
+    // Draw the vertical day lines
+    auto posX = leftDatePos.second;
+    auto dayOfWeek = leftDatePos.first.day_of_week();
+    painter->setPen(appearance.boardWeekdayColumnColor);
+    while (posX < rect.right() + _layout.dateColumnWidth())
+    {
+      if (dayOfWeek == boost::gregorian::Sunday)
+      {
+        int w = appearance.boardSundayColumnWidth;
+        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()), QColor(appearance.boardSundayColumnColor));
+      }
+      else if (dayOfWeek == boost::gregorian::Saturday)
+      {
+        int w = appearance.boardSaturdayColumnWidth;
+        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()), QColor(appearance.boardSaturdayColumnColor));
+      }
+      else
+        painter->drawLine(posX-1, rect.top(), posX-1, rect.bottom());
+      posX += _layout.dateColumnWidth();
+      dayOfWeek = (dayOfWeek + 1) % 7;
+    }
+
+    // Fill in the separator rows (we do not want to have vertical lines in there)
+    for (auto row : _layout.rowGeometries())
+    {
+      if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
+      {
+        auto background = QColor(0x353F41);
+        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()-1), background);
+        painter->setPen(appearance.boardEvenRowColor);
+        painter->drawLine(rect.left(), row.bottom()-1, rect.width(), row.bottom()-1);
+      }
+    }
   }
 
   void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)
