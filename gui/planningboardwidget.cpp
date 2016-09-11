@@ -22,12 +22,11 @@ namespace gui
   {
     auto itemRect = rect().adjusted(1, 1, 0, -1);
     const int cornerRadius = 5;
-    const auto itemColor = QColor(0xfffafafa);
-    const auto selectionColor = _layout->selectionColor;
+    auto itemColor = getItemColor();
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setBrush(isSelected() ? selectionColor : itemColor);
+    painter->setBrush(itemColor);
     painter->setPen(itemColor.darker(200));
 
     // Construct a rounded rectangle. Not all of the corners are rounded. Only the parts corresponding to the beginning
@@ -43,7 +42,10 @@ namespace gui
     painter->drawPath(path.simplified());
 
     painter->setClipRect(itemRect);
-    painter->setPen(QColor(0, 0, 0));
+    if (itemColor.lightness() > 200)
+      painter->setPen(QColor(0x586E75));
+    else
+      painter->setPen(QColor(0xffffff));
     // painter->setFont()
     auto description = QString::fromStdString(_atom->reservation()->description());
     painter->drawText(itemRect.adjusted(5, 2, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, description);
@@ -59,6 +61,30 @@ namespace gui
     if (change == QGraphicsItem::ItemSelectedChange)
       static_cast<PlanningBoardReservationItem*>(parentItem())->setReservationSelected(value.toBool());
     return newValue;
+  }
+
+  QColor PlanningBoardAtomItem::getItemColor() const
+  {
+    const auto defaultItemColor = QColor(0xE0D5B3);
+    const auto selectedItemColor = QColor(0xD33682);
+    const auto checkedInItemColor = QColor(0x9EC2A9); // QColor(0x2AA198);
+
+    const auto archivedItemColor = QColor(0xECEBE8);
+    const auto archivedSelectedItemColor = selectedItemColor.lighter(150);
+
+
+    auto today = boost::gregorian::day_clock::local_day();
+    if (_atom->reservation()->dateRange().is_before(today))
+      return isSelected() ? archivedSelectedItemColor : archivedItemColor;
+
+    if (_atom->reservation()->dateRange().contains(today))
+      return isSelected() ? selectedItemColor : checkedInItemColor;
+
+    if (_atom->reservation()->id() % 30 == 0)
+      return isSelected() ? selectedItemColor : QColor(0xD4885C);
+
+    return isSelected() ? selectedItemColor : defaultItemColor;
+
   }
 
   PlanningBoardReservationItem::PlanningBoardReservationItem(PlanningBoardLayout* layout,
@@ -97,8 +123,8 @@ namespace gui
           const int handleSize = 3;
           const int linkOverhang = 10;
           const QColor& handleColor = _layout->selectionColor;
-          painter->fillRect(QRect(x1, y1 - handleSize, handleSize, handleSize * 2), handleColor);
-          painter->fillRect(QRect(x2 - handleSize + 1, y2 - handleSize, handleSize, handleSize * 2), handleColor);
+          painter->fillRect(QRect(x1 - handleSize, y1 - handleSize, handleSize * 2, handleSize * 2), handleColor);
+          painter->fillRect(QRect(x2 - handleSize, y2 - handleSize, handleSize * 2, handleSize * 2), handleColor);
 
           // Draw the zig-yag line between handles
           QPointF points[] = {QPoint(x1, y1), QPoint(x1 + linkOverhang, y1), QPoint(x2 - linkOverhang, y2),

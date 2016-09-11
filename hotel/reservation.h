@@ -38,6 +38,8 @@ namespace hotel
 
     const std::string& description() const;
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
+
+    boost::gregorian::date_period dateRange() const;
     const int length() const;
 
   private:

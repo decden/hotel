@@ -20,11 +20,16 @@ namespace hotel
       return nullptr;
     }
 
-    _atoms.push_back(std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
+    _atoms.push_back( std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
   }
 
   const std::string& Reservation::description() const { return _description; }
   const std::vector<std::unique_ptr<ReservationAtom>>& Reservation::atoms() const { return _atoms; }
+
+  boost::gregorian::date_period Reservation::dateRange() const
+  {
+    return boost::gregorian::date_period(_atoms.front()->dateRange().begin(), _atoms.back()->dateRange().end());
+  }
 
   const int Reservation::length() const
   {
