@@ -125,14 +125,7 @@ namespace gui
     PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
 
   private:
-    void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)
-    {
-      for (auto& reservation : reservations)
-      {
-        auto item = new PlanningBoardReservationItem(&_layout, reservation.get());
-        _scene.addItem(item);
-      }
-    }
+    void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);
 
     std::unique_ptr<hotel::persistence::SqliteStorage> _storage;
     std::unique_ptr<hotel::PlanningBoard> _planning;

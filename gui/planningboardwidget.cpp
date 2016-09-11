@@ -59,6 +59,7 @@ namespace gui
   void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
   {
     auto itemRect = rect().adjusted(1, 1, 0, -1);
+    const int cornerRadius = 5;
     const auto itemColor = QColor(0xfffafafa);
     const auto selectionColor = _layout->selectionColor;
 
@@ -66,7 +67,18 @@ namespace gui
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(isSelected() ? selectionColor : itemColor);
     painter->setPen(itemColor.darker(200));
-    painter->drawRoundedRect(itemRect.adjusted(-0.5, -0.5, -0.5, -0.5), 5, 5, Qt::AbsoluteSize);
+
+    // Construct a rounded rectangle. Not all of the corners are rounded. Only the parts corresponding to the beginning
+    // or end of a reservation are rounded
+    auto borderRect = itemRect.adjusted(-0.5, -0.5, -0.5, -0.5);
+    QPainterPath path;
+    path.setFillRule(Qt::WindingFill);
+    path.addRoundedRect(borderRect, cornerRadius, cornerRadius, Qt::AbsoluteSize);
+    if (!_atom->isFirst())
+      path.addRect(borderRect.adjusted(0, 0, -cornerRadius, 0));
+    if (!_atom->isLast())
+      path.addRect(borderRect.adjusted(cornerRadius, 0, 0, 0));
+    painter->drawPath(path.simplified());
 
     painter->setClipRect(itemRect);
     painter->setPen(QColor(0, 0, 0));
@@ -186,7 +198,7 @@ namespace gui
     _scene.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
   }
 
-  void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation> > &reservations)
+  void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)
   {
     for (auto& reservation : reservations)
     {
