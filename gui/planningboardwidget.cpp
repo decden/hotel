@@ -4,44 +4,6 @@
 
 namespace gui
 {
-
-  PlanningBoardLayout::PlanningBoardLayout() { _originDate = boost::gregorian::day_clock::local_day(); }
-
-  void PlanningBoardLayout::updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels)
-  {
-    _roomIdToYPosition.clear();
-    int y = 0;
-    for (auto& hotel : hotels)
-    {
-      for (auto& room : hotel->rooms())
-      {
-        _roomIdToYPosition[room->id()] = y;
-        y += 20;
-      }
-      y += 10;
-    }
-  }
-
-  QRectF PlanningBoardLayout::getAtomRect(int roomId, boost::gregorian::date_period dateRange)
-  {
-    auto pos = getDatePositionX(dateRange.begin());
-    auto width = dateRange.length().days() * 24 - 1;
-    auto y = _roomIdToYPosition[roomId]; // TODO: check if the room exist first!
-
-    return QRectF(pos, y, width, 20);
-  }
-
-  int PlanningBoardLayout::getDatePositionX(boost::gregorian::date date) const
-  {
-    return (date - _originDate).days() * 24;
-  }
-
-  int PlanningBoardLayout::getHeight() const
-  {
-    // TODO: calculate this in the right way! This does not account for gaps or uneven spacing!
-    return _roomIdToYPosition.size() * 22;
-  }
-
   PlanningBoardAtomItem::PlanningBoardAtomItem(PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
                                                QGraphicsItem* parent)
       : QGraphicsRectItem(parent), _layout(layout), _atom(atom)

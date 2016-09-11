@@ -3,6 +3,7 @@ find_package(Qt5Widgets REQUIRED)
 
 add_executable(hotel_gui
                gui.cpp
+               planningboardlayout.cpp
                planningboardwidget.cpp
               )
 

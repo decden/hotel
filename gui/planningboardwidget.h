@@ -1,6 +1,8 @@
 #ifndef GUI_PLANNINGBOARDWIDGET_H
 #define GUI_PLANNINGBOARDWIDGET_H
 
+#include "gui/planningboardlayout.h"
+
 #include "hotel/hotel.h"
 #include "hotel/persistence/sqlitestorage.h"
 #include "hotel/planning.h"
@@ -9,7 +11,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsView>
 
-#include "boost/date_time.hpp"
+#include <boost/date_time.hpp>
 
 #include <map>
 #include <memory>
@@ -17,37 +19,6 @@
 
 namespace gui
 {
-  /**
-   * @brief The PlanningBoardLayout class holds the geometry and appearance of the PlanningBoardWidget
-   *
-   * One of the responsibilities of this class is to transofrm room ids and positions to coordinates in the virtual
-   * planning board.
-   */
-  class PlanningBoardLayout
-  {
-  public:
-    PlanningBoardLayout();
-
-    void updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
-
-    //! @brief getAtomRect produces the rectangle for the given room and date on the virtual planning board
-    QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange);
-
-    //! @brief getPositionX returns the x coordiante associated to the given date, w.r.t. the layout's origin date
-    int getDatePositionX(boost::gregorian::date date) const;
-
-    //! @brief getHeight returns the total heiht of the planning board, according to the current layout.
-    int getHeight() const;
-
-    QColor widgetBackground = QColor(0xcccccc);
-    QColor selectionColor = QColor(0xC3AB08);
-
-  private:
-    std::map<int, int> _roomIdToYPosition;
-    // The date which will correspond to the x=0 line
-    boost::gregorian::date _originDate;
-  };
-
   /**
    * @brief The PlanningBoardAtomItem class is the graphical equivalent to a ReservationAtom object
    *
