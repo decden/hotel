@@ -36,13 +36,5 @@ int main(int argc, char** argv)
 {
   // Fill the test.db with randomly generated test data
   createTestDatabase("test.db");
-
-  // Reopen the database
-  auto storage = std::make_unique<hotel::persistence::SqliteStorage>("test.db");
-
-  // Create the server and start the application
-  webapi::Server server(std::move(storage));
-  server.start();
-
   return 0;
 }

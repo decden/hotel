@@ -48,7 +48,7 @@ namespace cli
                              boost::gregorian::date_period period)
   {
     // std::uniform_int_distribution<> dayDist(0, period.length().days());
-    std::normal_distribution<> dayDist(period.length().days() / 2, period.length().days() / 8);
+    std::normal_distribution<> dayDist(period.length().days() / 4, period.length().days() / 2);
     std::uniform_int_distribution<> roomDist(0, hotel.rooms().size() - 1);
     std::uniform_int_distribution<> lengthDist(3, 21);
     std::uniform_int_distribution<> percentageDist(0, 100);
@@ -110,8 +110,12 @@ namespace cli
   std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng,
                                                            std::vector<std::unique_ptr<hotel::Hotel>>& hotels)
   {
-    auto period = boost::gregorian::date_period(boost::gregorian::date(2016, boost::gregorian::Jan, 1),
-                                                boost::gregorian::date(2016, boost::gregorian::Dec, 31));
+    using namespace boost::gregorian;
+    auto today = day_clock::local_day();
+    auto periodFrom = today + days(-7);
+    auto periodTo = today + days(600);
+
+    auto period = boost::gregorian::date_period(periodFrom, periodTo);
 
     auto planning = std::make_unique<hotel::PlanningBoard>();
 
