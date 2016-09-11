@@ -40,6 +40,7 @@ namespace gui
     int getHeight() const;
 
     QColor widgetBackground = QColor(0xcccccc);
+    QColor selectionColor = QColor(0xC3AB08);
 
   private:
     std::map<int, int> _roomIdToYPosition;
@@ -92,8 +93,8 @@ namespace gui
 
   private:
     // parent
+    PlanningBoardLayout* _layout;
     const hotel::Reservation* _reservation;
-    std::string _label;
     bool _isSelected;
   };
 

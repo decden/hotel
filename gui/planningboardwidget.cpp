@@ -59,28 +59,27 @@ namespace gui
   void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
   {
     auto itemRect = rect().adjusted(1, 1, 0, -1);
-    auto itemColor = QColor(0xffffffff);
+    auto itemColor = QColor(0xfffafafa);
 
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setBrush(itemColor);
     painter->setPen(itemColor.darker(200));
-    painter->drawRoundedRect(itemRect.adjusted(0.5, 0.5, 0.5, 0.5), 5, 5, Qt::AbsoluteSize);
+    painter->drawRoundedRect(itemRect.adjusted(-0.5, -0.5, -0.5, -0.5), 5, 5, Qt::AbsoluteSize);
 
     painter->setClipRect(itemRect);
     painter->setPen(QColor(0, 0, 0));
     // painter->setFont()
     auto description = QString::fromStdString(_atom->reservation()->description());
-    painter->drawText(itemRect.adjusted(5, 3, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, description);
+    painter->drawText(itemRect.adjusted(5, 2, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, description);
     painter->restore();
   }
 
   PlanningBoardReservationItem::PlanningBoardReservationItem(PlanningBoardLayout* layout,
                                                              const hotel::Reservation* reservation,
                                                              QGraphicsItem* parent)
-      : QGraphicsItem(parent), _reservation(reservation), _isSelected(false)
+      : QGraphicsItem(parent), _layout(layout), _reservation(reservation), _isSelected(false)
   {
-    _label = "Hello!";
     for (auto& atom : _reservation->atoms())
     {
       auto item = new PlanningBoardAtomItem(layout, atom.get());
@@ -88,9 +87,9 @@ namespace gui
     }
   }
 
-  void PlanningBoardReservationItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+  void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
   {
-    if (_isSelected)
+    if (_isSelected || true)
     {
       // Draw the connection links between items
       auto children = childItems();
@@ -98,13 +97,37 @@ namespace gui
       {
         for (auto i = 0; i < children.size() - 1; ++i)
         {
+          auto previousBox = children[i]->boundingRect();
+          auto nextBox = children[i + 1]->boundingRect();
+
+          // Calculate the two points
+          auto x1 = previousBox.right();
+          auto y1 = previousBox.top() + previousBox.height() / 2;
+          auto x2 = nextBox.left();
+          auto y2 = nextBox.top() + nextBox.height() / 2;
+
+          // Draw the two rectangular handles
+          const int handleSize = 3;
+          const int linkOverhang = 15;
+          const QColor& handleColor = _layout->selectionColor;
+          painter->fillRect(QRect(x1, y1 - handleSize, handleSize, handleSize * 2), handleColor);
+          painter->fillRect(QRect(x2 - handleSize + 1, y2 - handleSize, handleSize, handleSize * 2), handleColor);
+
+          // Draw the zig-yag line between handles
+          QPointF points[] = {QPoint(x1, y1), QPoint(x1 + linkOverhang, y1), QPoint(x2 - linkOverhang, y2),
+                              QPoint(x2, y2)};
+          painter->save();
+          painter->setRenderHint(QPainter::Antialiasing, true);
+          painter->setPen(QPen(handleColor, 2));
+          painter->drawPolyline(points, 4);
+          painter->restore();
         }
       }
     }
   }
 
   PlanningBoardWidget::PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
-    : QGraphicsView(), _storage(std::move(storage))
+      : QGraphicsView(), _storage(std::move(storage))
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
     setCacheMode(QGraphicsView::CacheBackground);
