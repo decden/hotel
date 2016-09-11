@@ -1,7 +1,5 @@
 #include "hotel/persistence/jsonserializer.h"
 
-#include "json.hpp"
-
 #include <sstream>
 
 namespace hotel
@@ -10,14 +8,10 @@ namespace hotel
   {
     JsonSerializer::JsonSerializer() {}
 
-    std::string JsonSerializer::serializeHotels(const std::vector<std::unique_ptr<Hotel>>& hotels)
+    nlohmann::json JsonSerializer::serializeHotels(const std::vector<std::unique_ptr<Hotel>>& hotels)
     {
       using json = nlohmann::json;
-      json resultJson;
-      resultJson["data"] = {
-        {"count", hotels.size()},
-        {"hotels", json::array()}
-      };
+      json resultJson = json::array();
 
       for (auto& hotel : hotels)
       {
@@ -48,22 +42,17 @@ namespace hotel
           hotelJson["rooms"].push_back(roomJson);
         }
 
-        resultJson["result"]["hotels"].push_back(hotelJson);
+        resultJson.push_back(hotelJson);
       }
 
-      return resultJson.dump();
+      return resultJson;
     }
 
-    std::string JsonSerializer::serializePlanning(const std::unique_ptr<PlanningBoard>& planning)
+    nlohmann::json JsonSerializer::serializePlanning(const std::unique_ptr<PlanningBoard>& planning)
     {
       using json = nlohmann::json;
       json resultJson;
-      resultJson["data"] = {
-        {"count", planning->reservations().size()},
-        {"reservations", json::array()}
-      };
-
-      // TODO: Store room ids in planning!
+      resultJson = json::array();
 
       for (auto& reservation : planning->reservations())
       {
@@ -77,16 +66,16 @@ namespace hotel
         {
           json atomJson = {
             {"roomId", atom->roomId()},
-            {"from", boost::gregorian::to_iso_string(atom->dateRange().begin())},
-            {"to", boost::gregorian::to_iso_string(atom->dateRange().end())}
+            {"from", boost::gregorian::to_iso_extended_string(atom->dateRange().begin())},
+            {"to", boost::gregorian::to_iso_extended_string(atom->dateRange().end())}
           };
           reservationJson["atoms"].push_back(atomJson);
         }
 
-        resultJson["reservations"].push_back(reservationJson);
+        resultJson.push_back(reservationJson);
       }
 
-      return resultJson.dump();
+      return resultJson;
     }
 
   } // namespace persistence

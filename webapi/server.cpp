@@ -28,7 +28,7 @@ namespace webapi
   {
     _mongooseManager = {};
     _httpServerSettings = {};
-    _httpServerSettings.document_root = ".";
+    _httpServerSettings.document_root = "../../hotel/web";
     _httpServerSettings.enable_directory_listing = "yes";
   }
 
@@ -65,7 +65,19 @@ namespace webapi
 
       auto serializer = hotel::persistence::JsonSerializer();
       auto hotels = _storage->loadHotels();
-      newWsConnection->sendText(serializer.serializeHotels(hotels));
+      std::vector<int> roomIds;
+      for (auto& hotel : hotels)
+        for (auto& room : hotel->rooms())
+          roomIds.push_back(room->id());
+      auto planning = _storage->loadPlanning(roomIds);
+      auto hotelsJson = serializer.serializeHotels(hotels);
+      auto reservationsJson = serializer.serializePlanning(planning);
+
+      json msg1 = {{"type", "hotels"}, {"data", hotelsJson}};
+      json msg2 = {{"type", "reservations"}, {"data", reservationsJson}};
+
+      newWsConnection->sendText(msg1.dump());
+      newWsConnection->sendText(msg2.dump());
       _wsConnections.push_back(std::move(newWsConnection));
     }
 

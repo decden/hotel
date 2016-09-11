@@ -53,13 +53,20 @@ namespace hotel
     bool hasRoom(int roomId) const;
 
     /**
-     * @brief getAvailableDaysFrom computes the number of days in which the given room is available from the given date onwards.
+     * @brief getAvailableDaysFrom computes the number of days in which the given room is available from the given date
+     * onwards.
      * @return the number of days for which the room is free. If the room is unavailable 0 is returend. If the room is
      *         always available max is returned.
      */
     int getAvailableDaysFrom(int roomId, boost::gregorian::date date) const;
 
     const std::vector<std::unique_ptr<Reservation>>& reservations() const;
+
+    /**
+     * @brief getPlanningExtent Returns the date period encompassing all of the reservations
+     * @return If there are no reservation, an empty period is returned, encompassing the current day.
+     */
+    boost::gregorian::date_period getPlanningExtent() const;
 
   private:
     /**

@@ -23,7 +23,7 @@ namespace hotel
     _atoms.push_back(std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
   }
 
-  const std::string& Reservation::description() { return _description; }
+  const std::string& Reservation::description() const { return _description; }
   const std::vector<std::unique_ptr<ReservationAtom>>& Reservation::atoms() const { return _atoms; }
 
   const int Reservation::length() const

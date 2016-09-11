@@ -85,6 +85,32 @@ namespace hotel
 
   const std::vector<std::unique_ptr<Reservation>>& PlanningBoard::reservations() const { return _reservations; }
 
+  boost::gregorian::date_period PlanningBoard::getPlanningExtent() const
+  {
+    using namespace boost::gregorian;
+    if (_reservations.empty())
+    {
+      auto today = day_clock::local_day();
+      return date_period(today, today);
+    }
+    else
+    {
+      date from(pos_infin);
+      date to(neg_infin);
+      for (auto& roomRow : _rooms)
+      {
+        if (!roomRow.second.empty())
+        {
+          auto& atoms = roomRow.second;
+          from = std::min(from, atoms.front()->dateRange().begin());
+          to = std::max(to, atoms.back()->dateRange().end());
+        }
+      }
+      assert(!from.is_special() && !to.is_special() && from < to);
+      return date_period(from, to);
+    }
+  }
+
   void PlanningBoard::insertAtom(const ReservationAtom* atom)
   {
     // TODO: This can be made more efficient! Linear instead of n*log(n)

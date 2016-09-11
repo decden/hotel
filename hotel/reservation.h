@@ -36,7 +36,7 @@ namespace hotel
 
     ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
-    const std::string& description();
+    const std::string& description() const;
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
     const int length() const;
 
