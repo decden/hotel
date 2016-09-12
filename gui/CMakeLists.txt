@@ -6,6 +6,7 @@ add_executable(hotel_gui
                planningboardlayout.cpp
                planningboardwidget.cpp
                planningboardreservationitem.cpp
+               roomlistwidget.cpp
               )
 
 target_link_libraries(hotel_gui hotel hotel_webapi Qt5::Widgets)

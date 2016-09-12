@@ -26,7 +26,7 @@ namespace gui
   class PlanningBoardWidget : public QGraphicsView
   {
   public:
-    PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
+    PlanningBoardWidget(hotel::PlanningBoard* planning, std::vector<std::unique_ptr<hotel::Hotel>>* hotels);
 
   protected:
     virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -35,9 +35,8 @@ namespace gui
   private:
     void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);
 
-    std::unique_ptr<hotel::persistence::SqliteStorage> _storage;
-    std::unique_ptr<hotel::PlanningBoard> _planning;
-    std::vector<std::unique_ptr<hotel::Hotel>> _hotels;
+    hotel::PlanningBoard* _planning;
+    std::vector<std::unique_ptr<hotel::Hotel>>* _hotels;
 
     QGraphicsScene _scene;
     PlanningBoardLayout _layout;

@@ -7,6 +7,7 @@
 
 #include <QColor>
 #include <QFont>
+#include <QPainter>
 #include <QRect>
 
 namespace gui
@@ -23,20 +24,24 @@ namespace gui
       SeparatorRow
     };
 
-    PlanningBoardRowGeometry(RowType type, int top, int height, int id = 0);
+    PlanningBoardRowGeometry(RowType type, int top, int height, bool even = true, int id = 0);
+
     void setId(int id) { _id = id; }
+    void setRowEven(bool even) { _isEven = even; }
 
     RowType rowType() const { return _type; }
     int id() const { return _id; }
     int top() const { return _top; }
     int bottom() const { return _top + _height; }
     int height() const { return _height; }
+    bool isRowEven() const { return _isEven; }
 
   private:
     RowType _type;
     int _id;
     int _top;
     int _height;
+    bool _isEven;
   };
 
   /**
@@ -75,6 +80,12 @@ namespace gui
     QColor boardSundayColumnColor = QColor(0xE3D097);
     QColor boardTodayBar = QColor(0x26, 0x8B, 0xD2, 0xA0);
     QColor boardSeparatorColor = QColor(0x353F41);
+
+    // Room list constants
+    int roomListWidth = 100;
+
+    // Utility functions for rendering
+    void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect &rect) const;
   };
 
   /**
@@ -95,6 +106,8 @@ namespace gui
 
     //! @brief getPositionX returns the x coordiante associated to the given date, w.r.t. the layout's origin date
     int getDatePositionX(boost::gregorian::date date) const;
+
+    const PlanningBoardRowGeometry* getRowGeometryForRoom(int roomId) const;
 
     /**
      * @brief getNearestDate returns the nearest date to the given position, together with the actual x-position of the

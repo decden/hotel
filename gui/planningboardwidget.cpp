@@ -6,20 +6,17 @@
 
 namespace gui
 {
-  PlanningBoardWidget::PlanningBoardWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
-      : QGraphicsView(), _storage(std::move(storage))
+  PlanningBoardWidget::PlanningBoardWidget(hotel::PlanningBoard* planning,
+                                           std::vector<std::unique_ptr<hotel::Hotel>>* hotels)
+      : QGraphicsView(), _planning(planning), _hotels(hotels)
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setFrameStyle(QFrame::Plain);
     setCacheMode(QGraphicsView::CacheBackground);
     setScene(&_scene);
 
-    _hotels = _storage->loadHotels();
-    std::vector<int> roomIds;
-    for (auto& hotel : _hotels)
-      for (auto& room : hotel->rooms())
-        roomIds.push_back(room->id());
-    _planning = _storage->loadPlanning(roomIds);
-    _layout.updateRoomGeometry(_hotels);
+    _layout.updateRoomGeometry(*hotels);
 
     // Add the reservations
     addReservations(_planning->reservations());
@@ -37,15 +34,10 @@ namespace gui
     painter->fillRect(rect, appearance.widgetBackground);
 
     // Draw the horizontal alternating rows
-    bool isRowEven = true;
-    for (auto row : _layout.rowGeometries())
+    for (auto& row : _layout.rowGeometries())
     {
       if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
-      {
-        auto background = (isRowEven) ? appearance.boardEvenRowColor : appearance.boardOddRowColor;
-        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()), background);
-      }
-      isRowEven = !isRowEven;
+        appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
     }
 
     // Get the horizontal date range
@@ -60,15 +52,17 @@ namespace gui
       if (dayOfWeek == boost::gregorian::Sunday)
       {
         int w = appearance.boardSundayColumnWidth;
-        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()), QColor(appearance.boardSundayColumnColor));
+        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()),
+                          QColor(appearance.boardSundayColumnColor));
       }
       else if (dayOfWeek == boost::gregorian::Saturday)
       {
         int w = appearance.boardSaturdayColumnWidth;
-        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()), QColor(appearance.boardSaturdayColumnColor));
+        painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()),
+                          QColor(appearance.boardSaturdayColumnColor));
       }
       else
-        painter->drawLine(posX-1, rect.top(), posX-1, rect.bottom());
+        painter->drawLine(posX - 1, rect.top(), posX - 1, rect.bottom());
       posX += _layout.dateColumnWidth();
       dayOfWeek = (dayOfWeek + 1) % 7;
     }
@@ -77,25 +71,16 @@ namespace gui
     for (auto row : _layout.rowGeometries())
     {
       if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
-      {
-        auto separatorColor = appearance.boardSeparatorColor;
-        QLinearGradient grad(0, row.top(), 0, row.bottom());
-        grad.setColorAt(0.0, separatorColor.darker(200));
-        grad.setColorAt(0.5, QColor(0x353F41));
-
-        painter->fillRect(QRect(rect.left(), row.top(), rect.width(), row.height()-1), grad);
-        painter->setPen(appearance.boardEvenRowColor);
-        painter->drawLine(rect.left(), row.bottom()-1, rect.width(), row.bottom()-1);
-      }
+        appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
     }
   }
 
-  void PlanningBoardWidget::drawForeground(QPainter *painter, const QRectF &rect)
+  void PlanningBoardWidget::drawForeground(QPainter* painter, const QRectF& rect)
   {
     // Draw the bar indicating the current day
     auto today = boost::gregorian::day_clock::local_day();
     auto x = _layout.getDatePositionX(today);
-    auto todayRect = QRect(x-2, rect.top(), 3, rect.height());
+    auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
     painter->fillRect(todayRect, _layout.appearance().boardTodayBar);
   }
 

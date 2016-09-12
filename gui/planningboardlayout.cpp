@@ -3,8 +3,9 @@
 namespace gui
 {
 
-  PlanningBoardRowGeometry::PlanningBoardRowGeometry(PlanningBoardRowGeometry::RowType type, int top, int height, int id)
-      : _type(type), _id(id), _top(top), _height(height)
+  PlanningBoardRowGeometry::PlanningBoardRowGeometry(PlanningBoardRowGeometry::RowType type, int top, int height,
+                                                     bool even, int id)
+      : _type(type), _id(id), _top(top), _height(height), _isEven(even)
   {
   }
 
@@ -24,10 +25,13 @@ namespace gui
     int y = hotelSeparatorHeight;
     for (auto& hotel : hotels)
     {
+      bool isEven = true;
       for (auto& room : hotel->rooms())
       {
-        _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::RoomRow, y, _roomRowHeight, room->id()});
+        _rows.push_back(
+            PlanningBoardRowGeometry{PlanningBoardRowGeometry::RoomRow, y, _roomRowHeight, isEven, room->id()});
         y += _roomRowHeight;
+        isEven = !isEven;
       }
 
       _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, y, hotelSeparatorHeight});
@@ -40,22 +44,24 @@ namespace gui
     auto pos = getDatePositionX(dateRange.begin());
     auto width = dateRange.length().days() * _dateColumnWidth - 1;
 
-    int y = 0;
-    for (auto& row : _rows)
-    {
-      if (row.rowType() == PlanningBoardRowGeometry::RoomRow && row.id() == roomId)
-      {
-        y = row.top();
-        break;
-      }
-    }
-
+    auto row = getRowGeometryForRoom(roomId);
+    int y = row != nullptr ? row->top() : 0;
     return QRectF(pos, y, width, _roomRowHeight);
   }
 
   int PlanningBoardLayout::getDatePositionX(boost::gregorian::date date) const
   {
     return (date - _originDate).days() * _dateColumnWidth;
+  }
+
+  const PlanningBoardRowGeometry* PlanningBoardLayout::getRowGeometryForRoom(int roomId) const
+  {
+    for (auto& row : _rows)
+    {
+      if (row.rowType() == PlanningBoardRowGeometry::RoomRow && row.id() == roomId)
+        return &row;
+    }
+    return nullptr;
   }
 
   std::pair<boost::gregorian::date, int> PlanningBoardLayout::getNearestDatePosition(int positionX) const
@@ -70,6 +76,26 @@ namespace gui
       return 0;
     else
       return _rows.back().bottom();
+  }
+
+  void PlanningBoardAppearance::drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row,
+                                                  const QRect& rect) const
+  {
+    if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
+    {
+      QLinearGradient grad(0, rect.top(), 0, rect.bottom());
+      grad.setColorAt(0.0, boardSeparatorColor.darker(200));
+      grad.setColorAt(0.5, boardSeparatorColor);
+
+      painter->fillRect(rect, grad);
+      painter->setPen(boardEvenRowColor);
+      painter->drawLine(rect.left(), rect.bottom(), rect.right(), rect.bottom());
+    }
+    else if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
+    {
+      auto color = row.isRowEven() ? boardEvenRowColor : boardOddRowColor;
+      painter->fillRect(rect, color);
+    }
   }
 
 } // namespace gui
