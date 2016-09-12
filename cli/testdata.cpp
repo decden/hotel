@@ -22,7 +22,7 @@ namespace cli
     {
       auto hotel = std::make_unique<hotel::Hotel>("Hotel " + std::to_string(i));
       auto numOfFloors = floors_dist(rng);
-      auto numOfCategories = numOfFloors + 1;
+      auto numOfCategories = numOfFloors / 3 + 1;
       for (auto c : boost::irange(0, numOfCategories))
         hotel->addRoomCategory(
             std::make_unique<hotel::RoomCategory>("cat" + std::to_string(c), "Category " + std::to_string(c)));

@@ -26,6 +26,9 @@ namespace gui
     auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
     auto right = _layout.getDatePositionX(dateRange.end()) + 10;
     _scene.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
+
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   }
 
   void PlanningBoardWidget::drawBackground(QPainter* painter, const QRectF& rect)

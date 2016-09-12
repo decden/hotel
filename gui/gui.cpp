@@ -2,6 +2,7 @@
 #include <QGridLayout>
 #include <QWindow>
 #include <QPushButton>
+#include <QScrollBar>
 
 #include "gui/planningboardwidget.h"
 #include "gui/roomlistwidget.h"
@@ -21,9 +22,20 @@ int main(int argc, char** argv)
   auto planning = storage->loadPlanning(roomIds);
 
   auto layout = new QGridLayout();
+  auto verticalScrollbar = new QScrollBar(Qt::Vertical);
+  auto horizontalScrollbar = new QScrollBar(Qt::Horizontal);
+  auto planningBoard = new gui::PlanningBoardWidget(planning.get(), &hotels);
+  auto roomList = new gui::RoomListWidget(&hotels);
+
   layout->setSpacing(0);
-  layout->addWidget(new gui::PlanningBoardWidget(planning.get(), &hotels), 1, 1);
-  layout->addWidget(new gui::RoomListWidget(&hotels), 1, 0);
+  layout->addWidget(planningBoard, 1, 1);
+  layout->addWidget(roomList, 1, 0);
+  layout->addWidget(verticalScrollbar, 1, 2);
+  layout->addWidget(horizontalScrollbar, 2, 1);
+
+  planningBoard->setVerticalScrollBar(verticalScrollbar);
+  planningBoard->setHorizontalScrollBar(horizontalScrollbar);
+  roomList->setVerticalScrollBar(verticalScrollbar);
 
   QWidget window;
   window.setLayout(layout);
