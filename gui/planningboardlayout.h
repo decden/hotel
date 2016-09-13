@@ -52,6 +52,7 @@ namespace gui
     // General colors
     QColor widgetBackground = QColor(0xCCCCCC);
     QColor selectionColor = QColor(0xD33682);
+    QFont boldHeaderFont = QFont("Arial", 10, QFont::Bold);
 
     // Atom constants
     int atomConnectionHandleSize = 3;
@@ -78,14 +79,22 @@ namespace gui
     QColor boardWeekdayColumnColor = QColor(0xE3D9BA);
     QColor boardSaturdayColumnColor = QColor(0xE3D097);
     QColor boardSundayColumnColor = QColor(0xE3D097);
-    QColor boardTodayBar = QColor(0x26, 0x8B, 0xD2, 0xA0);
+    QColor boardTodayColor = QColor(0x268BD2);
     QColor boardSeparatorColor = QColor(0x353F41);
 
     // Room list constants
     int roomListWidth = 100;
+    int monthBarHeight = 20;
+    int daysBarHeight = 40;
+    // Room list fonts
+    QFont roomListCategoryFont = QFont("Arial", 8);
 
     // Utility functions for rendering
     void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect &rect) const;
+
+    // Utility functions for text
+    const QString& getShortWeekdayName(int dayOfWeek) const;
+    const QString& getMonthName(int month) const;
   };
 
   /**

@@ -98,4 +98,19 @@ namespace gui
     }
   }
 
+  const QString ShortDaysOfWeek[7] = {"su", "mo", "tu", "we", "th", "fr", "sa"};
+  const QString& PlanningBoardAppearance::getShortWeekdayName(int dayOfWeek) const
+  {
+    assert(dayOfWeek >= 0 && dayOfWeek < 7);
+    return ShortDaysOfWeek[dayOfWeek];
+  }
+
+  const QString MonthNames[12] = {"January", "February", "March",     "April",   "May",       "June",
+                                  "July",    "August",   "September", "October", "Novermber", "December"};
+  const QString& PlanningBoardAppearance::getMonthName(int month) const
+  {
+    assert(month >= 1 && month <= 12);
+    return MonthNames[month - 1];
+  }
+
 } // namespace gui

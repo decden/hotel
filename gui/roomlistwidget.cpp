@@ -34,8 +34,9 @@ namespace gui
     painter->setClipRect(itemRect);
 
     painter->setPen(appearance.atomDarkTextColor);
+    painter->setFont(appearance.boldHeaderFont);
     painter->drawText(itemRect.adjusted(8, 0, 0, 0), Qt::AlignVCenter, QString::fromStdString(_room->name()));
-    painter->setFont(QFont("Arial", 8));
+    painter->setFont(appearance.roomListCategoryFont);
     painter->drawText(itemRect.adjusted(8, 0, -5, 0), Qt::AlignVCenter | Qt::AlignRight, QString::fromStdString(_room->category()->shortCode()));
     painter->restore();
   }

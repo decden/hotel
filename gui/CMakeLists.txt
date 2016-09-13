@@ -2,10 +2,11 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets REQUIRED)
 
 add_executable(hotel_gui
+               datebarwidget.cpp
                gui.cpp
                planningboardlayout.cpp
-               planningboardwidget.cpp
                planningboardreservationitem.cpp
+               planningboardwidget.cpp
                roomlistwidget.cpp
               )
 

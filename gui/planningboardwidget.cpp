@@ -84,7 +84,9 @@ namespace gui
     auto today = boost::gregorian::day_clock::local_day();
     auto x = _layout.getDatePositionX(today);
     auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
-    painter->fillRect(todayRect, _layout.appearance().boardTodayBar);
+    auto lineColor = _layout.appearance().boardTodayColor;
+    lineColor.setAlpha(0xA0);
+    painter->fillRect(todayRect, lineColor);
   }
 
   void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)
