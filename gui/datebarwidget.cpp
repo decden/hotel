@@ -5,7 +5,7 @@
 namespace gui
 {
 
-  DateBarDayItem::DateBarDayItem(PlanningBoardLayout* layout, int day, int weekday, bool isHighlighted)
+  DateBarDayItem::DateBarDayItem(const PlanningBoardLayout *layout, int day, int weekday, bool isHighlighted)
       : QGraphicsRectItem(), _layout(layout), _day(day), _weekday(weekday), _isHighlighted(isHighlighted)
   {
     if (isHighlighted)
@@ -42,7 +42,7 @@ namespace gui
     painter->restore();
   }
 
-  DateBarMonthItem::DateBarMonthItem(PlanningBoardLayout* layout, int month, int year)
+  DateBarMonthItem::DateBarMonthItem(const PlanningBoardLayout *layout, int month, int year)
       : QGraphicsRectItem(), _layout(layout), _month(month), _year(year)
   {
   }
@@ -63,18 +63,22 @@ namespace gui
     painter->restore();
   }
 
-  DateBarWidget::DateBarWidget(QWidget* parent) : QGraphicsView(parent)
+  DateBarWidget::DateBarWidget(const PlanningBoardLayout* layout, QWidget* parent)
+      : QGraphicsView(parent), _layout(layout)
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setFrameStyle(QFrame::Plain);
 
     // Prepare the scene
-    setScene(&_scene);
+    _scene = new QGraphicsScene;
+    setScene(_scene);
 
     // Set scene size
-    auto height = _layout.appearance().monthBarHeight + _layout.appearance().daysBarHeight;
-    _scene.setSceneRect(QRectF(-400, 0, 15984, height));
+    auto height = _layout->appearance().monthBarHeight + _layout->appearance().daysBarHeight;
+    auto sceneRect = _layout->sceneRect();
+    sceneRect.setHeight(height);
+    _scene->setSceneRect(sceneRect);
     rebuildScene();
 
     // No scrollbars
@@ -84,45 +88,49 @@ namespace gui
 
   QSize DateBarWidget::sizeHint() const
   {
-    auto height = _layout.appearance().monthBarHeight + _layout.appearance().daysBarHeight;
+    auto height = _layout->appearance().monthBarHeight + _layout->appearance().daysBarHeight;
     return QSize(0, height);
   }
 
   void DateBarWidget::rebuildScene()
   {
-    _scene.clear();
+    _scene->clear();
+    auto& appearance = _layout->appearance();
 
     // Rebuild the scene
-    int left = -400;
-    int width = 15984;
-    int colWidth = _layout.dateColumnWidth();
+    auto sceneRect = _layout->sceneRect();
+    int left = sceneRect.left();
+    int right =sceneRect.right();
+    int colWidth = _layout->dateColumnWidth();
 
     auto today = boost::gregorian::day_clock::local_day();
-    int posX;
+
+    // Add the day items
+    int positionX;
     boost::gregorian::date date;
-    std::tie(date, posX) = _layout.getNearestDatePosition(left - colWidth);
-    posX -= _layout.dateColumnWidth() / 2 - 1; // Dates are centered above the dateline
-    for (int i = posX; i < (left + width); i += colWidth)
+    std::tie(date, positionX) = _layout->getNearestDatePosition(left - colWidth);
+    positionX -= colWidth / 2 - 1; // Dates are centered above the dateline
+    for (int x = positionX; x < right; x += colWidth)
     {
-      auto item = new DateBarDayItem(&_layout, date.day(), date.day_of_week(), date == today);
-      int w = _layout.dateColumnWidth();
-      item->setRect(QRect(i - 1, 20, w + 1, 40));
-      _scene.addItem(item);
+      auto item = new DateBarDayItem(_layout, date.day(), date.day_of_week(), date == today);
+      item->setRect(QRect(x - 1, appearance.monthBarHeight, colWidth + 1, appearance.daysBarHeight));
+      _scene->addItem(item);
       date += boost::gregorian::days(1);
     }
 
-    std::tie(date, posX) = _layout.getNearestDatePosition(left - colWidth);
-    posX -= colWidth / 2 - 1; // Dates are centered above the dateline
-    posX -= (date.day() - 1) * colWidth;
+    // Add the month items
+    std::tie(date, positionX) = _layout->getNearestDatePosition(left - colWidth);
+    positionX -= colWidth / 2 - 1;            // Dates are centered above the dateline
+    positionX -= (date.day() - 1) * colWidth; // Roll back to the beginning of the month
     date = boost::gregorian::date(date.year(), date.month(), 1);
-    for (int i = posX; i < (left + width);)
+    for (int i = positionX; i < right;)
     {
       auto nextMonth = date + boost::gregorian::months(1);
-      auto daysInMonth = (nextMonth - date).days();
-      auto item = new DateBarMonthItem(&_layout, date.month(), date.year());
-      item->setRect(QRect(i, 0, daysInMonth * colWidth, 20));
-      _scene.addItem(item);
-      i += daysInMonth * colWidth;
+      auto monthWidth = (nextMonth - date).days() * colWidth;
+      auto item = new DateBarMonthItem(_layout, date.month(), date.year());
+      item->setRect(QRect(i, 0, monthWidth, appearance.monthBarHeight));
+      _scene->addItem(item);
+      i += monthWidth;
       date = nextMonth;
     }
   }

@@ -4,7 +4,7 @@
 
 namespace gui
 {
-  PlanningBoardAtomItem::PlanningBoardAtomItem(PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
+  PlanningBoardAtomItem::PlanningBoardAtomItem(const PlanningBoardLayout *layout, const hotel::ReservationAtom* atom,
                                                QGraphicsItem* parent)
       : QGraphicsRectItem(parent), _layout(layout), _atom(atom)
   {
@@ -111,7 +111,7 @@ namespace gui
       return appearance.atomLightTextColor;
   }
 
-  PlanningBoardReservationItem::PlanningBoardReservationItem(PlanningBoardLayout* layout,
+  PlanningBoardReservationItem::PlanningBoardReservationItem(const PlanningBoardLayout *layout,
                                                              const hotel::Reservation* reservation,
                                                              QGraphicsItem* parent)
       : QGraphicsItem(parent), _layout(layout), _reservation(reservation), _isSelected(false),

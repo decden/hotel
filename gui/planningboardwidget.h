@@ -26,20 +26,19 @@ namespace gui
   class PlanningBoardWidget : public QGraphicsView
   {
   public:
-    PlanningBoardWidget(hotel::PlanningBoard* planning, std::vector<std::unique_ptr<hotel::Hotel>>* hotels);
+    PlanningBoardWidget(const PlanningBoardLayout* layout);
+    void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);
 
   protected:
     virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
     virtual void drawForeground(QPainter* painter, const QRectF& rect) override;
 
   private:
-    void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);
-
     hotel::PlanningBoard* _planning;
     std::vector<std::unique_ptr<hotel::Hotel>>* _hotels;
 
-    QGraphicsScene _scene;
-    PlanningBoardLayout _layout;
+    QGraphicsScene* _scene;
+    const PlanningBoardLayout* _layout;
   };
 
 } // namespace gui

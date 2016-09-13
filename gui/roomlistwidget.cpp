@@ -5,7 +5,8 @@
 namespace gui
 {
 
-  RoomListRoomItem::RoomListRoomItem(PlanningBoardLayout* layout, hotel::HotelRoom* room, QGraphicsItem* parent)
+  RoomListRoomItem::RoomListRoomItem(const PlanningBoardLayout* layout, const hotel::HotelRoom* room,
+                                     QGraphicsItem* parent)
       : QGraphicsRectItem(parent), _layout(layout), _room(room)
   {
     updateAppearance();
@@ -30,36 +31,33 @@ namespace gui
     highlightRect.setWidth(6);
     painter->fillRect(highlightRect, QColor(0x217683 * _room->category()->id())); // Random color for now!
 
+    // Add a margin to the right to separate it from the planning board
+    auto separatorRect = QRect(itemRect.right() - 1, itemRect.top(), 1, itemRect.height());
+    painter->fillRect(separatorRect, appearance.boardWeekdayColumnColor);
+
+    // Draw the text
     painter->save();
     painter->setClipRect(itemRect);
-
     painter->setPen(appearance.atomDarkTextColor);
     painter->setFont(appearance.boldHeaderFont);
     painter->drawText(itemRect.adjusted(8, 0, 0, 0), Qt::AlignVCenter, QString::fromStdString(_room->name()));
     painter->setFont(appearance.roomListCategoryFont);
-    painter->drawText(itemRect.adjusted(8, 0, -5, 0), Qt::AlignVCenter | Qt::AlignRight, QString::fromStdString(_room->category()->shortCode()));
+    painter->drawText(itemRect.adjusted(8, 0, -5, 0), Qt::AlignVCenter | Qt::AlignRight,
+                      QString::fromStdString(_room->category()->shortCode()));
     painter->restore();
   }
 
-  RoomListWidget::RoomListWidget(std::vector<std::unique_ptr<hotel::Hotel>>* hotels, QWidget* parent)
-      : QGraphicsView(parent)
+  RoomListWidget::RoomListWidget(const PlanningBoardLayout* layout, QWidget* parent)
+      : QGraphicsView(parent), _layout(layout)
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     setFrameStyle(QFrame::Plain);
 
-    _layout.updateRoomGeometry(*hotels);
-
-    // Prepare the scene
-    setScene(&_scene);
-    for (auto& hotel : *hotels)
-      for (auto& room : hotel->rooms())
-        addRoomItem(room.get());
-
     // Set scene size
-    _scene.setSceneRect(QRectF(0, 0, _layout.appearance().roomListWidth, _layout.getHeight()));
-
-    viewport()->setMinimumWidth(100);
+    _scene = new QGraphicsScene;
+    _scene->setSceneRect(QRectF(0, 0, _layout->appearance().roomListWidth, _layout->getHeight()));
+    setScene(_scene);
 
     // No scrollbars
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -68,24 +66,24 @@ namespace gui
 
   QSize RoomListWidget::sizeHint() const
   {
-    auto width = _layout.appearance().roomListWidth;
+    auto width = _layout->appearance().roomListWidth;
     return QSize(width, 0);
   }
 
   void RoomListWidget::drawBackground(QPainter* painter, const QRectF& rect)
   {
-    auto& appearance = _layout.appearance();
+    auto& appearance = _layout->appearance();
 
     painter->fillRect(rect, appearance.widgetBackground);
 
-    for (auto row : _layout.rowGeometries())
+    for (auto row : _layout->rowGeometries())
       appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
   }
 
   void RoomListWidget::addRoomItem(hotel::HotelRoom* room)
   {
-    auto item = new RoomListRoomItem(&_layout, room);
-    _scene.addItem(item);
+    auto item = new RoomListRoomItem(_layout, room);
+    _scene->addItem(item);
   }
 
 } // namespace gui

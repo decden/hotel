@@ -13,12 +13,12 @@ namespace gui
   class DateBarDayItem : public QGraphicsRectItem
   {
   public:
-    DateBarDayItem(PlanningBoardLayout* layout, int day, int weekday, bool isHighlighted);
+    DateBarDayItem(const PlanningBoardLayout* layout, int day, int weekday, bool isHighlighted);
 
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
   private:
-    PlanningBoardLayout* _layout;
+    const PlanningBoardLayout* _layout;
     int _day;
     int _weekday;
     bool _isHighlighted;
@@ -27,12 +27,12 @@ namespace gui
   class DateBarMonthItem : public QGraphicsRectItem
   {
   public:
-    DateBarMonthItem(PlanningBoardLayout* layout, int month, int year);
+    DateBarMonthItem(const PlanningBoardLayout* layout, int month, int year);
 
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
   private:
-    PlanningBoardLayout* _layout;
+    const PlanningBoardLayout* _layout;
     int _month;
     int _year;
   };
@@ -40,15 +40,15 @@ namespace gui
   class DateBarWidget : public QGraphicsView
   {
   public:
-    DateBarWidget(QWidget* parent = nullptr);
+    DateBarWidget(const PlanningBoardLayout* layout, QWidget* parent = nullptr);
 
     virtual QSize sizeHint() const override;
 
   private:
     void rebuildScene();
 
-    PlanningBoardLayout _layout;
-    QGraphicsScene _scene;
+    QGraphicsScene* _scene;
+    const PlanningBoardLayout* _layout;
   };
 
 } // namespace gui

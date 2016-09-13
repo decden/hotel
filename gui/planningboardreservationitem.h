@@ -21,7 +21,7 @@ namespace gui
   class PlanningBoardAtomItem : public QGraphicsRectItem
   {
   public:
-    PlanningBoardAtomItem(PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
+    PlanningBoardAtomItem(const PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
                           QGraphicsItem* parent = nullptr);
 
     void updateAppearance();
@@ -36,7 +36,7 @@ namespace gui
     QColor getItemColor() const;
     QColor getItemTextColor() const;
 
-    PlanningBoardLayout* _layout;
+    const PlanningBoardLayout* _layout;
     const hotel::ReservationAtom* _atom;
   };
 
@@ -52,7 +52,7 @@ namespace gui
   class PlanningBoardReservationItem : public QGraphicsItem
   {
   public:
-    PlanningBoardReservationItem(PlanningBoardLayout* layout, const hotel::Reservation* reservation,
+    PlanningBoardReservationItem(const PlanningBoardLayout* layout, const hotel::Reservation* reservation,
                                  QGraphicsItem* parent = nullptr);
 
     // QGraphicsItem interface
@@ -65,8 +65,7 @@ namespace gui
     void setReservationSelected(bool select);
 
   private:
-    // parent
-    PlanningBoardLayout* _layout;
+    const PlanningBoardLayout* _layout;
     const hotel::Reservation* _reservation;
     bool _isSelected;
     /**

@@ -6,51 +6,43 @@
 
 namespace gui
 {
-  PlanningBoardWidget::PlanningBoardWidget(hotel::PlanningBoard* planning,
-                                           std::vector<std::unique_ptr<hotel::Hotel>>* hotels)
-      : QGraphicsView(), _planning(planning), _hotels(hotels)
+  PlanningBoardWidget::PlanningBoardWidget(const PlanningBoardLayout *layout)
+      : QGraphicsView(), _layout(layout)
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setFrameStyle(QFrame::Plain);
     setCacheMode(QGraphicsView::CacheBackground);
-    setScene(&_scene);
 
-    _layout.updateRoomGeometry(*hotels);
+    _scene = new QGraphicsScene;
+    _scene->setSceneRect(_layout->sceneRect());
+    setScene(_scene);
 
-    // Add the reservations
-    addReservations(_planning->reservations());
-
-    // Compute the size of the scen
-    auto dateRange = _planning->getPlanningExtent();
-    auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
-    auto right = _layout.getDatePositionX(dateRange.end()) + 10;
-    _scene.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
-
+    // No scrollbars
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   }
 
   void PlanningBoardWidget::drawBackground(QPainter* painter, const QRectF& rect)
   {
-    auto& appearance = _layout.appearance();
+    auto& appearance = _layout->appearance();
     painter->fillRect(rect, appearance.widgetBackground);
 
     // Draw the horizontal alternating rows
-    for (auto& row : _layout.rowGeometries())
+    for (auto& row : _layout->rowGeometries())
     {
       if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
         appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
     }
 
     // Get the horizontal date range
-    auto leftDatePos = _layout.getNearestDatePosition(rect.left() - _layout.dateColumnWidth());
+    auto leftDatePos = _layout->getNearestDatePosition(rect.left() - _layout->dateColumnWidth());
 
     // Draw the vertical day lines
     auto posX = leftDatePos.second;
     auto dayOfWeek = leftDatePos.first.day_of_week();
     painter->setPen(appearance.boardWeekdayColumnColor);
-    while (posX < rect.right() + _layout.dateColumnWidth())
+    while (posX < rect.right() + _layout->dateColumnWidth())
     {
       if (dayOfWeek == boost::gregorian::Sunday)
       {
@@ -66,12 +58,12 @@ namespace gui
       }
       else
         painter->drawLine(posX - 1, rect.top(), posX - 1, rect.bottom());
-      posX += _layout.dateColumnWidth();
+      posX += _layout->dateColumnWidth();
       dayOfWeek = (dayOfWeek + 1) % 7;
     }
 
     // Fill in the separator rows (we do not want to have vertical lines in there)
-    for (auto row : _layout.rowGeometries())
+    for (auto row : _layout->rowGeometries())
     {
       if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
         appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
@@ -82,9 +74,9 @@ namespace gui
   {
     // Draw the bar indicating the current day
     auto today = boost::gregorian::day_clock::local_day();
-    auto x = _layout.getDatePositionX(today);
+    auto x = _layout->getDatePositionX(today);
     auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
-    auto lineColor = _layout.appearance().boardTodayColor;
+    auto lineColor = _layout->appearance().boardTodayColor;
     lineColor.setAlpha(0xA0);
     painter->fillRect(todayRect, lineColor);
   }
@@ -93,8 +85,8 @@ namespace gui
   {
     for (auto& reservation : reservations)
     {
-      auto item = new PlanningBoardReservationItem(&_layout, reservation.get());
-      _scene.addItem(item);
+      auto item = new PlanningBoardReservationItem(_layout, reservation.get());
+      _scene->addItem(item);
     }
   }
 

@@ -83,14 +83,14 @@ namespace gui
     QColor boardSeparatorColor = QColor(0x353F41);
 
     // Room list constants
-    int roomListWidth = 100;
+    int roomListWidth = 80;
     int monthBarHeight = 20;
     int daysBarHeight = 40;
     // Room list fonts
     QFont roomListCategoryFont = QFont("Arial", 8);
 
     // Utility functions for rendering
-    void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect &rect) const;
+    void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect& rect) const;
 
     // Utility functions for text
     const QString& getShortWeekdayName(int dayOfWeek) const;
@@ -110,8 +110,11 @@ namespace gui
 
     void updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
 
+    void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
+    QRectF sceneRect() const { return _sceneRect; }
+
     //! @brief getAtomRect produces the rectangle for the given room and date on the virtual planning board
-    QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange);
+    QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange) const;
 
     //! @brief getPositionX returns the x coordiante associated to the given date, w.r.t. the layout's origin date
     int getDatePositionX(boost::gregorian::date date) const;
@@ -128,7 +131,7 @@ namespace gui
     int getHeight() const;
     int dateColumnWidth() const { return _dateColumnWidth; }
 
-    const std::vector<PlanningBoardRowGeometry>& rowGeometries() { return _rows; }
+    const std::vector<PlanningBoardRowGeometry>& rowGeometries() const { return _rows; }
     const PlanningBoardAppearance& appearance() const { return _appearance; }
 
   private:
@@ -136,6 +139,9 @@ namespace gui
     int _dateColumnWidth;
 
     PlanningBoardAppearance _appearance;
+
+    // Scene rect
+    QRectF _sceneRect;
 
     // List of ordered, non-overlapping row definitions
     std::vector<PlanningBoardRowGeometry> _rows;

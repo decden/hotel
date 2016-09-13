@@ -37,9 +37,11 @@ namespace gui
       _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, y, hotelSeparatorHeight});
       y += hotelSeparatorHeight;
     }
+
+    _sceneRect.setHeight(getHeight());
   }
 
-  QRectF PlanningBoardLayout::getAtomRect(int roomId, boost::gregorian::date_period dateRange)
+  QRectF PlanningBoardLayout::getAtomRect(int roomId, boost::gregorian::date_period dateRange) const
   {
     auto pos = getDatePositionX(dateRange.begin());
     auto width = dateRange.length().days() * _dateColumnWidth - 1;

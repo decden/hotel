@@ -7,6 +7,7 @@ add_executable(hotel_gui
                planningboardlayout.cpp
                planningboardreservationitem.cpp
                planningboardwidget.cpp
+               planningwidget.cpp
                roomlistwidget.cpp
               )
 
