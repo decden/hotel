@@ -109,7 +109,18 @@ namespace gui
   public:
     PlanningBoardLayout();
 
-    void updateRoomGeometry(hotel::HotelCollection& hotels);
+    enum LayoutType
+    {
+      GroupedByHotel,
+      GroupedByRoomCategory
+    };
+
+    /**
+     * @brief initializeLayout initializes the rows contained in layout, given the provided hotels and rooms
+     * @param hotels the list of hotels to include in the layout
+     * @param layoutType indicates how to position the rows
+     */
+    void initializeLayout(hotel::HotelCollection& hotels, LayoutType layoutType);
 
     void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
     QRectF sceneRect() const { return _sceneRect; }
@@ -149,6 +160,10 @@ namespace gui
 
     // The date which will correspond to the x=0 line
     boost::gregorian::date _originDate;
+
+
+    void appendRoomRow(bool isEven, int roomId);
+    void appendSeparatorRow(int separatorHeight);
   };
 
 } // namespace gui

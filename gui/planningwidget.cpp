@@ -1,6 +1,7 @@
 #include "planningwidget.h"
 
 #include <QGridLayout>
+#include <QKeyEvent>
 
 namespace gui
 {
@@ -12,7 +13,7 @@ namespace gui
     _planningData = storage->loadPlanning(_hotelsData->allRoomIDs());
 
     // Initialize the layout object with the above data
-    _layout.updateRoomGeometry(*_hotelsData);
+    _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByRoomCategory);
 
     // Initialize scene geometry
     // TODO: This should be combined together with a fixed minimum width
@@ -49,6 +50,21 @@ namespace gui
     for (auto room : _hotelsData->allRooms())
       _roomList->addRoomItem(room);
     _planningBoard->addReservations(_planningData->reservations());
+  }
+
+  void PlanningWidget::keyPressEvent(QKeyEvent* event)
+  {
+    if (event->key() == Qt::Key_F1)
+      _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByHotel);
+    if (event->key() == Qt::Key_F2)
+      _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByRoomCategory);
+
+    if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
+    {
+      _planningBoard->updateLayout();
+      _roomList->updateLayout();
+      _dateBar->updateLayout();
+    }
   }
 
 } // namespace gui

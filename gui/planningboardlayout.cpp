@@ -16,26 +16,45 @@ namespace gui
     _dateColumnWidth = 26;
   }
 
-  void PlanningBoardLayout::updateRoomGeometry(hotel::HotelCollection& hotels)
+  void PlanningBoardLayout::initializeLayout(hotel::HotelCollection& hotels, LayoutType layoutType)
   {
     const int hotelSeparatorHeight = 20;
+    const int categorySeparatorHeight = 10;
 
     _rows.clear();
-    _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, 0, hotelSeparatorHeight});
-    int y = hotelSeparatorHeight;
-    for (auto& hotel : hotels.hotels())
+    if (layoutType == GroupedByHotel)
     {
-      bool isEven = true;
-      for (auto& room : hotel->rooms())
+      appendSeparatorRow(hotelSeparatorHeight);
+      for (auto& hotel : hotels.hotels())
       {
-        _rows.push_back(
-            PlanningBoardRowGeometry{PlanningBoardRowGeometry::RoomRow, y, _roomRowHeight, isEven, room->id()});
-        y += _roomRowHeight;
-        isEven = !isEven;
+        bool isEven = true;
+        for (auto& room : hotel->rooms())
+        {
+          appendRoomRow(isEven, room->id());
+          isEven = !isEven;
+        }
+        appendSeparatorRow(hotelSeparatorHeight);
       }
-
-      _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, y, hotelSeparatorHeight});
-      y += hotelSeparatorHeight;
+    }
+    else if (layoutType == GroupedByRoomCategory)
+    {
+      appendSeparatorRow(hotelSeparatorHeight);
+      for (auto& hotel : hotels.hotels())
+      {
+        for (auto& category : hotel->categories())
+        {
+          bool isEven = true;
+          for (auto& room : hotels.allRoomsByCategory(category->id()))
+          {
+            appendRoomRow(isEven, room->id());
+            isEven = !isEven;
+          }
+          appendSeparatorRow(categorySeparatorHeight);
+        }
+        if (!_rows.empty())
+          _rows.pop_back();
+        appendSeparatorRow(hotelSeparatorHeight);
+      }
     }
 
     _sceneRect.setHeight(getHeight());
@@ -78,6 +97,18 @@ namespace gui
       return 0;
     else
       return _rows.back().bottom();
+  }
+
+  void PlanningBoardLayout::appendRoomRow(bool isEven, int roomId)
+  {
+    auto type = PlanningBoardRowGeometry::RoomRow;
+    _rows.push_back(PlanningBoardRowGeometry{type, getHeight(), _roomRowHeight, isEven, roomId});
+  }
+
+  void PlanningBoardLayout::appendSeparatorRow(int separatorHeight)
+  {
+    auto type = PlanningBoardRowGeometry::SeparatorRow;
+    _rows.push_back(PlanningBoardRowGeometry{type, getHeight(), separatorHeight});
   }
 
   void PlanningBoardAppearance::drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row,

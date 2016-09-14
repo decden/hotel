@@ -37,12 +37,19 @@ namespace gui
     int _year;
   };
 
+  /**
+   * @brief The DateBarWidget class shows a horizontal date bar displaying month, day of month and day of week
+   */
   class DateBarWidget : public QGraphicsView
   {
   public:
     DateBarWidget(const PlanningBoardLayout* layout, QWidget* parent = nullptr);
 
+    // QGraphicsView interface
     virtual QSize sizeHint() const override;
+
+    //! When the layout changes, call this methods to update the scene.
+    void updateLayout();
 
   private:
     void rebuildScene();

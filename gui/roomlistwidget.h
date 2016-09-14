@@ -13,15 +13,19 @@ namespace gui
   public:
     RoomListRoomItem(const PlanningBoardLayout* layout, const hotel::HotelRoom* room, QGraphicsItem* parent = nullptr);
 
-    void updateAppearance();
-
+    // QGraphicsRectItem interface
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+    void updateLayout();
 
   private:
     const PlanningBoardLayout* _layout;
     const hotel::HotelRoom* _room;
   };
 
+  /**
+   * @brief The RoomListWidget class shows a list of rooms
+   */
   class RoomListWidget : public QGraphicsView
   {
   public:
@@ -30,12 +34,18 @@ namespace gui
 
     void addRoomItem(hotel::HotelRoom* room);
 
+    //! When the layout changes, call this methods to update the scene.
+    void updateLayout();
+
   protected:
     virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
 
   private:
     QGraphicsScene* _scene;
     const PlanningBoardLayout* _layout;
+
+    void invalidateBackground();
+    void invalidateForeground();
   };
 
 } // namespace gui

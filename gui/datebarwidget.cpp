@@ -92,6 +92,15 @@ namespace gui
     return QSize(0, height);
   }
 
+  void DateBarWidget::updateLayout()
+  {
+    auto height = _layout->appearance().monthBarHeight + _layout->appearance().daysBarHeight;
+    auto sceneRect = _layout->sceneRect();
+    sceneRect.setHeight(height);
+    _scene->setSceneRect(sceneRect);
+    rebuildScene();
+  }
+
   void DateBarWidget::rebuildScene()
   {
     _scene->clear();

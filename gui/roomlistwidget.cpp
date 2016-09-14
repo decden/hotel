@@ -9,16 +9,16 @@ namespace gui
                                      QGraphicsItem* parent)
       : QGraphicsRectItem(parent), _layout(layout), _room(room)
   {
-    updateAppearance();
+    updateLayout();
   }
 
-  void RoomListRoomItem::updateAppearance()
+  void RoomListRoomItem::updateLayout()
   {
     auto rowGeometry = _layout->getRowGeometryForRoom(_room->id());
     if (rowGeometry)
-    {
       setRect(0, rowGeometry->top(), _layout->appearance().roomListWidth, rowGeometry->height());
-    }
+    else
+      setRect(0, 0, 0, 0);
   }
 
   void RoomListRoomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -84,6 +84,34 @@ namespace gui
   {
     auto item = new RoomListRoomItem(_layout, room);
     _scene->addItem(item);
+  }
+
+  void RoomListWidget::updateLayout()
+  {
+    for (auto item : _scene->items())
+    {
+      // TODO: We should maintain a list of reservation which are currently diplayed, instead of resorting do
+      // dynamic_casting things
+      auto roomItem = dynamic_cast<RoomListRoomItem*>(item);
+      if (roomItem != nullptr)
+        roomItem->updateLayout();
+    }
+
+    _scene->setSceneRect(QRectF(0, 0, _layout->appearance().roomListWidth, _layout->getHeight()));
+    invalidateBackground();
+    invalidateForeground();
+  }
+
+  void RoomListWidget::invalidateBackground()
+  {
+    _scene->invalidate(sceneRect(), QGraphicsScene::BackgroundLayer);
+    update();
+  }
+
+  void RoomListWidget::invalidateForeground()
+  {
+    _scene->invalidate(sceneRect(), QGraphicsScene::ForegroundLayer);
+    update();
   }
 
 } // namespace gui

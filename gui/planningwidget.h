@@ -31,6 +31,9 @@ namespace gui
   public:
     PlanningWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
 
+  protected:
+    virtual void keyPressEvent(QKeyEvent* event) override;
+
   private:
     // Layout objects, holding layout information for this widget
     PlanningBoardLayout _layout;

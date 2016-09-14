@@ -24,8 +24,10 @@ namespace gui
     PlanningBoardAtomItem(const PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
                           QGraphicsItem* parent = nullptr);
 
-    void updateAppearance();
+    // QGraphicsRectItem interface
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+    void updateLayout();
 
   protected:
     //! @brief Reacts on selection changes and propagates them to the parent PlanningBoardReservationItem
@@ -63,6 +65,8 @@ namespace gui
      * @brief setReservationSelected marks this item and all of its children as selected
      */
     void setReservationSelected(bool select);
+
+    void updateLayout();
 
   private:
     const PlanningBoardLayout* _layout;

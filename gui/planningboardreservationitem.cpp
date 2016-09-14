@@ -9,10 +9,10 @@ namespace gui
       : QGraphicsRectItem(parent), _layout(layout), _atom(atom)
   {
     setFlag(QGraphicsItem::ItemIsSelectable);
-    updateAppearance();
+    updateLayout();
   }
 
-  void PlanningBoardAtomItem::updateAppearance()
+  void PlanningBoardAtomItem::updateLayout()
   {
     auto itemRect = _layout->getAtomRect(_atom->roomId(), _atom->_dateRange);
     setRect(itemRect);
@@ -184,5 +184,15 @@ namespace gui
     setZValue(select ? 1 : 0);
 
     _isUpdatingSelection = false;
+  }
+
+  void PlanningBoardReservationItem::updateLayout()
+  {
+    for (auto item : childItems())
+    {
+      auto atomItem = dynamic_cast<PlanningBoardAtomItem*>(item);
+      if (atomItem != nullptr)
+        atomItem->updateLayout();
+    }
   }
 } // namespace gui

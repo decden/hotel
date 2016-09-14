@@ -6,8 +6,7 @@
 
 namespace gui
 {
-  PlanningBoardWidget::PlanningBoardWidget(const PlanningBoardLayout *layout)
-      : QGraphicsView(), _layout(layout)
+  PlanningBoardWidget::PlanningBoardWidget(const PlanningBoardLayout* layout) : QGraphicsView(), _layout(layout)
   {
     setAlignment(Qt::AlignLeft | Qt::AlignTop);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -88,6 +87,34 @@ namespace gui
       auto item = new PlanningBoardReservationItem(_layout, reservation.get());
       _scene->addItem(item);
     }
+  }
+
+  void PlanningBoardWidget::updateLayout()
+  {
+    for (auto item : _scene->items())
+    {
+      // TODO: We should maintain a list of reservation which are currently diplayed, instead of resorting do
+      // dynamic_casting things
+      auto reservationItem = dynamic_cast<PlanningBoardReservationItem*>(item);
+      if (reservationItem != nullptr)
+        reservationItem->updateLayout();
+    }
+
+    _scene->setSceneRect(_layout->sceneRect());
+    invalidateBackground();
+    invalidateForeground();
+  }
+
+  void PlanningBoardWidget::invalidateBackground()
+  {
+    _scene->invalidate(sceneRect(), QGraphicsScene::BackgroundLayer);
+    update();
+  }
+
+  void PlanningBoardWidget::invalidateForeground()
+  {
+    _scene->invalidate(sceneRect(), QGraphicsScene::ForegroundLayer);
+    update();
   }
 
 } // namespace gui
