@@ -16,14 +16,14 @@ namespace gui
     _dateColumnWidth = 26;
   }
 
-  void PlanningBoardLayout::updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels)
+  void PlanningBoardLayout::updateRoomGeometry(hotel::HotelCollection& hotels)
   {
     const int hotelSeparatorHeight = 20;
 
     _rows.clear();
     _rows.push_back(PlanningBoardRowGeometry{PlanningBoardRowGeometry::SeparatorRow, 0, hotelSeparatorHeight});
     int y = hotelSeparatorHeight;
-    for (auto& hotel : hotels)
+    for (auto& hotel : hotels.hotels())
     {
       bool isEven = true;
       for (auto& room : hotel->rooms())

@@ -4,6 +4,7 @@
 #include "gui/planningboardlayout.h"
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/persistence/sqlitestorage.h"
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
@@ -35,7 +36,7 @@ namespace gui
 
   private:
     hotel::PlanningBoard* _planning;
-    std::vector<std::unique_ptr<hotel::Hotel>>* _hotels;
+    hotel::HotelCollection* _hotels;
 
     QGraphicsScene* _scene;
     const PlanningBoardLayout* _layout;

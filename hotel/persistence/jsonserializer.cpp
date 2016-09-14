@@ -8,12 +8,12 @@ namespace hotel
   {
     JsonSerializer::JsonSerializer() {}
 
-    nlohmann::json JsonSerializer::serializeHotels(const std::vector<std::unique_ptr<Hotel>>& hotels)
+    nlohmann::json JsonSerializer::serializeHotelCollection(const HotelCollection &hotelCollection)
     {
       using json = nlohmann::json;
       json resultJson = json::array();
 
-      for (auto& hotel : hotels)
+      for (auto& hotel : hotelCollection.hotels())
       {
         json hotelJson = {
           {"id", hotel->id()},
@@ -48,13 +48,13 @@ namespace hotel
       return resultJson;
     }
 
-    nlohmann::json JsonSerializer::serializePlanning(const std::unique_ptr<PlanningBoard>& planning)
+    nlohmann::json JsonSerializer::serializePlanning(const PlanningBoard &planning)
     {
       using json = nlohmann::json;
       json resultJson;
       resultJson = json::array();
 
-      for (auto& reservation : planning->reservations())
+      for (auto& reservation : planning.reservations())
       {
         json reservationJson = {
           {"id", reservation->id()},

@@ -9,14 +9,10 @@ namespace gui
   {
     // Load the Data
     _hotelsData = storage->loadHotels();
-    std::vector<int> roomIds;
-    for (auto& hotel : _hotelsData)
-      for (auto& room : hotel->rooms())
-        roomIds.push_back(room->id());
-    _planningData = storage->loadPlanning(roomIds);
+    _planningData = storage->loadPlanning(_hotelsData->allRoomIDs());
 
     // Initialize the layout object with the above data
-    _layout.updateRoomGeometry(_hotelsData);
+    _layout.updateRoomGeometry(*_hotelsData);
 
     // Initialize scene geometry
     // TODO: This should be combined together with a fixed minimum width
@@ -50,9 +46,8 @@ namespace gui
     _dateBar->setHorizontalScrollBar(_horizontalScrollbar);
 
     // Add data to the sub-widgets
-    for (auto& hotel : _hotelsData)
-      for (auto& room : hotel->rooms())
-        _roomList->addRoomItem(room.get());
+    for (auto room : _hotelsData->allRooms())
+      _roomList->addRoomItem(room);
     _planningBoard->addReservations(_planningData->reservations());
   }
 

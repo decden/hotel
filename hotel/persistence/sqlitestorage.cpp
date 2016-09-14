@@ -96,7 +96,7 @@ namespace hotel
       prepareQueries();
     }
 
-    std::vector<std::unique_ptr<Hotel>> SqliteStorage::loadHotels()
+    std::unique_ptr<hotel::HotelCollection> SqliteStorage::loadHotels()
     {
       std::vector<std::unique_ptr<Hotel>> results;
 
@@ -149,7 +149,7 @@ namespace hotel
         }
       }
 
-      return std::move(results);
+      return std::make_unique<hotel::HotelCollection>(std::move(results));
     }
 
     std::unique_ptr<PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int>& roomIds)

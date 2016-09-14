@@ -2,6 +2,7 @@
 #define GUI_PLANNINGBOARDLAYOUT_H
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 
 #include <boost/date_time.hpp>
 
@@ -108,7 +109,7 @@ namespace gui
   public:
     PlanningBoardLayout();
 
-    void updateRoomGeometry(std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
+    void updateRoomGeometry(hotel::HotelCollection& hotels);
 
     void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
     QRectF sceneRect() const { return _sceneRect; }

@@ -2,6 +2,7 @@
 #define HOTEL_PERSISTENCE_JSONSERIALIZER_H
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
 #include "json.hpp"
@@ -16,8 +17,8 @@ namespace hotel
     public:
       JsonSerializer();
 
-      nlohmann::json serializeHotels(const std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
-      nlohmann::json serializePlanning(const std::unique_ptr<hotel::PlanningBoard>& planning);
+      nlohmann::json serializeHotelCollection(const HotelCollection& hotelCollection);
+      nlohmann::json serializePlanning(const PlanningBoard& planning);
     };
 
   } // namespace persistence

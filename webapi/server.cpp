@@ -65,13 +65,10 @@ namespace webapi
 
       auto serializer = hotel::persistence::JsonSerializer();
       auto hotels = _storage->loadHotels();
-      std::vector<int> roomIds;
-      for (auto& hotel : hotels)
-        for (auto& room : hotel->rooms())
-          roomIds.push_back(room->id());
+      std::vector<int> roomIds = hotels->allRoomIDs();
       auto planning = _storage->loadPlanning(roomIds);
-      auto hotelsJson = serializer.serializeHotels(hotels);
-      auto reservationsJson = serializer.serializePlanning(planning);
+      auto hotelsJson = serializer.serializeHotelCollection(*hotels);
+      auto reservationsJson = serializer.serializePlanning(*planning);
 
       json msg1 = {{"type", "hotels"}, {"data", hotelsJson}};
       json msg2 = {{"type", "reservations"}, {"data", reservationsJson}};

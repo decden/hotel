@@ -7,6 +7,7 @@
 #include "gui/roomlistwidget.h"
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
 #include "hotel/persistence/sqlitestorage.h"
@@ -43,7 +44,7 @@ namespace gui
     gui::DateBarWidget* _dateBar;
 
     // Planning data
-    std::vector<std::unique_ptr<hotel::Hotel>> _hotelsData;
+    std::unique_ptr<hotel::HotelCollection> _hotelsData;
     std::unique_ptr<hotel::PlanningBoard> _planningData;
   };
 

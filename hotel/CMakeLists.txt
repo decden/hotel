@@ -1,6 +1,7 @@
 add_library(hotel
             detailedreservation.cpp
             hotel.cpp
+            hotelcollection.cpp
             persistentobject.cpp
             planning.cpp
             reservation.cpp

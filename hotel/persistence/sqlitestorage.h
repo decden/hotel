@@ -2,9 +2,11 @@
 #define HOTEL_PERSISTENCE_SQLITESTORAGE_H
 
 #include "hotel/hotel.h"
-#include "hotel/persistence/sqlitestatement.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
+
+#include "hotel/persistence/sqlitestatement.h"
 
 #include <sqlite3.h>
 
@@ -26,7 +28,7 @@ namespace hotel
 
       void deleteAll();
 
-      std::vector<std::unique_ptr<hotel::Hotel>> loadHotels();
+      std::unique_ptr<hotel::HotelCollection> loadHotels();
       std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);
 
       bool storeNewHotel(hotel::Hotel& hotel);
