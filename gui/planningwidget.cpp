@@ -5,7 +5,6 @@
 
 namespace gui
 {
-
   PlanningWidget::PlanningWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
   {
     // Load the Data
@@ -13,7 +12,7 @@ namespace gui
     _planningData = storage->loadPlanning(_hotelsData->allRoomIDs());
 
     // Initialize the layout object with the above data
-    _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByRoomCategory);
+    _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
     // Initialize scene geometry
     // TODO: This should be combined together with a fixed minimum width
@@ -29,9 +28,9 @@ namespace gui
 
     _verticalScrollbar = new QScrollBar(Qt::Vertical);
     _horizontalScrollbar = new QScrollBar(Qt::Horizontal);
-    _planningBoard = new gui::PlanningBoardWidget(&_layout);
-    _roomList = new gui::RoomListWidget(&_layout);
-    _dateBar = new gui::DateBarWidget(&_layout);
+    _planningBoard = new planningwidget::PlanningBoardWidget(&_layout);
+    _roomList = new planningwidget::RoomListWidget(&_layout);
+    _dateBar = new planningwidget::DateBarWidget(&_layout);
 
     grid->addWidget(_dateBar, 0, 1);
     grid->addWidget(_roomList, 1, 0);
@@ -55,9 +54,9 @@ namespace gui
   void PlanningWidget::keyPressEvent(QKeyEvent* event)
   {
     if (event->key() == Qt::Key_F1)
-      _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByHotel);
+      _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByHotel);
     if (event->key() == Qt::Key_F2)
-      _layout.initializeLayout(*_hotelsData, PlanningBoardLayout::GroupedByRoomCategory);
+      _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
     if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
     {

@@ -1,10 +1,10 @@
 #ifndef GUI_PLANNINGWIDGET_H
 #define GUI_PLANNINGWIDGET_H
 
-#include "gui/datebarwidget.h"
-#include "gui/planningboardlayout.h"
-#include "gui/planningboardwidget.h"
-#include "gui/roomlistwidget.h"
+#include "gui/planningwidget/datebarwidget.h"
+#include "gui/planningwidget/planningboardlayout.h"
+#include "gui/planningwidget/planningboardwidget.h"
+#include "gui/planningwidget/roomlistwidget.h"
 
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
@@ -36,15 +36,15 @@ namespace gui
 
   private:
     // Layout objects, holding layout information for this widget
-    PlanningBoardLayout _layout;
+    planningwidget::PlanningBoardLayout _layout;
     QRect _sceneRect;
 
     // Widgets
     QScrollBar* _verticalScrollbar;
     QScrollBar* _horizontalScrollbar;
-    gui::PlanningBoardWidget* _planningBoard;
-    gui::RoomListWidget* _roomList;
-    gui::DateBarWidget* _dateBar;
+    planningwidget::PlanningBoardWidget* _planningBoard;
+    planningwidget::RoomListWidget* _roomList;
+    planningwidget::DateBarWidget* _dateBar;
 
     // Planning data
     std::unique_ptr<hotel::HotelCollection> _hotelsData;
