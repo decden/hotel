@@ -9,3 +9,5 @@ add_subdirectory (cli)
 add_subdirectory (gui)
 add_subdirectory (hotel)
 add_subdirectory (webapi)
+
+add_subdirectory (guiapp)
