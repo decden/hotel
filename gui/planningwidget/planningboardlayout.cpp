@@ -14,6 +14,7 @@ namespace gui
     PlanningBoardLayout::PlanningBoardLayout()
     {
       _originDate = boost::gregorian::day_clock::local_day();
+      _pivotDate = _originDate;
       _roomRowHeight = 22;
       _dateColumnWidth = 26;
     }
