@@ -19,7 +19,7 @@ namespace hotel
     HotelCollection();
     explicit HotelCollection(std::vector<std::unique_ptr<hotel::Hotel>> hotel);
 
-    const std::vector<std::unique_ptr<Hotel> > &hotels() const;
+    const std::vector<std::unique_ptr<Hotel>> &hotels() const;
 
     std::vector<int> allRoomIDs() const;
     std::vector<int> allCategoryIDs() const;

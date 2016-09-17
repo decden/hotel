@@ -16,7 +16,12 @@ namespace gui
 
     // Initialize scene geometry
     // TODO: This should be combined together with a fixed minimum width
-    auto dateRange = _planningData->getPlanningExtent();
+    auto planningExtent = _planningData->getPlanningExtent();
+    // Extend the date range so that it starts one week prior to the first reservation and extends for at least one year
+    auto dateRange = planningExtent.merge(boost::gregorian::date_period(
+          planningExtent.begin() + boost::gregorian::days(-7),
+          planningExtent.begin() + boost::gregorian::days(365)));
+
     auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
     auto right = _layout.getDatePositionX(dateRange.end()) + 10;
     _layout.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));

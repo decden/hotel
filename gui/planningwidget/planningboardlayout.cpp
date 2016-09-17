@@ -46,12 +46,14 @@ namespace gui
           for (auto& category : hotel->categories())
           {
             bool isEven = true;
-            for (auto& room : hotels.allRoomsByCategory(category->id()))
+            auto roomsInCategory = hotels.allRoomsByCategory(category->id());
+            for (auto& room : roomsInCategory)
             {
               appendRoomRow(isEven, room->id());
               isEven = !isEven;
             }
-            appendSeparatorRow(categorySeparatorHeight);
+            if (!roomsInCategory.empty())
+              appendSeparatorRow(categorySeparatorHeight);
           }
           if (!_rows.empty())
             _rows.pop_back();

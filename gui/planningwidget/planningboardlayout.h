@@ -88,7 +88,7 @@ namespace gui
       QColor boardSeparatorColor = QColor(0x353F41);
 
       // Room list constants
-      int roomListWidth = 80;
+      int roomListWidth = 100;
       int monthBarHeight = 20;
       int daysBarHeight = 40;
       // Room list fonts
