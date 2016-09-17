@@ -13,6 +13,7 @@ namespace gui
 
     // Initialize the layout object with the above data
     _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
+    _layout.setPivotDate(boost::gregorian::day_clock::local_day());
 
     // Initialize scene geometry
     // TODO: This should be combined together with a fixed minimum width
@@ -37,6 +38,15 @@ namespace gui
     _roomList = new planningwidget::RoomListWidget(&_layout);
     _dateBar = new planningwidget::DateBarWidget(&_layout);
 
+    // Wire up the scroll bars
+    _planningBoard->setHorizontalScrollBar(_horizontalScrollbar);
+    _planningBoard->setVerticalScrollBar(_verticalScrollbar);
+    _roomList->setVerticalScrollBar(_verticalScrollbar);
+    _dateBar->setHorizontalScrollBar(_horizontalScrollbar);
+
+    // Wire up events
+    connect(_dateBar, SIGNAL(dateClicked(boost::gregorian::date)), this, SLOT(setPivotDate(boost::gregorian::date)));
+
     grid->addWidget(_dateBar, 0, 1);
     grid->addWidget(_roomList, 1, 0);
     grid->addWidget(_planningBoard, 1, 1);
@@ -44,16 +54,18 @@ namespace gui
     grid->addWidget(_horizontalScrollbar, 2, 1);
     setLayout(grid);
 
-    // Wire up the scroll bars
-    _planningBoard->setHorizontalScrollBar(_horizontalScrollbar);
-    _planningBoard->setVerticalScrollBar(_verticalScrollbar);
-    _roomList->setVerticalScrollBar(_verticalScrollbar);
-    _dateBar->setHorizontalScrollBar(_horizontalScrollbar);
 
     // Add data to the sub-widgets
     for (auto room : _hotelsData->allRooms())
       _roomList->addRoomItem(room);
     _planningBoard->addReservations(_planningData->reservations());
+  }
+
+  void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
+  {
+    // TODO: This should not update the whole layout!
+    _layout.setPivotDate(pivotDate);
+    updateLayout();
   }
 
   void PlanningWidget::keyPressEvent(QKeyEvent* event)
@@ -65,10 +77,15 @@ namespace gui
 
     if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
     {
-      _planningBoard->updateLayout();
-      _roomList->updateLayout();
-      _dateBar->updateLayout();
+      updateLayout();
     }
+  }
+
+  void PlanningWidget::updateLayout()
+  {
+    _planningBoard->updateLayout();
+    _roomList->updateLayout();
+    _dateBar->updateLayout();
   }
 
 } // namespace gui

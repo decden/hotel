@@ -15,6 +15,8 @@
 #include <QScrollBar>
 #include <QWidget>
 
+#include <boost/date_time.hpp>
+
 #include <memory>
 #include <vector>
 
@@ -28,8 +30,12 @@ namespace gui
    */
   class PlanningWidget : public QWidget
   {
+    Q_OBJECT
   public:
     PlanningWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
+
+  public slots:
+    void setPivotDate(boost::gregorian::date pivotDate);
 
   protected:
     virtual void keyPressEvent(QKeyEvent* event) override;
@@ -49,6 +55,9 @@ namespace gui
     // Planning data
     std::unique_ptr<hotel::HotelCollection> _hotelsData;
     std::unique_ptr<hotel::PlanningBoard> _planningData;
+
+    // Triggers a layout update of all the widgets
+    void updateLayout();
   };
 
 } // namespace gui

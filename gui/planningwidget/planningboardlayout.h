@@ -57,6 +57,7 @@ namespace gui
       // General colors
       QColor widgetBackground = QColor(0xCCCCCC);
       QColor selectionColor = QColor(0xD33682);
+      QFont headerFont = QFont("Arial", 10);
       QFont boldHeaderFont = QFont("Arial", 10, QFont::Bold);
 
       // Atom constants
@@ -84,7 +85,8 @@ namespace gui
       QColor boardWeekdayColumnColor = QColor(0xE3D9BA);
       QColor boardSaturdayColumnColor = QColor(0xE3D097);
       QColor boardSundayColumnColor = QColor(0xE3D097);
-      QColor boardTodayColor = QColor(0x268BD2);
+      QColor boardPivotTodayColor = QColor(0x268BD2);
+      QColor boardPivotColor = QColor(0x26D2AC);
       QColor boardSeparatorColor = QColor(0x353F41);
 
       // Room list constants
@@ -129,6 +131,9 @@ namespace gui
       void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
       QRectF sceneRect() const { return _sceneRect; }
 
+      void setPivotDate(const boost::gregorian::date date) { _pivotDate = date; }
+      boost::gregorian::date pivotDate() const { return _pivotDate; }
+
       //! @brief getAtomRect produces the rectangle for the given room and date on the virtual planning board
       QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange) const;
 
@@ -139,8 +144,7 @@ namespace gui
 
       /**
        * @brief getNearestDate returns the nearest date to the given position, together with the actual x-position of
-       * the
-       *        found date.
+       * the found date.
        */
       std::pair<boost::gregorian::date, int> getNearestDatePosition(int positionX) const;
 
@@ -163,7 +167,11 @@ namespace gui
       // List of ordered, non-overlapping row definitions
       std::vector<PlanningBoardRowGeometry> _rows;
 
-      // The date which will correspond to the x=0 line
+      // The currently selected date
+      boost::gregorian::date _pivotDate;
+
+      // The date which will correspond to the x=0 line. This value does not represent the currently selected date, it
+      // is only used for setting a coordinate system, in which to place the reservations.
       boost::gregorian::date _originDate;
 
       void appendRoomRow(bool isEven, int roomId);

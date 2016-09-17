@@ -7,10 +7,10 @@ namespace gui
   namespace planningwidget
   {
 
-    DateBarDayItem::DateBarDayItem(const PlanningBoardLayout* layout, int day, int weekday, bool isHighlighted)
-        : QGraphicsRectItem(), _layout(layout), _day(day), _weekday(weekday), _isHighlighted(isHighlighted)
+    DateBarDayItem::DateBarDayItem(DateBarWidget* parent, const PlanningBoardLayout* layout, boost::gregorian::date date, bool isPivot, bool isToday)
+        : QGraphicsRectItem(), _parent(parent), _layout(layout), _date(date), _isPivot(isPivot), _isToday(isToday)
     {
-      if (isHighlighted)
+      if (isPivot)
         setZValue(1);
     }
 
@@ -19,17 +19,24 @@ namespace gui
       auto& appearance = _layout->appearance();
       auto itemRect = rect().adjusted(0, 0, 0, 0);
 
-      painter->save();
+      auto day = _date.day();
+      auto dayOfWeek = _date.day_of_week();
 
+      painter->save();
       painter->setPen(appearance.boardWeekdayColumnColor);
 
       auto borderRect = itemRect.adjusted(0.5, 0.5, -0.5, -0.5);
 
-      auto backgroundColor = _isHighlighted ? appearance.boardTodayColor
-                                            : ((_weekday == 0 || _weekday == 6) ? appearance.boardOddRowColor
-                                                                                : appearance.boardEvenRowColor);
-      auto borderColor = _isHighlighted ? appearance.boardTodayColor.darker() : appearance.boardWeekdayColumnColor;
-      auto textColor = _isHighlighted ? appearance.atomLightTextColor : appearance.atomDarkTextColor;
+      QColor backgroundColor;
+      if (_isPivot && _isToday)
+        backgroundColor = appearance.boardPivotTodayColor;
+      else if (_isPivot && !_isToday)
+        backgroundColor = appearance.boardPivotColor;
+      else
+        backgroundColor = (dayOfWeek == 0 || dayOfWeek == 6) ? appearance.boardOddRowColor : appearance.boardEvenRowColor;
+
+      auto borderColor = _isPivot ? appearance.boardPivotTodayColor.darker() : appearance.boardWeekdayColumnColor;
+      auto textColor = _isPivot ? appearance.atomLightTextColor : appearance.atomDarkTextColor;
 
       painter->setPen(borderColor);
       painter->fillRect(itemRect.adjusted(-0.5, 0.5, -0.5, -0.5), backgroundColor);
@@ -37,11 +44,16 @@ namespace gui
 
       painter->setClipRect(itemRect);
       painter->setPen(textColor);
-      painter->setFont(appearance.boldHeaderFont);
+      painter->setFont(_isToday ? appearance.boldHeaderFont : appearance.headerFont);
       painter->drawText(itemRect.adjusted(0, 5, 0, 0), Qt::AlignHCenter | Qt::AlignTop,
-                        QString("%1").arg(appearance.getShortWeekdayName(_weekday)));
-      painter->drawText(itemRect.adjusted(0, 0, 0, -5), Qt::AlignHCenter | Qt::AlignBottom, QString("%1").arg(_day));
+                        QString("%1").arg(appearance.getShortWeekdayName(dayOfWeek)));
+      painter->drawText(itemRect.adjusted(0, 0, 0, -5), Qt::AlignHCenter | Qt::AlignBottom, QString("%1").arg(day));
       painter->restore();
+    }
+
+    void DateBarDayItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+    {
+      _parent->dateItemClicked(_date);
     }
 
     DateBarMonthItem::DateBarMonthItem(const PlanningBoardLayout* layout, int month, int year)
@@ -115,6 +127,7 @@ namespace gui
       int colWidth = _layout->dateColumnWidth();
 
       auto today = boost::gregorian::day_clock::local_day();
+      auto pivotDate = _layout->pivotDate();
 
       // Add the day items
       int positionX;
@@ -123,7 +136,7 @@ namespace gui
       positionX -= colWidth / 2 - 1; // Dates are centered above the dateline
       for (int x = positionX; x < right; x += colWidth)
       {
-        auto item = new DateBarDayItem(_layout, date.day(), date.day_of_week(), date == today);
+        auto item = new DateBarDayItem(this, _layout, date, date == pivotDate, date == today);
         item->setRect(QRect(x - 1, appearance.monthBarHeight, colWidth + 1, appearance.daysBarHeight));
         _scene->addItem(item);
         date += boost::gregorian::days(1);
@@ -144,6 +157,11 @@ namespace gui
         i += monthWidth;
         date = nextMonth;
       }
+    }
+
+    void DateBarWidget::dateItemClicked(boost::gregorian::date date)
+    {
+      emit dateClicked(date);
     }
   } // namespace planningwidget
 } // namespace gui

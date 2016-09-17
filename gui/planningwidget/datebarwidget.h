@@ -12,19 +12,28 @@ namespace gui
 {
   namespace planningwidget
   {
+    class DateBarWidget;
 
+    /**
+     * @brief The DateBarDayItem class is a graphics item showing one single day in the day bar
+     */
     class DateBarDayItem : public QGraphicsRectItem
     {
     public:
-      DateBarDayItem(const PlanningBoardLayout* layout, int day, int weekday, bool isHighlighted);
+      DateBarDayItem(DateBarWidget* parent, const PlanningBoardLayout* layout, boost::gregorian::date date, bool isPivot, bool isToday);
 
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     private:
+      DateBarWidget* _parent;
       const PlanningBoardLayout* _layout;
-      int _day;
-      int _weekday;
-      bool _isHighlighted;
+      boost::gregorian::date _date;
+
+      bool _isPivot;
+      bool _isToday;
+
+    protected:
+      void mousePressEvent(QGraphicsSceneMouseEvent *event);
     };
 
     class DateBarMonthItem : public QGraphicsRectItem
@@ -45,6 +54,7 @@ namespace gui
      */
     class DateBarWidget : public QGraphicsView
     {
+      Q_OBJECT
     public:
       DateBarWidget(const PlanningBoardLayout* layout, QWidget* parent = nullptr);
 
@@ -54,8 +64,15 @@ namespace gui
       //! When the layout changes, call this methods to update the scene.
       void updateLayout();
 
+    signals:
+      void dateClicked(boost::gregorian::date date);
+
     private:
       void rebuildScene();
+
+      // Methods called by the scene's items
+      friend class DateBarDayItem;
+      void dateItemClicked(boost::gregorian::date date);
 
       QGraphicsScene* _scene;
       const PlanningBoardLayout* _layout;

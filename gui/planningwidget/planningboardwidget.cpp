@@ -74,11 +74,11 @@ namespace gui
 
     void PlanningBoardWidget::drawForeground(QPainter* painter, const QRectF& rect)
     {
-      // Draw the bar indicating the current day
-      auto today = boost::gregorian::day_clock::local_day();
-      auto x = _layout->getDatePositionX(today);
+      // Draw the bar indicating the pivot day
+      auto pivotDay = _layout->pivotDate();
+      auto x = _layout->getDatePositionX(pivotDay);
       auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
-      auto lineColor = _layout->appearance().boardTodayColor;
+      auto lineColor = _layout->appearance().boardPivotTodayColor;
       lineColor.setAlpha(0xA0);
       painter->fillRect(todayRect, lineColor);
     }
