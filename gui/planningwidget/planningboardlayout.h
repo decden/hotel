@@ -65,6 +65,7 @@ namespace gui
       // Reservation renderers
       ReservationRenderer reservationRendererDefault;
       PrivacyReservationRenderer reservationRendererPrivacy;
+      HighlightArrivalsRenderer reservationRendererArrivals;
 
       // Atom constants
       int atomConnectionHandleSize = 3;
@@ -103,7 +104,7 @@ namespace gui
       QFont roomListCategoryFont = QFont("Arial", 8);
 
       // Utility functions for rendering
-      const ReservationRenderer* reservationRenderer() const { return &reservationRendererDefault; }
+      const ReservationRenderer* reservationRenderer() const { return &reservationRendererArrivals; }
       void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect& rect) const;
 
       // Utility functions for text

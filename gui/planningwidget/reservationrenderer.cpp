@@ -159,5 +159,15 @@ namespace gui
       painter->fillRect(atomRect.adjusted(0, 0, 0, -1), backgroundColor);
     }
 
+    QColor HighlightArrivalsRenderer::getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const
+    {
+      auto& appearance = layout.appearance();
+      if (isSelected)
+        return appearance.atomSelectedColor;
+
+      bool highlight = atom.dateRange().begin() == layout.pivotDate();
+      return highlight ? appearance.atomCheckedInColor : appearance.atomDefaultColor;
+    }
+
   } // namespace planningwidget
 } // namespace gui

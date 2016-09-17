@@ -54,6 +54,12 @@ namespace gui
       virtual void drawAtomBackground(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const override;
     };
 
+    class HighlightArrivalsRenderer : public ReservationRenderer
+    {
+    protected:
+      QColor getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const;
+    };
+
   } // namespace planningwidget
 } // namespace gui
 
