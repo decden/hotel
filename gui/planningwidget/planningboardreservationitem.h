@@ -37,10 +37,6 @@ namespace gui
       virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
     private:
-      QString getDisplayedText() const;
-      QColor getItemColor() const;
-      QColor getItemTextColor() const;
-
       const PlanningBoardLayout* _layout;
       const hotel::ReservationAtom* _atom;
     };

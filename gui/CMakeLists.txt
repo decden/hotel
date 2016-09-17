@@ -7,6 +7,7 @@ add_library(hotel_gui
             planningwidget/planningboardlayout.cpp
             planningwidget/planningboardreservationitem.cpp
             planningwidget/planningboardwidget.cpp
+            planningwidget/reservationrenderer.cpp
             planningwidget/roomlistwidget.cpp
            )
 

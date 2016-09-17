@@ -4,6 +4,8 @@
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
 
+#include "gui/planningwidget/reservationrenderer.h"
+
 #include <boost/date_time.hpp>
 
 #include <QColor>
@@ -60,6 +62,10 @@ namespace gui
       QFont headerFont = QFont("Arial", 10);
       QFont boldHeaderFont = QFont("Arial", 10, QFont::Bold);
 
+      // Reservation renderers
+      ReservationRenderer reservationRendererDefault;
+      PrivacyReservationRenderer reservationRendererPrivacy;
+
       // Atom constants
       int atomConnectionHandleSize = 3;
       int atomConnectionOverhang = 10;
@@ -97,6 +103,7 @@ namespace gui
       QFont roomListCategoryFont = QFont("Arial", 8);
 
       // Utility functions for rendering
+      const ReservationRenderer* reservationRenderer() const { return &reservationRendererDefault; }
       void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect& rect) const;
 
       // Utility functions for text
