@@ -1,6 +1,7 @@
 #ifndef GUI_PLANNINGBOARDWIDGET_H
 #define GUI_PLANNINGBOARDWIDGET_H
 
+#include "gui/planningwidget/newreservationtool.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
 #include "hotel/hotel.h"
@@ -40,12 +41,39 @@ namespace gui
       virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
       virtual void drawForeground(QPainter* painter, const QRectF& rect) override;
 
+      virtual void mousePressEvent(QMouseEvent* event) override
+      {
+        QGraphicsView::mousePressEvent(event);
+
+        if (!event->isAccepted())
+        {
+          auto pos = mapToScene(event->pos());
+          _tool->mousePressEvent(event, pos);
+        }
+      }
+      virtual void mouseReleaseEvent(QMouseEvent* event) override
+      {
+        QGraphicsView::mouseReleaseEvent(event);
+        if (!event->isAccepted())
+        {
+          auto pos = mapToScene(event->pos());
+          _tool->mouseReleaseEvent(event, pos);
+        }
+      }
+      virtual void mouseMoveEvent(QMouseEvent* event) override
+      {
+        auto pos = mapToScene(event->pos());
+        _tool->mouseMoveEvent(event, pos);
+      }
+
     private:
       hotel::PlanningBoard* _planning;
       hotel::HotelCollection* _hotels;
 
       QGraphicsScene* _scene;
       const PlanningBoardLayout* _layout;
+
+      std::unique_ptr<Tool> _tool = std::make_unique<NewReservationTool>();
 
       void invalidateBackground();
       void invalidateForeground();

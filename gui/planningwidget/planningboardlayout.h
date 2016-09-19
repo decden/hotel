@@ -143,12 +143,16 @@ namespace gui
       boost::gregorian::date pivotDate() const { return _pivotDate; }
 
       //! @brief getAtomRect produces the rectangle for the given room and date on the virtual planning board
+      //! If the room does not exist, a zero height rectangle is returned
       QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange) const;
 
       //! @brief getPositionX returns the x coordiante associated to the given date, w.r.t. the layout's origin date
       int getDatePositionX(boost::gregorian::date date) const;
 
       const PlanningBoardRowGeometry* getRowGeometryForRoom(int roomId) const;
+
+      //! @brief returns the row located at vertical position y
+      const PlanningBoardRowGeometry* getRowGeometryAtPosition(int posY) const;
 
       /**
        * @brief getNearestDate returns the nearest date to the given position, together with the actual x-position of

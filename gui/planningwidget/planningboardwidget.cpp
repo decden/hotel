@@ -20,6 +20,10 @@ namespace gui
       _scene->setSceneRect(_layout->sceneRect());
       setScene(_scene);
 
+      // Init tools
+      _tool->init(layout, _scene);
+      _tool->load();
+
       // No scrollbars
       setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
       setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

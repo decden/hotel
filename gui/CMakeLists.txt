@@ -9,6 +9,9 @@ add_library(hotel_gui
             planningwidget/planningboardwidget.cpp
             planningwidget/reservationrenderer.cpp
             planningwidget/roomlistwidget.cpp
+
+            planningwidget/tool.cpp
+            planningwidget/newreservationtool.cpp
            )
 
 target_link_libraries(hotel_gui hotel Qt5::Widgets)

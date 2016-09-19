@@ -72,7 +72,8 @@ namespace gui
 
       auto row = getRowGeometryForRoom(roomId);
       int y = row != nullptr ? row->top() : 0;
-      return QRectF(pos, y, width, _roomRowHeight);
+      int height = row != nullptr ? row->height() : 0;
+      return QRectF(pos, y, width, height);
     }
 
     int PlanningBoardLayout::getDatePositionX(boost::gregorian::date date) const
@@ -90,9 +91,19 @@ namespace gui
       return nullptr;
     }
 
+    const PlanningBoardRowGeometry *PlanningBoardLayout::getRowGeometryAtPosition(int posY) const
+    {
+      for (auto& row : _rows)
+      {
+        if (posY >= row.top() && posY < row.bottom())
+          return &row;
+      }
+      return nullptr;
+    }
+
     std::pair<boost::gregorian::date, int> PlanningBoardLayout::getNearestDatePosition(int positionX) const
     {
-      auto dateIndex = (positionX + _dateColumnWidth / 2) / _dateColumnWidth;
+      auto dateIndex = std::floor((positionX + _dateColumnWidth / 2.0) / _dateColumnWidth);
       return std::make_pair(_originDate + boost::gregorian::days(dateIndex), dateIndex * _dateColumnWidth);
     }
 
