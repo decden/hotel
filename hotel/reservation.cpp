@@ -3,6 +3,8 @@
 namespace hotel
 {
 
+  Reservation::Reservation(const std::string& description) : _status(Unknown), _description(description) {}
+
   hotel::Reservation::Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange)
       : _status(Unknown), _description(description)
   {
@@ -10,11 +12,32 @@ namespace hotel
   }
 
   void Reservation::setStatus(Reservation::ReservationStatus status) { _status = status; }
+  void Reservation::setDescription(const std::string& newDescription) { _description = newDescription; }
+
+  ReservationAtom* Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
+  {
+    if (_atoms.empty() || _atoms[_atoms.size() - 1]->dateRange().end() == dateRange.begin())
+    {
+      auto atom = new ReservationAtom(this, room, dateRange);
+      _atoms.push_back(std::unique_ptr<ReservationAtom>(atom));
+      return atom;
+    }
+    else
+    {
+      std::cerr << "Cannot add atom because the date range is not contiguous to the previous atom" << std::endl;
+      return nullptr;
+    }
+  }
 
   ReservationAtom* Reservation::addContinuation(int room, boost::gregorian::date date)
   {
-    auto& lastAtom = *_atoms.rbegin();
+    if (_atoms.empty())
+    {
+      std::cerr << "Cannot add continuation, because reservation has no atom yet" << std::endl;
+      return nullptr;
+    }
 
+    auto& lastAtom = *_atoms.rbegin();
     if (lastAtom->_dateRange.end() >= date)
     {
       std::cerr << "Cannot create reservation continuation... The given date preceeds the end date of the last atom"
@@ -22,8 +45,9 @@ namespace hotel
       return nullptr;
     }
 
-    _atoms.push_back(
-        std::make_unique<ReservationAtom>(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date)));
+    auto atom = new ReservationAtom(this, room, boost::gregorian::date_period(lastAtom->_dateRange.end(), date));
+    _atoms.push_back(std::unique_ptr<ReservationAtom>(atom));
+    return atom;
   }
 
   Reservation::ReservationStatus Reservation::status() const { return _status; }
@@ -35,8 +59,31 @@ namespace hotel
     return boost::gregorian::date_period(_atoms.front()->dateRange().begin(), _atoms.back()->dateRange().end());
   }
 
+  const bool Reservation::isValid() const
+  {
+    if (_atoms.empty())
+      return false;
+
+    if (_atoms[0]->dateRange().is_null())
+      return false;
+
+    // Check that all of the atoms are contiguous and have valid date ranges
+    for (size_t i = 1; i < _atoms.size(); ++i)
+    {
+      if (_atoms[i]->dateRange().is_null())
+        return false;
+      if (_atoms[i - 1]->dateRange().end() != _atoms[i]->dateRange().begin())
+        return false;
+    }
+
+    return true;
+  }
+
   const int Reservation::length() const
   {
+    if (_atoms.empty())
+      return 0;
+
     return (_atoms[_atoms.size() - 1]->_dateRange.end() - _atoms[0]->_dateRange.begin()).days();
   }
 

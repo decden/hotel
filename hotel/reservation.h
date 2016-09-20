@@ -42,9 +42,13 @@ namespace hotel
       Archived
     };
 
+    Reservation(const std::string& description);
     Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange);
 
     void setStatus(ReservationStatus status);
+    void setDescription(const std::string& newDescription);
+
+    ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
     ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
     ReservationStatus status() const;
@@ -52,6 +56,9 @@ namespace hotel
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
 
     boost::gregorian::date_period dateRange() const;
+
+    //! @brief Returns true if the reservation contains at least one atom, and all of the periods are continuous
+    const bool isValid() const;
     const int length() const;
 
   private:
@@ -74,8 +81,8 @@ namespace hotel
     int roomId() const { return _roomId; }
     boost::gregorian::date_period dateRange() const { return _dateRange; }
 
-    bool isFirst() const { return this == _reservation->atoms().begin()->get(); }
-    bool isLast() const { return this == _reservation->atoms().rbegin()->get(); }
+    bool isFirst() const { return _reservation && this == _reservation->atoms().begin()->get(); }
+    bool isLast() const { return _reservation && this == _reservation->atoms().rbegin()->get(); }
 
   public: // TODO: Public for now...
     Reservation* _reservation;
