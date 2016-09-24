@@ -147,6 +147,24 @@ namespace hotel
     return result;
   }
 
+  std::vector<Reservation*> PlanningBoard::getReservationsInPeriod(boost::gregorian::date_period period)
+  {
+    std::vector<Reservation*> result;
+    for (auto& reservation : _reservations)
+      if (reservation->dateRange().intersects(period))
+        result.push_back(reservation.get());
+    return result;
+  }
+
+  std::vector<const Reservation*> PlanningBoard::getReservationsInPeriod(boost::gregorian::date_period period) const
+  {
+    std::vector<const Reservation*> result;
+    for (auto& reservation : _reservations)
+      if (reservation->dateRange().intersects(period))
+        result.push_back(reservation.get());
+    return result;
+  }
+
   boost::gregorian::date_period PlanningBoard::getPlanningExtent() const
   {
     using namespace boost::gregorian;

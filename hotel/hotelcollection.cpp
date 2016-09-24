@@ -26,6 +26,15 @@ namespace hotel
     return categoryIds;
   }
 
+  HotelRoom *HotelCollection::findRoomById(int id)
+  {
+    for (auto& hotel : _hotels)
+      for (auto& room : hotel->rooms())
+        if (room->id() == id)
+          return room.get();
+    return nullptr;
+  }
+
   std::vector<HotelRoom*> HotelCollection::allRooms()
   {
     std::vector<hotel::HotelRoom*> rooms;

@@ -53,6 +53,7 @@ namespace gui
     // TODO: This should not update the whole layout!
     _layout.setPivotDate(pivotDate);
     updateLayout();
+    emit pivotDateChanged(pivotDate);
   }
 
   void PlanningWidget::keyPressEvent(QKeyEvent* event)

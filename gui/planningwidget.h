@@ -37,6 +37,9 @@ namespace gui
   public slots:
     void setPivotDate(boost::gregorian::date pivotDate);
 
+  signals:
+    void pivotDateChanged(boost::gregorian::date pivotDate);
+
   protected:
     virtual void keyPressEvent(QKeyEvent* event) override;
 

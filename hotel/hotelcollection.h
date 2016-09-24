@@ -24,8 +24,11 @@ namespace hotel
     std::vector<int> allRoomIDs() const;
     std::vector<int> allCategoryIDs() const;
 
+    hotel::HotelRoom* findRoomById(int id);
+
     std::vector<hotel::HotelRoom*> allRooms();
     std::vector<hotel::HotelRoom*> allRoomsByCategory(int categoryId);
+
 
   private:
     std::vector<std::unique_ptr<hotel::Hotel>> _hotels;
