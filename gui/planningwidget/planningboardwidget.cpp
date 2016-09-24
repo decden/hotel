@@ -87,12 +87,42 @@ namespace gui
       painter->fillRect(todayRect, lineColor);
     }
 
-    void PlanningBoardWidget::addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations)
+    void PlanningBoardWidget::addReservations(const std::vector<const hotel::Reservation*>& reservations)
     {
       for (auto& reservation : reservations)
       {
-        auto item = new PlanningBoardReservationItem(_layout, reservation.get());
+        auto item = new PlanningBoardReservationItem(_layout, reservation);
         _scene->addItem(item);
+      }
+    }
+
+    void PlanningBoardWidget::removeReservations(const std::vector<const hotel::Reservation*>& reservations)
+    {
+      // Make a set out of the list
+      std::set<const hotel::Reservation*> reservationSet;
+      for (auto& reservation : reservations)
+        reservationSet.insert(reservation);
+
+      // Remove all of the corresponiding reservations
+      for (auto item : _scene->items())
+      {
+        auto reservationItem = dynamic_cast<PlanningBoardReservationItem*>(item);
+        if (reservationItem != nullptr)
+        {
+          if (reservationSet.find(reservationItem->reservation()) != reservationSet.end())
+            _scene->removeItem(reservationItem);
+        }
+      }
+    }
+
+    void PlanningBoardWidget::removeAllReservations()
+    {
+      // Remove all of the corresponiding reservations
+      for (auto item : _scene->items())
+      {
+        auto reservationItem = dynamic_cast<PlanningBoardReservationItem*>(item);
+        if (reservationItem != nullptr)
+          _scene->removeItem(reservationItem);
       }
     }
 

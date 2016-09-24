@@ -61,11 +61,12 @@ namespace gui
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
       virtual QRectF boundingRect() const override;
 
+      const hotel::Reservation* reservation() const { return _reservation; }
+
       /**
        * @brief setReservationSelected marks this item and all of its children as selected
        */
       void setReservationSelected(bool select);
-
       void updateLayout();
 
     private:

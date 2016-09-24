@@ -7,11 +7,43 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
 namespace hotel
 {
+  class PlanningBoard;
+
+  /**
+   * @brief The PlanningBoardObserver class is an interface that can be implemented by classes wishing to be notified
+   *        when the planning board changes
+   *
+   * @see PlanningBoard
+   */
+  class PlanningBoardObserver
+  {
+  public:
+    PlanningBoardObserver();
+    virtual ~PlanningBoardObserver();
+
+    const PlanningBoard* observedPlanningBoard() const;
+    void setObservedPlanningBoard(PlanningBoard* board);
+
+  protected:
+    friend class PlanningBoard;
+
+    // Update methods called by the planning board when its contents change
+    virtual void reservationsAdded(const std::vector<const Reservation*>& reservations) = 0;
+    virtual void reservationsRemoved(const std::vector<const Reservation*>& reservations) = 0;
+
+    // Update methods called when changing/setting the observed planning board
+    virtual void initialUpdate(const PlanningBoard& board) = 0;
+    virtual void allReservationsRemoved() = 0;
+
+  private:
+    PlanningBoard* _observedPlanningBoard;
+  };
 
   /**
    * @brief The PlanningBoard class holds planning information for a given set of rooms.
@@ -27,6 +59,8 @@ namespace hotel
   class PlanningBoard
   {
   public:
+    ~PlanningBoard();
+
     /**
      * @brief addRoomId Adds a room on the planning board
      * @param roomId the id of the room to add
@@ -54,19 +88,23 @@ namespace hotel
 
     /**
      * @brief getAvailableDaysFrom computes the number of days in which the given room is available from the given date
-     * onwards.
+     *        onwards.
      * @return the number of days for which the room is free. If the room is unavailable 0 is returend. If the room is
      *         always available max is returned.
      */
     int getAvailableDaysFrom(int roomId, boost::gregorian::date date) const;
 
-    const std::vector<std::unique_ptr<Reservation>>& reservations() const;
+    std::vector<Reservation*> reservations();
+    std::vector<const Reservation*> reservations() const;
 
     /**
      * @brief getPlanningExtent Returns the date period encompassing all of the reservations
      * @return If there are no reservation, an empty period is returned, encompassing the current day.
      */
     boost::gregorian::date_period getPlanningExtent() const;
+
+    void addObserver(PlanningBoardObserver* observer);
+    void removeObserver(PlanningBoardObserver* observer);
 
   private:
     /**
@@ -77,6 +115,9 @@ namespace hotel
 
     std::vector<std::unique_ptr<Reservation>> _reservations;
     std::map<int, std::vector<const ReservationAtom*>> _rooms;
+
+    //! List fo observers which are notified of changes
+    std::set<PlanningBoardObserver*> _observers;
   };
 
 } // namespace hotel

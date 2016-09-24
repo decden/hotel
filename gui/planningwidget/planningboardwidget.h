@@ -32,7 +32,9 @@ namespace gui
     {
     public:
       PlanningBoardWidget(const PlanningBoardLayout* layout);
-      void addReservations(const std::vector<std::unique_ptr<hotel::Reservation>>& reservations);
+      void addReservations(const std::vector<const hotel::Reservation*>& reservations);
+      void removeReservations(const std::vector<const hotel::Reservation*>& reservations);
+      void removeAllReservations();
 
       //! When the layout changes, call this methods to update the scene.
       void updateLayout();

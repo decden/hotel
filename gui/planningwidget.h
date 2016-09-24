@@ -28,17 +28,23 @@ namespace gui
    * In a nutshell, the planning widget is composed of three main parts: A list of rooms, a date bar and a planning
    * board containing all of the reservations.
    */
-  class PlanningWidget : public QWidget
+  class PlanningWidget : public QWidget, public hotel::PlanningBoardObserver
   {
     Q_OBJECT
   public:
-    PlanningWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage);
+    PlanningWidget(hotel::HotelCollection* hotelCollection);
 
   public slots:
     void setPivotDate(boost::gregorian::date pivotDate);
 
   protected:
     virtual void keyPressEvent(QKeyEvent* event) override;
+
+    // PlanningBoardObserver interface
+    virtual void reservationsAdded(const std::vector<const hotel::Reservation*>& reservations) override;
+    virtual void reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations) override;
+    virtual void initialUpdate(const hotel::PlanningBoard& board) override;
+    virtual void allReservationsRemoved() override;
 
   private:
     // Layout objects, holding layout information for this widget
@@ -52,9 +58,10 @@ namespace gui
     planningwidget::RoomListWidget* _roomList;
     planningwidget::DateBarWidget* _dateBar;
 
-    // Planning data
-    std::unique_ptr<hotel::HotelCollection> _hotelsData;
-    std::unique_ptr<hotel::PlanningBoard> _planningData;
+    // Hotel data
+    hotel::HotelCollection* _hotelCollection;
+
+    void updateDateRange();
 
     // Triggers a layout update of all the widgets
     void updateLayout();

@@ -3,6 +3,35 @@
 namespace hotel
 {
 
+  PlanningBoardObserver::PlanningBoardObserver() : _observedPlanningBoard(nullptr) {}
+
+  PlanningBoardObserver::~PlanningBoardObserver()
+  {
+    if (_observedPlanningBoard)
+      _observedPlanningBoard->removeObserver(this);
+  }
+
+  const PlanningBoard* PlanningBoardObserver::observedPlanningBoard() const { return _observedPlanningBoard; }
+
+  void PlanningBoardObserver::setObservedPlanningBoard(PlanningBoard* board)
+  {
+    if (board == _observedPlanningBoard)
+      return;
+
+    if (_observedPlanningBoard)
+    {
+      _observedPlanningBoard->removeObserver(this);
+      allReservationsRemoved();
+    }
+
+    _observedPlanningBoard = board;
+    if (board)
+    {
+      board->addObserver(this);
+      initialUpdate(*board);
+    }
+  }
+
   ReservationAtom::ReservationAtom(Reservation* reservation, const int room, boost::gregorian::date_period dateRange)
       : _reservation(reservation), _roomId(room), _dateRange(dateRange)
   {
@@ -16,16 +45,21 @@ namespace hotel
       return nullptr;
     }
 
+    // Insert reservation and atoms
     for (auto& atom : reservation->atoms())
       insertAtom(atom.get());
-
     auto reservationPtr = reservation.get();
     _reservations.push_back(std::move(reservation));
+
+    // Notify the observers and return
+    for (auto& observer : _observers)
+      observer->reservationsAdded({reservation.get()});
     return reservationPtr;
   }
 
   void PlanningBoard::removeReservation(const Reservation* reservation)
   {
+    // Remove the atoms
     for (auto& atom : reservation->atoms())
     {
       auto& roomAtoms = _rooms[atom->_roomId];
@@ -34,10 +68,22 @@ namespace hotel
         roomAtoms.erase(atomIt);
     }
 
+    // Find and remove the reservation, then notify the observers
     auto reservationIt =
         std::find_if(_reservations.begin(), _reservations.end(), [=](auto& x) { return x.get() == reservation; });
     if (reservationIt != _reservations.end())
+    {
       _reservations.erase(reservationIt);
+      for (auto& observer : _observers)
+        observer->reservationsRemoved({reservation});
+    }
+  }
+
+  PlanningBoard::~PlanningBoard()
+  {
+    auto observerListCopy = _observers;
+    for (auto observer : observerListCopy)
+      observer->setObservedPlanningBoard(nullptr);
   }
 
   void PlanningBoard::addRoomId(int roomId)
@@ -83,7 +129,23 @@ namespace hotel
       return std::max<int>(0, ((*it)->_dateRange.begin() - date).days());
   }
 
-  const std::vector<std::unique_ptr<Reservation>>& PlanningBoard::reservations() const { return _reservations; }
+  std::vector<Reservation*> PlanningBoard::reservations()
+  {
+    std::vector<Reservation*> result;
+    result.reserve(_reservations.size());
+    for (auto& reservation : _reservations)
+      result.push_back(reservation.get());
+    return result;
+  }
+
+  std::vector<const Reservation*> PlanningBoard::reservations() const
+  {
+    std::vector<const Reservation*> result;
+    result.reserve(_reservations.size());
+    for (auto& reservation : _reservations)
+      result.push_back(reservation.get());
+    return result;
+  }
 
   boost::gregorian::date_period PlanningBoard::getPlanningExtent() const
   {
@@ -110,6 +172,10 @@ namespace hotel
       return date_period(from, to);
     }
   }
+
+  void PlanningBoard::addObserver(PlanningBoardObserver* observer) { _observers.insert(observer); }
+
+  void PlanningBoard::removeObserver(PlanningBoardObserver* observer) { _observers.erase(observer); }
 
   void PlanningBoard::insertAtom(const ReservationAtom* atom)
   {

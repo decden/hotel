@@ -3,7 +3,6 @@
 #include <QGraphicsScene>
 #include <QPainter>
 
-
 namespace gui
 {
   namespace planningwidget
@@ -14,7 +13,9 @@ namespace gui
       painter->fillRect(rect(), QColor(0xff00ff));
     }
 
-    NewReservationTool::NewReservationTool() : _layout(nullptr), _boardScene(nullptr) {}
+    NewReservationTool::NewReservationTool() : _layout(nullptr), _boardScene(nullptr), _ghosts(), _currentGhost(nullptr)
+    {
+    }
 
     void NewReservationTool::init(const PlanningBoardLayout* layout, QGraphicsScene* boardScene)
     {
@@ -40,7 +41,7 @@ namespace gui
       // TODO update layout of ghosts
     }
 
-    void NewReservationTool::mousePressEvent(QMouseEvent *event, const QPointF &position)
+    void NewReservationTool::mousePressEvent(QMouseEvent* event, const QPointF& position)
     {
       unload();
       load();
@@ -61,12 +62,9 @@ namespace gui
       _boardScene->addItem(_currentGhost);
     }
 
-    void NewReservationTool::mouseReleaseEvent(QMouseEvent *event, const QPointF &position)
-    {
+    void NewReservationTool::mouseReleaseEvent(QMouseEvent* event, const QPointF& position) {}
 
-    }
-
-    void NewReservationTool::mouseMoveEvent(QMouseEvent *event, const QPointF &position)
+    void NewReservationTool::mouseMoveEvent(QMouseEvent* event, const QPointF& position)
     {
       if (_currentGhost != nullptr)
       {

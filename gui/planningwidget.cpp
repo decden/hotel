@@ -5,27 +5,16 @@
 
 namespace gui
 {
-  PlanningWidget::PlanningWidget(std::unique_ptr<hotel::persistence::SqliteStorage> storage)
+  PlanningWidget::PlanningWidget(hotel::HotelCollection* hotelCollection)
   {
-    // Load the Data
-    _hotelsData = storage->loadHotels();
-    _planningData = storage->loadPlanning(_hotelsData->allRoomIDs());
+    // Assign the data
+    _hotelCollection = hotelCollection;
 
     // Initialize the layout object with the above data
-    _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
     _layout.setPivotDate(boost::gregorian::day_clock::local_day());
+    _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
-    // Initialize scene geometry
-    // TODO: This should be combined together with a fixed minimum width
-    auto planningExtent = _planningData->getPlanningExtent();
-    // Extend the date range so that it starts one week prior to the first reservation and extends for at least one year
-    auto dateRange = planningExtent.merge(boost::gregorian::date_period(
-          planningExtent.begin() + boost::gregorian::days(-7),
-          planningExtent.begin() + boost::gregorian::days(365)));
-
-    auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
-    auto right = _layout.getDatePositionX(dateRange.end()) + 10;
-    _layout.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
+    updateDateRange();
 
     // Create UI
     auto grid = new QGridLayout;
@@ -54,11 +43,9 @@ namespace gui
     grid->addWidget(_horizontalScrollbar, 2, 1);
     setLayout(grid);
 
-
     // Add data to the sub-widgets
-    for (auto room : _hotelsData->allRooms())
+    for (auto room : _hotelCollection->allRooms())
       _roomList->addRoomItem(room);
-    _planningBoard->addReservations(_planningData->reservations());
   }
 
   void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
@@ -71,14 +58,50 @@ namespace gui
   void PlanningWidget::keyPressEvent(QKeyEvent* event)
   {
     if (event->key() == Qt::Key_F1)
-      _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByHotel);
+      _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByHotel);
     if (event->key() == Qt::Key_F2)
-      _layout.initializeLayout(*_hotelsData, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
+      _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
     if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
     {
       updateLayout();
     }
+  }
+
+  void PlanningWidget::reservationsAdded(const std::vector<const hotel::Reservation*>& reservations)
+  {
+    _planningBoard->addReservations(reservations);
+  }
+
+  void PlanningWidget::reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations)
+  {
+    _planningBoard->removeReservations(reservations);
+  }
+
+  void PlanningWidget::initialUpdate(const hotel::PlanningBoard& board)
+  {
+    _planningBoard->addReservations(board.reservations());
+    updateDateRange();
+    updateLayout();
+  }
+
+  void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }
+
+  void PlanningWidget::updateDateRange()
+  {
+    auto planningExtent = boost::gregorian::date_period(_layout.pivotDate(), _layout.pivotDate());
+    auto planningBoard = observedPlanningBoard();
+    if (planningBoard != nullptr)
+      planningExtent = planningBoard->getPlanningExtent();
+
+    // Extend the date range so that it starts one week prior to the first reservation and extends for at least one year
+    auto dateRange = planningExtent.merge(boost::gregorian::date_period(
+        planningExtent.begin() + boost::gregorian::days(-7), planningExtent.begin() + boost::gregorian::days(365)));
+
+    // Apply the scene size
+    auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
+    auto right = _layout.getDatePositionX(dateRange.end()) + 10;
+    _layout.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
   }
 
   void PlanningWidget::updateLayout()
