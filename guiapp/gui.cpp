@@ -20,9 +20,5 @@ int main(int argc, char** argv)
   widget.setObservedPlanningBoard(planning.get());
   widget.show();
 
-  gui::PlanningWidget widget2(hotelCollection.get());
-  widget2.setObservedPlanningBoard(planning.get());
-  widget2.show();
-
   return app.exec();
 }

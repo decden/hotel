@@ -50,7 +50,8 @@ namespace gui
         if (!event->isAccepted())
         {
           auto pos = mapToScene(event->pos());
-          _tool->mousePressEvent(event, pos);
+          if (_tool)
+            _tool->mousePressEvent(event, pos);
         }
       }
       virtual void mouseReleaseEvent(QMouseEvent* event) override
@@ -59,13 +60,15 @@ namespace gui
         if (!event->isAccepted())
         {
           auto pos = mapToScene(event->pos());
-          _tool->mouseReleaseEvent(event, pos);
+          if (_tool)
+            _tool->mouseReleaseEvent(event, pos);
         }
       }
       virtual void mouseMoveEvent(QMouseEvent* event) override
       {
         auto pos = mapToScene(event->pos());
-        _tool->mouseMoveEvent(event, pos);
+        if (_tool)
+          _tool->mouseMoveEvent(event, pos);
       }
 
     private:
@@ -75,7 +78,7 @@ namespace gui
       QGraphicsScene* _scene;
       const PlanningBoardLayout* _layout;
 
-      std::unique_ptr<Tool> _tool = std::make_unique<NewReservationTool>();
+      std::unique_ptr<Tool> _tool = nullptr;
 
       void invalidateBackground();
       void invalidateForeground();
