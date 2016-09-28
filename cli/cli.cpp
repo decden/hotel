@@ -3,8 +3,6 @@
 #include "hotel/persistence/jsonserializer.h"
 #include "hotel/persistence/sqlitestorage.h"
 
-#include "webapi/server.h"
-
 #include <chrono>
 #include <fstream>
 #include <iostream>

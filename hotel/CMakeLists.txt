@@ -11,4 +11,5 @@ add_library(hotel
             persistence/sqlitestatement.cpp
            )
 
+target_include_directories(hotel PUBLIC ../extern/nlohmann_json)
 target_link_libraries(hotel sqlite3 boost_date_time)
