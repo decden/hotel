@@ -1,5 +1,4 @@
 set(CMAKE_AUTOMOC ON)
-find_package(Qt5Widgets REQUIRED)
 
 add_library(hotel_gui
             statusbar.cpp
@@ -13,5 +12,15 @@ add_library(hotel_gui
             planningwidget/tool.cpp
             planningwidget/newreservationtool.cpp
            )
+
+#
+# Find external dependencies
+#
+
+find_package(Qt5Widgets REQUIRED)
+
+#
+# Link dependencies
+#
 
 target_link_libraries(hotel_gui hotel Qt5::Widgets)
