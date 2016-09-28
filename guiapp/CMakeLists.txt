@@ -5,12 +5,6 @@ add_executable(hotel_guiapp
               )
 
 #
-# Find external dependencies
-#
-
-find_package(Qt5Widgets REQUIRED)
-
-#
 # Link dependencies
 #
 

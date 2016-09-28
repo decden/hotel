@@ -31,8 +31,8 @@ namespace hotel
       std::unique_ptr<hotel::HotelCollection> loadHotels();
       std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);
 
-      bool storeNewHotel(hotel::Hotel& hotel);
-      bool storeNewReservationAndAtoms(hotel::Reservation& reservation);
+      void storeNewHotel(hotel::Hotel& hotel);
+      void storeNewReservationAndAtoms(hotel::Reservation& reservation);
 
       void getReservation();
 

@@ -23,6 +23,7 @@ namespace hotel
         sqlite3_finalize(_statement);
       _statement = that._statement;
       that._statement = nullptr;
+      return *this;
     }
 
     SqliteStatement::~SqliteStatement()
@@ -58,7 +59,7 @@ namespace hotel
 
     void SqliteStatement::bindArgument(int pos, const std::string& text)
     {
-      sqlite3_bind_text(_statement, pos, text.c_str(), text.size(), SQLITE_TRANSIENT);
+      sqlite3_bind_text(_statement, pos, text.c_str(), static_cast<int>(text.size()), SQLITE_TRANSIENT);
     }
 
     void SqliteStatement::bindArgument(int pos, int64_t value) { sqlite3_bind_int64(_statement, pos, value); }
@@ -68,7 +69,7 @@ namespace hotel
       bindArgument(pos, boost::gregorian::to_iso_string(date));
     }
 
-    void SqliteStatement::readArg(int pos, std::__cxx11::string& val)
+    void SqliteStatement::readArg(int pos, std::string& val)
     {
       auto text = (const char*)sqlite3_column_text(_statement, pos);
       if (text != nullptr)

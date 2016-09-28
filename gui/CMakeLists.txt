@@ -14,12 +14,6 @@ add_library(hotel_gui
            )
 
 #
-# Find external dependencies
-#
-
-find_package(Qt5Widgets REQUIRED)
-
-#
 # Link dependencies
 #
 

@@ -194,7 +194,7 @@ namespace hotel
       return result;
     }
 
-    bool SqliteStorage::storeNewHotel(Hotel& hotel)
+    void SqliteStorage::storeNewHotel(Hotel& hotel)
     {
       // First, store the hotel
       query("hotel.insert").execute(hotel.name());
@@ -215,7 +215,7 @@ namespace hotel
       }
     }
 
-    bool SqliteStorage::storeNewReservationAndAtoms(Reservation& reservation)
+    void SqliteStorage::storeNewReservationAndAtoms(Reservation& reservation)
     {
       auto reservationStatus = serializeReservationStatus(reservation.status());
       query("reservation.insert").execute(reservation.description(), reservationStatus);
