@@ -82,6 +82,9 @@ namespace gui
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+      auto height = _layout->appearance().monthBarHeight + _layout->appearance().daysBarHeight;
+      setMaximumHeight(height);
+      setMinimumHeight(height);
       setFrameStyle(QFrame::Plain);
 
       // Prepare the scene
@@ -89,7 +92,6 @@ namespace gui
       setScene(_scene);
 
       // Set scene size
-      auto height = _layout->appearance().monthBarHeight + _layout->appearance().daysBarHeight;
       auto sceneRect = _layout->sceneRect();
       sceneRect.setHeight(height);
       _scene->setSceneRect(sceneRect);
