@@ -2,6 +2,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets REQUIRED)
 
 add_library(hotel_gui
+            statusbar.cpp
             planningwidget.cpp
             planningwidget/datebarwidget.cpp
             planningwidget/planningboardlayout.cpp
@@ -9,7 +10,6 @@ add_library(hotel_gui
             planningwidget/planningboardwidget.cpp
             planningwidget/reservationrenderer.cpp
             planningwidget/roomlistwidget.cpp
-
             planningwidget/tool.cpp
             planningwidget/newreservationtool.cpp
            )

@@ -12,7 +12,7 @@ namespace gui
 
     // Initialize the layout object with the above data
     _layout.setPivotDate(boost::gregorian::day_clock::local_day());
-    _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
+    _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByHotel);
 
     updateDateRange();
 
