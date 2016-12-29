@@ -47,12 +47,16 @@ namespace hotel
 
     void setStatus(ReservationStatus status);
     void setDescription(const std::string& newDescription);
+    void setNumberOfAdults(int adults);
+    void setNumberOfChildren(int adults);
 
     ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
     ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
     ReservationStatus status() const;
     const std::string& description() const;
+    int numberOfAdults() const;
+    int numberOfChildren() const;
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
 
     boost::gregorian::date_period dateRange() const;
@@ -64,6 +68,8 @@ namespace hotel
   private:
     ReservationStatus _status;
     std::string _description;
+    int _adults;
+    int _children;
     std::vector<std::unique_ptr<ReservationAtom>> _atoms;
   };
 

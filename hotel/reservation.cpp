@@ -6,13 +6,15 @@ namespace hotel
   Reservation::Reservation(const std::string& description) : _status(Unknown), _description(description) {}
 
   hotel::Reservation::Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange)
-      : _status(Unknown), _description(description)
+      : _status(Unknown), _description(description), _adults(0), _children(0)
   {
     _atoms.push_back(std::make_unique<ReservationAtom>(this, roomId, dateRange));
   }
 
   void Reservation::setStatus(Reservation::ReservationStatus status) { _status = status; }
   void Reservation::setDescription(const std::string& newDescription) { _description = newDescription; }
+  void Reservation::setNumberOfAdults(int adults) { _adults = adults; }
+  void Reservation::setNumberOfChildren(int children) { _children = children; }
 
   ReservationAtom* Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
   {
@@ -52,6 +54,8 @@ namespace hotel
 
   Reservation::ReservationStatus Reservation::status() const { return _status; }
   const std::string& Reservation::description() const { return _description; }
+  int Reservation::numberOfAdults() const { return _adults; }
+  int Reservation::numberOfChildren() const { return _children; }
   const std::vector<std::unique_ptr<ReservationAtom>>& Reservation::atoms() const { return _atoms; }
 
   boost::gregorian::date_period Reservation::dateRange() const
