@@ -198,20 +198,20 @@ namespace hotel
     {
       // First, store the hotel
       query("hotel.insert").execute(hotel.name());
-      hotel.setId(lastInsertId());
+      hotel.setId(static_cast<int>(lastInsertId()));
 
       // Store all of the categories
       for (auto& category : hotel.categories())
       {
         query("room_category.insert").execute(hotel.id(), category->shortCode(), category->name());
-        category->setId(lastInsertId());
+        category->setId(static_cast<int>(lastInsertId()));
       }
 
       // Store all of the rooms
       for (auto& room : hotel.rooms())
       {
         query("room.insert").execute(hotel.id(), room->category()->id(), room->name());
-        room->setId(lastInsertId());
+        room->setId(static_cast<int>(lastInsertId()));
       }
     }
 
@@ -219,12 +219,12 @@ namespace hotel
     {
       auto reservationStatus = serializeReservationStatus(reservation.status());
       query("reservation.insert").execute(reservation.description(), reservationStatus);
-      reservation.setId(lastInsertId());
+      reservation.setId(static_cast<int>(lastInsertId()));
       for (auto& atom : reservation.atoms())
       {
         auto& q = query("reservation_atom.insert");
         q.execute(reservation.id(), atom->_roomId, atom->_dateRange.begin(), atom->_dateRange.end());
-        atom->setId(lastInsertId());
+        atom->setId(static_cast<int>(lastInsertId()));
       }
     }
 

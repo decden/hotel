@@ -10,6 +10,7 @@
 
 int main(int argc, char** argv)
 {
+  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
   auto storage = std::make_unique<hotel::persistence::SqliteStorage>("test.db");
