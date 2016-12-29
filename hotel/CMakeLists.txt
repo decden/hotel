@@ -1,18 +1,28 @@
-add_library(hotel
-            detailedreservation.cpp
-            hotel.cpp
-            hotelcollection.cpp
-            persistentobject.cpp
-            planning.cpp
-            reservation.cpp
+set(SRC
+    detailedreservation.cpp
+    hotel.cpp
+    hotelcollection.cpp
+    persistentobject.cpp
+    planning.cpp
+    reservation.cpp
 
-            persistence/jsonserializer.cpp
-            persistence/sqlitestorage.cpp
-            persistence/sqlitestatement.cpp
-           )
+    persistence/jsonserializer.cpp
+    persistence/sqlitestatement.cpp
+    persistence/sqlitestorage.cpp
+)
 
-#
-# Link dependencies
-#
+set(SRC_INCLUDES
+    detailedreservation.h
+    hotel.h
+    hotelcollection.h
+    persistentobject.h
+    planning.h
+    reservation.h
 
+    persistence/jsonserializer.h
+    persistence/sqlitestatement.h
+    persistence/sqlitestorage.h
+)
+
+add_library(hotel ${SRC} ${SRC_INCLUDES})
 target_link_libraries(hotel ${Boost_DATE_TIME_LIBRARY} ${SQLITE3_LIBRARY})

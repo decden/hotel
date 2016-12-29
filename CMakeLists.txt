@@ -7,6 +7,9 @@ include_directories(.)
 # Find and configure external dependencies
 #
 
+if (WIN32)
+	set(Boost_USE_STATIC_LIBS ON)
+endif()
 find_package(Boost REQUIRED COMPONENTS date_time)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
