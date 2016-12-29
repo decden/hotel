@@ -10,7 +10,7 @@
 void createTestDatabase(const std::string& db)
 {
   // Get us some random test data
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  auto seed = static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count());
   std::mt19937 rng(seed);
 
   // Store all of the random test data into the database

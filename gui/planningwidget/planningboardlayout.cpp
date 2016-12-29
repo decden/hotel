@@ -103,7 +103,7 @@ namespace gui
 
     std::pair<boost::gregorian::date, int> PlanningBoardLayout::getNearestDatePosition(int positionX) const
     {
-      auto dateIndex = std::floor((positionX + _dateColumnWidth / 2.0) / _dateColumnWidth);
+      auto dateIndex = static_cast<int>(std::floor((positionX + _dateColumnWidth / 2.0) / _dateColumnWidth));
       return std::make_pair(_originDate + boost::gregorian::days(dateIndex), dateIndex * _dateColumnWidth);
     }
 
