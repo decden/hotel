@@ -41,7 +41,11 @@ namespace hotel
   {
     if (!canAddReservation(*reservation))
     {
-      std::cerr << "addReservation(): Cannot add reservation" << std::endl;
+      std::cerr << "addReservation(): Cannot add reservation " << reservation->description() << std::endl;
+      for (auto& atom : reservation->atoms())
+      {
+        std::cerr << "  atom: " << atom->roomId() << " " << boost::gregorian::to_iso_string(atom->dateRange().begin()) << " " << boost::gregorian::to_iso_string(atom->dateRange().end()) << std::endl;
+      }
       return nullptr;
     }
 
