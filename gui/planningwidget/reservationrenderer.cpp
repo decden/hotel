@@ -7,6 +7,16 @@ namespace gui
   namespace planningwidget
   {
 
+  QColor mix(const QColor& c1, const QColor &c2)
+  {
+    return QColor(
+      (c1.red() + c2.red() * 3) / 4,
+      (c1.green() + c2.green() * 3) / 4,
+      (c1.blue() + c2.blue() * 3) / 4,
+      (c1.alpha() + c2.alpha() * 3) / 4
+    );
+  }
+
   void ReservationRenderer::paintAtom(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
   {
     drawAtomBackground(painter, layout, atom, atomRect, isSelected);
@@ -133,11 +143,13 @@ namespace gui
     QString ReservationRenderer::getAtomText(const hotel::ReservationAtom &atom, bool isSelected) const
     {
       auto description = QString::fromStdString(atom.reservation()->description());
-      description += QString(" (%1)").arg(atom.reservation()->length());
+      
+      auto text = QString("%1+%2 %3 (%4)").arg(atom.reservation()->numberOfAdults()).arg(atom.reservation()->numberOfChildren())
+                                          .arg(description).arg(atom.reservation()->length());
 
       if (!atom.isFirst())
-        description = "\u25B8 " + description;
-      return description;
+        text = "\xE2\x96\xB8 " + text;
+      return text;
     }
 
     void PrivacyReservationRenderer::paintAtom(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
@@ -159,15 +171,19 @@ namespace gui
       painter->fillRect(atomRect.adjusted(0, 0, 0, -1), backgroundColor);
     }
 
-    QColor HighlightArrivalsRenderer::getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const
+    QColor HighlightArrivalsRenderer::getAtomBackgroundColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const
     {
-      auto& appearance = layout.appearance();
-      if (isSelected)
-        return appearance.atomSelectedColor;
+      auto color = ReservationRenderer::getAtomBackgroundColor(layout, atom, isSelected);
+      color = mix(color, layout.appearance().atomDefaultColor);
 
-      bool highlight = atom.dateRange().begin() == layout.pivotDate();
-      return highlight ? appearance.atomCheckedInColor : appearance.atomDefaultColor;
+      bool isHighlighted = atom.dateRange().begin() == layout.pivotDate();
+      if (isHighlighted)
+        color = color.lighter(120);
+      if (isSelected)
+        color = layout.appearance().atomSelectedColor;
+
+      return color;
     }
 
-  } // namespace planningwidget
+} // namespace planningwidget
 } // namespace gui

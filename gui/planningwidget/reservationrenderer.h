@@ -57,7 +57,7 @@ namespace gui
     class HighlightArrivalsRenderer : public ReservationRenderer
     {
     protected:
-      QColor getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const;
+      virtual QColor getAtomBackgroundColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const override;
     };
 
   } // namespace planningwidget
