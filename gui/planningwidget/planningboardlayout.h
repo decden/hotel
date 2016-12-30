@@ -104,7 +104,7 @@ namespace gui
       QFont roomListCategoryFont = QFont("Arial", 8);
 
       // Utility functions for rendering
-      const ReservationRenderer* reservationRenderer() const { return &reservationRendererArrivals; }
+      const ReservationRenderer* reservationRenderer() const { return &reservationRendererDefault; }
       void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect& rect) const;
 
       // Utility functions for text
