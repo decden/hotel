@@ -3,6 +3,7 @@ set(SRC
     hotel.cpp
     hotelcollection.cpp
     persistentobject.cpp
+    person.cpp
     planning.cpp
     reservation.cpp
 
@@ -16,6 +17,7 @@ set(SRC_INCLUDES
     hotel.h
     hotelcollection.h
     persistentobject.h
+    person.h
     planning.h
     reservation.h
 
