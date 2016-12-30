@@ -25,8 +25,6 @@ namespace gui
       painter->save();
       painter->setPen(appearance.boardWeekdayColumnColor);
 
-      auto borderRect = itemRect.adjusted(0.5, 0.5, -0.5, -0.5);
-
       QColor backgroundColor;
       if (_isPivot && _isToday)
         backgroundColor = appearance.boardPivotTodayColor;

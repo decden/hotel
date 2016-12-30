@@ -85,8 +85,8 @@ namespace cli
       }
 
       auto reservation = std::make_unique<hotel::Reservation>("Reservation " + std::to_string(i), roomId, resPeriod);
-      // Fill in any missing days by changing rooms (100 attempts)
-      for (int j : boost::irange(0, 10))
+      // Fill in any missing days by changing rooms (10 attempts)
+      for (int i = 0; i < 10; ++i)
       {
         startDate = endDate;
         if (additionalDays == 0)

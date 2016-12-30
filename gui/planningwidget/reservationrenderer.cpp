@@ -35,7 +35,7 @@ namespace gui
         painter->setRenderHint(QPainter::Antialiasing, true);
         painter->setPen(QPen(appearance.selectionColor, 2));
 
-        for (auto i = 0; i < atomRects.size() - 1; ++i)
+        for (auto i = 0; i < static_cast<int>(atomRects.size()) - 1; ++i)
         {
           auto previousBox = atomRects[i];
           auto nextBox = atomRects[i + 1];
