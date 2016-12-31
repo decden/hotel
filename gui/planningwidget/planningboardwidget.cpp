@@ -90,6 +90,36 @@ namespace gui
       painter->fillRect(todayRect, lineColor);
     }
 
+    void PlanningBoardWidget::mousePressEvent(QMouseEvent *event)
+    {
+      QGraphicsView::mousePressEvent(event);
+
+      if (!event->isAccepted())
+      {
+        auto pos = mapToScene(event->pos());
+        if (_tool)
+          _tool->mousePressEvent(event, pos);
+      }
+    }
+
+    void PlanningBoardWidget::mouseReleaseEvent(QMouseEvent *event)
+    {
+      QGraphicsView::mouseReleaseEvent(event);
+      if (!event->isAccepted())
+      {
+        auto pos = mapToScene(event->pos());
+        if (_tool)
+          _tool->mouseReleaseEvent(event, pos);
+      }
+    }
+
+    void PlanningBoardWidget::mouseMoveEvent(QMouseEvent *event)
+    {
+      auto pos = mapToScene(event->pos());
+      if (_tool)
+        _tool->mouseMoveEvent(event, pos);
+    }
+
     void PlanningBoardWidget::addReservations(const std::vector<const hotel::Reservation*>& reservations)
     {
       for (auto& reservation : reservations)

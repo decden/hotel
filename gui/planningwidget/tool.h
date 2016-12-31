@@ -38,7 +38,7 @@ namespace gui
 
       /**
        * @brief unload is called before the tool is deactivated.
-       * In this method the tool should clear all of the temporary items it may have allocated.
+       * In this method the tool should clear all of the temporary items it may have allocated and added to the scene.
        */
       virtual void unload() = 0;
 

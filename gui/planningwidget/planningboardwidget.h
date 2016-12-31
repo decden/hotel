@@ -43,33 +43,9 @@ namespace gui
       virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
       virtual void drawForeground(QPainter* painter, const QRectF& rect) override;
 
-      virtual void mousePressEvent(QMouseEvent* event) override
-      {
-        QGraphicsView::mousePressEvent(event);
-
-        if (!event->isAccepted())
-        {
-          auto pos = mapToScene(event->pos());
-          if (_tool)
-            _tool->mousePressEvent(event, pos);
-        }
-      }
-      virtual void mouseReleaseEvent(QMouseEvent* event) override
-      {
-        QGraphicsView::mouseReleaseEvent(event);
-        if (!event->isAccepted())
-        {
-          auto pos = mapToScene(event->pos());
-          if (_tool)
-            _tool->mouseReleaseEvent(event, pos);
-        }
-      }
-      virtual void mouseMoveEvent(QMouseEvent* event) override
-      {
-        auto pos = mapToScene(event->pos());
-        if (_tool)
-          _tool->mouseMoveEvent(event, pos);
-      }
+      virtual void mousePressEvent(QMouseEvent* event) override;
+      virtual void mouseReleaseEvent(QMouseEvent* event) override;
+      virtual void mouseMoveEvent(QMouseEvent* event) override;
 
     private:
       hotel::PlanningBoard* _planning;
