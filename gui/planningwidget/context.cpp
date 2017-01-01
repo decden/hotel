@@ -12,8 +12,8 @@ namespace gui
     void Context::setHotelCollection(hotel::HotelCollection* hotelCollection) { _hotelCollection = hotelCollection; }
     void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
     void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
-
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
+    void Context::setPlanning(const hotel::PlanningBoard* planning) { _planning = planning; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 
     void Context::initializeLayout(PlanningBoardLayout::LayoutType layoutType)
@@ -25,6 +25,7 @@ namespace gui
 
     hotel::HotelCollection* Context::hotelCollection() { return _hotelCollection; }
     const hotel::HotelCollection *Context::hotelCollection() const { return _hotelCollection; }
+    const hotel::PlanningBoard *Context::planning() const { return _planning; }
     PlanningBoardLayout& Context::layout() { return _layout; }
     const PlanningBoardLayout& Context::layout() const { return _layout; }
     PlanningBoardAppearance& Context::appearance() { return _appearance; }

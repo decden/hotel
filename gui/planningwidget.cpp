@@ -91,6 +91,7 @@ namespace gui
 
   void PlanningWidget::initialUpdate(const hotel::PlanningBoard& board)
   {
+    _context.setPlanning(&board);
     _planningBoard->addReservations(board.reservations());
     updateDateRange();
     updateLayout();
@@ -122,6 +123,10 @@ namespace gui
     _planningBoard->updateLayout();
     _roomList->updateLayout();
     _dateBar->updateLayout();
+
+    auto tool = _context.activeTool();
+    if (tool)
+      tool->updateLayout();
   }
 
 } // namespace gui

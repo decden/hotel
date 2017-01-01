@@ -39,6 +39,7 @@ namespace gui
 
       hotel::Reservation reservation;
       hotel::ReservationAtom* atom;
+      boost::gregorian::date maximumDate;
 
     private:
       const Context& _context;

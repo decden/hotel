@@ -32,9 +32,11 @@ namespace gui
       void setDateBarScene(QGraphicsScene* scene);
       void setRoomListScene(QGraphicsScene* scene);
       void setPlanningBoardScene(QGraphicsScene* scene);
+      void setPlanning(const hotel::PlanningBoard *planning);
 
       hotel::HotelCollection* hotelCollection();
       const hotel::HotelCollection* hotelCollection() const;
+      const hotel::PlanningBoard* planning() const;
       PlanningBoardLayout& layout();
       const PlanningBoardLayout& layout() const;
       PlanningBoardAppearance& appearance();
@@ -56,6 +58,7 @@ namespace gui
     private:
       // Hotel data
       hotel::HotelCollection* _hotelCollection;
+      const hotel::PlanningBoard* _planning;
 
       // Object with information on how to layout the individual elements in the planning widget, such as e.g.
       // reservations and rooms.

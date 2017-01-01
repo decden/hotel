@@ -103,13 +103,10 @@ namespace gui
     void PlanningBoardWidget::mouseReleaseEvent(QMouseEvent *event)
     {
       QGraphicsView::mouseReleaseEvent(event);
-      if (!event->isAccepted())
-      {
-        auto pos = mapToScene(event->pos());
-        auto tool = _context->activeTool();
-        if (tool)
-          tool->mouseReleaseEvent(event, pos);
-      }
+      auto pos = mapToScene(event->pos());
+      auto tool = _context->activeTool();
+      if (tool)
+        tool->mouseReleaseEvent(event, pos);
     }
 
     void PlanningBoardWidget::mouseMoveEvent(QMouseEvent *event)
