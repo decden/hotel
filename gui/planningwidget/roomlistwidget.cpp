@@ -49,7 +49,7 @@ namespace gui
       painter->restore();
     }
 
-    RoomListWidget::RoomListWidget(const Context *context, QWidget* parent)
+    RoomListWidget::RoomListWidget(Context *context, QWidget* parent)
         : QGraphicsView(parent), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -60,6 +60,7 @@ namespace gui
       _scene = new QGraphicsScene;
       _scene->setSceneRect(QRectF(0, 0, _context->appearance().roomListWidth, _context->layout().getHeight()));
       setScene(_scene);
+      _context->setRoomListScene(_scene);
 
       // No scrollbars
       setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

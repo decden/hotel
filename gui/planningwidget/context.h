@@ -29,18 +29,25 @@ namespace gui
       virtual ~Context() = default;
 
       void setHotelCollection(hotel::HotelCollection* hotelCollection);
+      void setDateBarScene(QGraphicsScene* scene);
+      void setRoomListScene(QGraphicsScene* scene);
+      void setPlanningBoardScene(QGraphicsScene* scene);
 
       hotel::HotelCollection* hotelCollection();
-      hotel::PlanningBoard* planning();
-
+      const hotel::HotelCollection* hotelCollection() const;
       PlanningBoardLayout& layout();
       const PlanningBoardLayout& layout() const;
       PlanningBoardAppearance& appearance();
       const PlanningBoardAppearance& appearance() const;
+
+      QGraphicsScene* dateBarScene();
+      QGraphicsScene* roomListScene();
+      QGraphicsScene* planningBoardScene();
+
       Tool* activeTool() { return _activeTool; }
+      const Tool* activeTool() const { return _activeTool; }
 
       void setPivotDate(const boost::gregorian::date date);
-
       void initializeLayout(PlanningBoardLayout::LayoutType layoutType);
 
       void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
@@ -49,7 +56,6 @@ namespace gui
     private:
       // Hotel data
       hotel::HotelCollection* _hotelCollection;
-      hotel::PlanningBoard* _planning;
 
       // Object with information on how to layout the individual elements in the planning widget, such as e.g.
       // reservations and rooms.

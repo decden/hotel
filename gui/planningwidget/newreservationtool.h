@@ -1,8 +1,9 @@
 #ifndef GUI_PLANNINGWIDGET_NEWRESERVATIONTOOL_H
 #define GUI_PLANNINGWIDGET_NEWRESERVATIONTOOL_H
 
-#include "gui/planningwidget/tool.h"
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/planningboardlayout.h"
+#include "gui/planningwidget/tool.h"
 
 #include <QGraphicsRectItem>
 #include <QMouseEvent>
@@ -19,14 +20,14 @@ namespace gui
     class ReservationGhostItem : public QGraphicsRectItem
     {
     public:
-      ReservationGhostItem(const PlanningBoardLayout* layout) : _layout(layout) {}
+      ReservationGhostItem(const Context& context) : _context(context) {}
 
       // QGraphicsRectItem interface
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
       void updateLayout()
       {
-        auto rect = _layout->getAtomRect(roomId, boost::gregorian::date_period(startDate, endDate));
+        auto rect = _context.layout().getAtomRect(roomId, boost::gregorian::date_period(startDate, endDate));
         setRect(rect);
       }
 
@@ -35,7 +36,7 @@ namespace gui
       boost::gregorian::date endDate;
 
     private:
-      const PlanningBoardLayout* _layout;
+      const Context& _context;
     };
 
 
@@ -48,7 +49,7 @@ namespace gui
     public:
       NewReservationTool();
 
-      virtual void init(const PlanningBoardLayout *layout, QGraphicsScene *boardScene) override;
+      virtual void init(Context& context) override;
 
       virtual void load() override;
       virtual void unload() override;
@@ -60,8 +61,7 @@ namespace gui
 
     private:
       //! Information needed to draw on the planning widget
-      const PlanningBoardLayout* _layout;
-      QGraphicsScene* _boardScene;
+      Context* _context;
 
       //! The list of temporary reservation items in the scene
       std::vector<ReservationGhostItem*> _ghosts;

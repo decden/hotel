@@ -1,4 +1,6 @@
-#include "newreservationtool.h"
+#include "gui/planningwidget/newreservationtool.h"
+
+#include "gui/planningwidget/context.h"
 
 #include <QGraphicsScene>
 #include <QPainter>
@@ -13,26 +15,27 @@ namespace gui
       painter->fillRect(rect(), QColor(0xff00ff));
     }
 
-    NewReservationTool::NewReservationTool() : _layout(nullptr), _boardScene(nullptr), _ghosts(), _currentGhost(nullptr)
+    NewReservationTool::NewReservationTool() : _context(nullptr), _ghosts(), _currentGhost(nullptr)
     {
     }
 
-    void NewReservationTool::init(const PlanningBoardLayout* layout, QGraphicsScene* boardScene)
+    void NewReservationTool::init(Context &context)
     {
-      _layout = layout;
-      _boardScene = boardScene;
+      _context = &context;
     }
 
     void NewReservationTool::load() {}
 
     void NewReservationTool::unload()
     {
+      auto boardScene = _context->planningBoardScene();
+
       for (auto ghost : _ghosts)
-        _boardScene->removeItem(ghost);
+        boardScene->removeItem(ghost);
       _ghosts.clear();
 
       if (_currentGhost != nullptr)
-        _boardScene->removeItem(_currentGhost);
+        boardScene->removeItem(_currentGhost);
       _currentGhost = nullptr;
     }
 
@@ -46,20 +49,22 @@ namespace gui
       unload();
       load();
 
+      auto& layout = _context->layout();
+
       // Get date and row
       boost::gregorian::date date;
       int dateXPos;
-      std::tie(date, dateXPos) = _layout->getNearestDatePosition(position.x());
-      auto row = _layout->getRowGeometryAtPosition(position.y());
+      std::tie(date, dateXPos) = layout.getNearestDatePosition(position.x());
+      auto row = layout.getRowGeometryAtPosition(position.y());
       if (row == nullptr || row->rowType() != PlanningBoardRowGeometry::RoomRow)
         return;
 
-      _currentGhost = new ReservationGhostItem(_layout);
+      _currentGhost = new ReservationGhostItem(*_context);
       _currentGhost->startDate = date;
       _currentGhost->endDate = date;
       _currentGhost->roomId = row->id();
       _currentGhost->updateLayout();
-      _boardScene->addItem(_currentGhost);
+      _context->planningBoardScene()->addItem(_currentGhost);
     }
 
     void NewReservationTool::mouseReleaseEvent(QMouseEvent* event, const QPointF& position) {}
@@ -70,7 +75,7 @@ namespace gui
       {
         boost::gregorian::date date;
         int dateXPos;
-        std::tie(date, dateXPos) = _layout->getNearestDatePosition(position.x());
+        std::tie(date, dateXPos) = _context->layout().getNearestDatePosition(position.x());
 
         if (date < _currentGhost->startDate)
           date = _currentGhost->startDate;

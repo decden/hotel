@@ -1,12 +1,15 @@
+#include "hotel/persistence/sqlitestorage.h"
+
+#include "gui/planningwidget.h"
+#include "gui/planningwidget/newreservationtool.h"
+
 #include <QApplication>
 #include <QGridLayout>
 #include <QWindow>
 #include <QPushButton>
 #include <QScrollBar>
 
-#include "gui/planningwidget.h"
-
-#include "hotel/persistence/sqlitestorage.h"
+#include <memory>
 
 int main(int argc, char** argv)
 {
@@ -18,6 +21,8 @@ int main(int argc, char** argv)
   auto planning = storage->loadPlanning(hotelCollection->allRoomIDs());
 
   gui::PlanningWidget widget(hotelCollection.get());
+  widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
+
   widget.setObservedPlanningBoard(planning.get());
   widget.show();
 

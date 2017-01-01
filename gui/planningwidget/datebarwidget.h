@@ -57,7 +57,7 @@ namespace gui
     {
       Q_OBJECT
     public:
-      DateBarWidget(const Context* context, QWidget* parent = nullptr);
+      DateBarWidget(Context* context, QWidget* parent = nullptr);
 
       // QGraphicsView interface
       virtual QSize sizeHint() const override;
@@ -75,7 +75,7 @@ namespace gui
       friend class DateBarDayItem;
       void dateItemClicked(boost::gregorian::date date);
 
-      const Context* _context;
+      Context* _context;
       QGraphicsScene* _scene;
     };
 

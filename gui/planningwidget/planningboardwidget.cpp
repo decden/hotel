@@ -19,6 +19,7 @@ namespace gui
       _scene = new QGraphicsScene;
       _scene->setSceneRect(_context->layout().sceneRect());
       setScene(_scene);
+      _context->setPlanningBoardScene(_scene);
 
       // No scrollbars
       setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

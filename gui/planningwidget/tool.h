@@ -11,7 +11,7 @@ namespace gui
 {
   namespace planningwidget
   {
-    class PlanningBoardLayout;
+    class Context;
 
     /**
      * @brief The Tool class is the base class of all tools used to interact in special ways with the planning board
@@ -29,7 +29,7 @@ namespace gui
        * This method is used by the reservation widget to tell the tool the information needed to draw and paint on the
        * canvas. This method is called only once during the tool's lifetime
        */
-      virtual void init(const PlanningBoardLayout* layout, QGraphicsScene* boardScene) = 0;
+      virtual void init(Context& context) = 0;
 
       /**
        * @brief load is called before the tool is activated

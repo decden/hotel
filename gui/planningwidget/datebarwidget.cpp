@@ -72,7 +72,7 @@ namespace gui
       painter->restore();
     }
 
-    DateBarWidget::DateBarWidget(const Context* context, QWidget* parent)
+    DateBarWidget::DateBarWidget(Context* context, QWidget* parent)
         : QGraphicsView(parent), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -85,6 +85,7 @@ namespace gui
       // Prepare the scene
       _scene = new QGraphicsScene;
       setScene(_scene);
+      _context->setRoomListScene(_scene);
 
       // Set scene size
       auto sceneRect = _context->layout().sceneRect();

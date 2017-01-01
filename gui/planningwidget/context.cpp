@@ -2,15 +2,18 @@
 
 #include "gui/planningwidget/tool.h"
 
-namespace gui {
-  namespace planningwidget {
+namespace gui
+{
+  namespace planningwidget
+  {
 
-    Context::Context()
-    {
+    Context::Context() {}
 
-    }
+    void Context::setHotelCollection(hotel::HotelCollection* hotelCollection) { _hotelCollection = hotelCollection; }
+    void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
+    void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
 
-    void Context::setHotelCollection(hotel::HotelCollection *hotelCollection) { _hotelCollection = hotelCollection; }
+    void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 
     void Context::initializeLayout(PlanningBoardLayout::LayoutType layoutType)
@@ -20,14 +23,17 @@ namespace gui {
         _layout.initializeLayout(*_hotelCollection, layoutType);
     }
 
-    hotel::HotelCollection *Context::hotelCollection() { return _hotelCollection; }
-    hotel::PlanningBoard *Context::planning() { return _planning; }
-    PlanningBoardLayout &Context::layout() { return _layout; }
-    const PlanningBoardLayout &Context::layout() const { return _layout; }
-    PlanningBoardAppearance &Context::appearance() { return _appearance; }
-    const PlanningBoardAppearance &Context::appearance() const { return _appearance; }
+    hotel::HotelCollection* Context::hotelCollection() { return _hotelCollection; }
+    const hotel::HotelCollection *Context::hotelCollection() const { return _hotelCollection; }
+    PlanningBoardLayout& Context::layout() { return _layout; }
+    const PlanningBoardLayout& Context::layout() const { return _layout; }
+    PlanningBoardAppearance& Context::appearance() { return _appearance; }
+    const PlanningBoardAppearance& Context::appearance() const { return _appearance; }
+    QGraphicsScene *Context::dateBarScene() { return _dateBarScene; }
+    QGraphicsScene *Context::roomListScene() { return _roomListScene; }
+    QGraphicsScene *Context::planningBoardScene() { return _planningBoardScene; }
 
-    void Context::registerTool(const std::string &toolName, std::unique_ptr<Tool> tool)
+    void Context::registerTool(const std::string& toolName, std::unique_ptr<Tool> tool)
     {
       if (toolName == "")
       {
@@ -36,17 +42,18 @@ namespace gui {
       }
       else if (_availableTools.find(toolName) != _availableTools.end())
       {
-        std::cerr << "registerTool(): a tool with the name " << toolName << " has already been registered." << std::endl;
+        std::cerr << "registerTool(): a tool with the name " << toolName << " has already been registered."
+                  << std::endl;
         return;
       }
       else
       {
-        tool->init(&_layout, nullptr /* TODO: Provide the main scene */);
+        tool->init(*this);
         _availableTools[toolName] = std::move(tool);
       }
     }
 
-    void Context::activateTool(const std::string &toolName)
+    void Context::activateTool(const std::string& toolName)
     {
       auto it = _availableTools.find(toolName);
 
@@ -58,15 +65,13 @@ namespace gui {
 
       if (_activeTool != newTool)
       {
-        if (_activeTool) _activeTool->unload();
+        if (_activeTool)
+          _activeTool->unload();
         _activeTool = newTool;
-        if (_activeTool) _activeTool->load();
+        if (_activeTool)
+          _activeTool->load();
       }
     }
-
-
-
-
 
   } // namespace planningwidget
 } // namespace gui

@@ -33,7 +33,7 @@ namespace gui
     class RoomListWidget : public QGraphicsView
     {
     public:
-      RoomListWidget(const Context* context, QWidget* parent = nullptr);
+      RoomListWidget(Context* context, QWidget* parent = nullptr);
       virtual QSize sizeHint() const override;
 
       void addRoomItem(hotel::HotelRoom* room);
@@ -45,7 +45,7 @@ namespace gui
       virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
 
     private:
-      const Context* _context;
+      Context* _context;
       QGraphicsScene* _scene;
 
       void invalidateBackground();
