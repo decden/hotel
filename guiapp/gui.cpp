@@ -22,6 +22,7 @@ int main(int argc, char** argv)
 
   gui::PlanningWidget widget(hotelCollection.get());
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
+  widget.activateTool("new-reservation");
 
   widget.setObservedPlanningBoard(planning.get());
   widget.show();

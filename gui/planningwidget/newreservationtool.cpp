@@ -9,21 +9,20 @@ namespace gui
 {
   namespace planningwidget
   {
+    using namespace boost::gregorian;
 
     void ReservationGhostItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
     {
-      painter->fillRect(rect(), QColor(0xff00ff));
+      // Date range is empty or invalid: no need to draw something
+      if (atom->dateRange().is_null())
+        return;
+
+      auto renderer = _context.appearance().reservationRenderer();
+      renderer->paintAtom(painter, _context, *atom, rect(), false);
     }
 
-    NewReservationTool::NewReservationTool() : _context(nullptr), _ghosts(), _currentGhost(nullptr)
-    {
-    }
-
-    void NewReservationTool::init(Context &context)
-    {
-      _context = &context;
-    }
-
+    NewReservationTool::NewReservationTool() : _context(nullptr), _ghosts(), _currentGhost(nullptr) {}
+    void NewReservationTool::init(Context& context) { _context = &context; }
     void NewReservationTool::load() {}
 
     void NewReservationTool::unload()
@@ -60,9 +59,8 @@ namespace gui
         return;
 
       _currentGhost = new ReservationGhostItem(*_context);
-      _currentGhost->startDate = date;
-      _currentGhost->endDate = date;
-      _currentGhost->roomId = row->id();
+      _currentGhost->atom->setDateRange(date_period(date, date));
+      _currentGhost->atom->setRoomId(row->id());
       _currentGhost->updateLayout();
       _context->planningBoardScene()->addItem(_currentGhost);
     }
@@ -73,13 +71,18 @@ namespace gui
     {
       if (_currentGhost != nullptr)
       {
-        boost::gregorian::date date;
+        date currentDate;
         int dateXPos;
-        std::tie(date, dateXPos) = _context->layout().getNearestDatePosition(position.x());
+        std::tie(currentDate, dateXPos) = _context->layout().getNearestDatePosition(position.x());
 
-        if (date < _currentGhost->startDate)
-          date = _currentGhost->startDate;
-        _currentGhost->endDate = date;
+        auto currentPeriod = _currentGhost->atom->dateRange();
+
+        // Dates cannot be extended in the past by dragging
+        if (currentDate < currentPeriod.begin())
+          currentDate = currentPeriod.begin();
+
+        auto newPeriod = date_period(currentPeriod.begin(), currentDate);
+        _currentGhost->atom->setDateRange(newPeriod);
 
         _currentGhost->updateLayout();
       }

@@ -103,8 +103,11 @@ namespace gui
     QColor ReservationRenderer::getAtomBackgroundColor(const Context &context, const hotel::ReservationAtom &atom, bool isSelected) const
     {
       using ReservationStatus = hotel::Reservation::ReservationStatus;
-
       auto& appearance = context.appearance();
+
+      if (atom.reservation()->status() == ReservationStatus::Temporary)
+        return appearance.atomTemporaryColor;
+
       if (isSelected)
       {
         if (atom.reservation()->status() == ReservationStatus::CheckedOut ||
@@ -143,10 +146,19 @@ namespace gui
 
     QString ReservationRenderer::getAtomText(const hotel::ReservationAtom &atom, bool isSelected) const
     {
+      using ReservationStatus = hotel::Reservation::ReservationStatus;
+
       auto description = QString::fromStdString(atom.reservation()->description());
-      
-      auto text = QString("%1+%2 %3 (%4)").arg(atom.reservation()->numberOfAdults()).arg(atom.reservation()->numberOfChildren())
-                                          .arg(description).arg(atom.reservation()->length());
+      QString text;
+
+      if (atom.reservation()->status() == ReservationStatus::Temporary)
+        text = QString("%1 (%2)").arg(description).arg(atom.reservation()->length());
+      else
+        text = QString("%1+%2 %3 (%4)")
+           .arg(atom.reservation()->numberOfAdults())
+           .arg(atom.reservation()->numberOfChildren())
+           .arg(description)
+           .arg(atom.reservation()->length());
 
       if (!atom.isFirst())
         text = "\xE2\x96\xB8 " + text;

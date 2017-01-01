@@ -35,6 +35,7 @@ namespace hotel
     enum ReservationStatus
     {
       Unknown,
+      Temporary, // Used for temporary selections in the planning board
       New,
       Confirmed,
       CheckedIn,
@@ -89,6 +90,9 @@ namespace hotel
 
     bool isFirst() const { return _reservation && this == _reservation->atoms().begin()->get(); }
     bool isLast() const { return _reservation && this == _reservation->atoms().rbegin()->get(); }
+
+    void setDateRange(boost::gregorian::date_period dateRange) { _dateRange = dateRange; }
+    void setRoomId(int id) { _roomId = id; }
 
   public: // TODO: Public for now...
     Reservation* _reservation;

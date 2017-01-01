@@ -3,7 +3,7 @@
 namespace hotel
 {
 
-  Reservation::Reservation(const std::string& description) : _status(Unknown), _description(description) {}
+  Reservation::Reservation(const std::string& description) : _status(Unknown), _description(description), _adults(0), _children(0) {}
 
   hotel::Reservation::Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange)
       : _status(Unknown), _description(description), _adults(0), _children(0)

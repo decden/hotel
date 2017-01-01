@@ -16,24 +16,29 @@ namespace gui
 {
   namespace planningwidget
   {
+    using namespace boost::gregorian;
 
     class ReservationGhostItem : public QGraphicsRectItem
     {
     public:
-      ReservationGhostItem(const Context& context) : _context(context) {}
+      ReservationGhostItem(const Context& context)
+          : QGraphicsRectItem(), reservation("new"), _context(context)
+      {
+        atom = reservation.addAtom(-1, date_period(date(), date()));
+        reservation.setStatus(hotel::Reservation::Temporary);
+      }
 
       // QGraphicsRectItem interface
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
       void updateLayout()
       {
-        auto rect = _context.layout().getAtomRect(roomId, boost::gregorian::date_period(startDate, endDate));
+        auto rect = _context.layout().getAtomRect(atom->roomId(), atom->dateRange());
         setRect(rect);
       }
 
-      int roomId;
-      boost::gregorian::date startDate;
-      boost::gregorian::date endDate;
+      hotel::Reservation reservation;
+      hotel::ReservationAtom* atom;
 
     private:
       const Context& _context;
