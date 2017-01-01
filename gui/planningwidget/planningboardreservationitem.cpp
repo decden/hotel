@@ -6,9 +6,9 @@ namespace gui
 {
   namespace planningwidget
   {
-    PlanningBoardAtomItem::PlanningBoardAtomItem(const PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
+    PlanningBoardAtomItem::PlanningBoardAtomItem(const Context *context, const hotel::ReservationAtom* atom,
                                                  QGraphicsItem* parent)
-        : QGraphicsRectItem(parent), _layout(layout), _atom(atom)
+        : QGraphicsRectItem(parent), _context(context), _atom(atom)
     {
       setFlag(QGraphicsItem::ItemIsSelectable);
       updateLayout();
@@ -16,14 +16,14 @@ namespace gui
 
     void PlanningBoardAtomItem::updateLayout()
     {
-      auto itemRect = _layout->getAtomRect(_atom->roomId(), _atom->_dateRange);
+      auto itemRect = _context->layout().getAtomRect(_atom->roomId(), _atom->_dateRange);
       setRect(itemRect);
     }
 
     void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
     {
-      auto renderer = _layout->appearance().reservationRenderer();
-      renderer->paintAtom(painter, *_layout, *_atom, rect(), isSelected());
+      auto renderer = _context->appearance().reservationRenderer();
+      renderer->paintAtom(painter, *_context, *_atom, rect(), isSelected());
     }
 
     QVariant PlanningBoardAtomItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value)
@@ -37,15 +37,15 @@ namespace gui
       return newValue;
     }
 
-    PlanningBoardReservationItem::PlanningBoardReservationItem(const PlanningBoardLayout* layout,
+    PlanningBoardReservationItem::PlanningBoardReservationItem(const Context *context,
                                                                const hotel::Reservation* reservation,
                                                                QGraphicsItem* parent)
-        : QGraphicsItem(parent), _layout(layout), _reservation(reservation), _isSelected(false),
+        : QGraphicsItem(parent), _context(context), _reservation(reservation), _isSelected(false),
           _isUpdatingSelection(false)
     {
       for (auto& atom : _reservation->atoms())
       {
-        auto item = new PlanningBoardAtomItem(layout, atom.get());
+        auto item = new PlanningBoardAtomItem(context, atom.get());
         item->setParentItem(this);
       }
     }
@@ -57,8 +57,8 @@ namespace gui
       for (auto child : childItems())
         rects.push_back(child->boundingRect());
 
-      auto renderer = _layout->appearance().reservationRenderer();
-      renderer->paintReservationConnections(painter, *_layout, rects, _isSelected);
+      auto renderer = _context->appearance().reservationRenderer();
+      renderer->paintReservationConnections(painter, *_context, rects, _isSelected);
     }
 
     QRectF PlanningBoardReservationItem::boundingRect() const { return childrenBoundingRect(); }

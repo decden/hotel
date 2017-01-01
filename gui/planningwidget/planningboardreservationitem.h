@@ -1,6 +1,7 @@
 #ifndef GUI_PLANNINGBOARDRESERVATIONITEM_H
 #define GUI_PLANNINGBOARDRESERVATIONITEM_H
 
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
 #include "hotel/reservation.h"
@@ -24,7 +25,7 @@ namespace gui
     class PlanningBoardAtomItem : public QGraphicsRectItem
     {
     public:
-      PlanningBoardAtomItem(const PlanningBoardLayout* layout, const hotel::ReservationAtom* atom,
+      PlanningBoardAtomItem(const Context* context, const hotel::ReservationAtom* atom,
                             QGraphicsItem* parent = nullptr);
 
       // QGraphicsRectItem interface
@@ -37,7 +38,7 @@ namespace gui
       virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
     private:
-      const PlanningBoardLayout* _layout;
+      const Context* _context;
       const hotel::ReservationAtom* _atom;
     };
 
@@ -54,7 +55,7 @@ namespace gui
     class PlanningBoardReservationItem : public QGraphicsItem
     {
     public:
-      PlanningBoardReservationItem(const PlanningBoardLayout* layout, const hotel::Reservation* reservation,
+      PlanningBoardReservationItem(const Context* context, const hotel::Reservation* reservation,
                                    QGraphicsItem* parent = nullptr);
 
       // QGraphicsItem interface
@@ -70,7 +71,7 @@ namespace gui
       void updateLayout();
 
     private:
-      const PlanningBoardLayout* _layout;
+      const Context* _context;
       const hotel::Reservation* _reservation;
       bool _isSelected;
       /**

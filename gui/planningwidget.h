@@ -1,6 +1,7 @@
 #ifndef GUI_PLANNINGWIDGET_H
 #define GUI_PLANNINGWIDGET_H
 
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/datebarwidget.h"
 #include "gui/planningwidget/planningboardlayout.h"
 #include "gui/planningwidget/planningboardwidget.h"
@@ -34,6 +35,9 @@ namespace gui
   public:
     PlanningWidget(hotel::HotelCollection* hotelCollection);
 
+    void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
+    void activateTool(const std::string& toolName);
+
   public slots:
     void setPivotDate(boost::gregorian::date pivotDate);
 
@@ -51,8 +55,6 @@ namespace gui
 
   private:
     // Layout objects, holding layout information for this widget
-    planningwidget::PlanningBoardLayout _layout;
-    QRect _sceneRect;
 
     // Widgets
     QScrollBar* _verticalScrollbar;
@@ -61,8 +63,8 @@ namespace gui
     planningwidget::RoomListWidget* _roomList;
     planningwidget::DateBarWidget* _dateBar;
 
-    // Hotel data
-    hotel::HotelCollection* _hotelCollection;
+    // Shared widget state
+    planningwidget::Context _context;
 
     void updateDateRange();
 

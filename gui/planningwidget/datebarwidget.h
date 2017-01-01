@@ -1,6 +1,7 @@
 #ifndef GUI_DATEBARWIDGET_H
 #define GUI_DATEBARWIDGET_H
 
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
 #include <QGraphicsRectItem>
@@ -20,13 +21,13 @@ namespace gui
     class DateBarDayItem : public QGraphicsRectItem
     {
     public:
-      DateBarDayItem(DateBarWidget* parent, const PlanningBoardLayout* layout, boost::gregorian::date date, bool isPivot, bool isToday);
+      DateBarDayItem(DateBarWidget* parent, const PlanningBoardAppearance& appearance, boost::gregorian::date date, bool isPivot, bool isToday);
 
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     private:
       DateBarWidget* _parent;
-      const PlanningBoardLayout* _layout;
+      const PlanningBoardAppearance& _appearance;
       boost::gregorian::date _date;
 
       bool _isPivot;
@@ -39,12 +40,12 @@ namespace gui
     class DateBarMonthItem : public QGraphicsRectItem
     {
     public:
-      DateBarMonthItem(const PlanningBoardLayout* layout, int month, int year);
+      DateBarMonthItem(const PlanningBoardAppearance& appearance, int month, int year);
 
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     private:
-      const PlanningBoardLayout* _layout;
+      const PlanningBoardAppearance& _appearance;
       int _month;
       int _year;
     };
@@ -56,7 +57,7 @@ namespace gui
     {
       Q_OBJECT
     public:
-      DateBarWidget(const PlanningBoardLayout* layout, QWidget* parent = nullptr);
+      DateBarWidget(const Context* context, QWidget* parent = nullptr);
 
       // QGraphicsView interface
       virtual QSize sizeHint() const override;
@@ -74,8 +75,8 @@ namespace gui
       friend class DateBarDayItem;
       void dateItemClicked(boost::gregorian::date date);
 
+      const Context* _context;
       QGraphicsScene* _scene;
-      const PlanningBoardLayout* _layout;
     };
 
   } // namespace planningwidget

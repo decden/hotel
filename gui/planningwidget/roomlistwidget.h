@@ -1,7 +1,7 @@
 #ifndef GUI_ROOMLISTWIDGET_H
 #define GUI_ROOMLISTWIDGET_H
 
-#include "gui/planningwidget/planningboardlayout.h"
+#include "gui/planningwidget/context.h"
 
 #include <QGraphicsRectItem>
 #include <QGraphicsView>
@@ -14,7 +14,7 @@ namespace gui
     class RoomListRoomItem : public QGraphicsRectItem
     {
     public:
-      RoomListRoomItem(const PlanningBoardLayout* layout, const hotel::HotelRoom* room,
+      RoomListRoomItem(const Context* context, const hotel::HotelRoom* room,
                        QGraphicsItem* parent = nullptr);
 
       // QGraphicsRectItem interface
@@ -23,7 +23,7 @@ namespace gui
       void updateLayout();
 
     private:
-      const PlanningBoardLayout* _layout;
+      const Context* _context;
       const hotel::HotelRoom* _room;
     };
 
@@ -33,7 +33,7 @@ namespace gui
     class RoomListWidget : public QGraphicsView
     {
     public:
-      RoomListWidget(const PlanningBoardLayout* layout, QWidget* parent = nullptr);
+      RoomListWidget(const Context* context, QWidget* parent = nullptr);
       virtual QSize sizeHint() const override;
 
       void addRoomItem(hotel::HotelRoom* room);
@@ -45,8 +45,8 @@ namespace gui
       virtual void drawBackground(QPainter* painter, const QRectF& rect) override;
 
     private:
+      const Context* _context;
       QGraphicsScene* _scene;
-      const PlanningBoardLayout* _layout;
 
       void invalidateBackground();
       void invalidateForeground();

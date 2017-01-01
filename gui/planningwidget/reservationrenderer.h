@@ -12,6 +12,7 @@ namespace gui
   namespace planningwidget
   {
     class PlanningBoardLayout;
+    class Context;
 
     /**
      * @brief The ReservationRenderer class is an interface for classes implementing the rendering of reservations and atoms
@@ -26,38 +27,38 @@ namespace gui
       virtual ~ReservationRenderer() {}
 
       // Paint functions called from the outside
-      virtual void paintAtom(QPainter* painter, const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom,
+      virtual void paintAtom(QPainter* painter, const Context& context, const hotel::ReservationAtom& atom,
                              const QRectF& atomRect, bool isSelected) const;
-      virtual void paintReservationConnections(QPainter* painter, const PlanningBoardLayout& layout, const std::vector<QRectF>& atomRects, bool isSelected) const;
+      virtual void paintReservationConnections(QPainter* painter, const Context& context, const std::vector<QRectF>& atomRects, bool isSelected) const;
 
     protected:
       // Utility drawing functions
-      virtual void drawAtomBackground(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom,
+      virtual void drawAtomBackground(QPainter *painter, const Context& context, const hotel::ReservationAtom &atom,
                                       const QRectF &atomRect, bool isSelected) const;
-      virtual void drawAtomText(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom,
+      virtual void drawAtomText(QPainter *painter, const Context& context, const hotel::ReservationAtom &atom,
                                 const QRectF &atomRect, bool isSelected) const;
 
       // Utility functions
       virtual QString getAtomText(const hotel::ReservationAtom& atom, bool isSelected) const;
-      virtual QColor getAtomBackgroundColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const;
-      virtual QColor getAtomTextColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const;
+      virtual QColor getAtomBackgroundColor(const Context& context, const hotel::ReservationAtom& atom, bool isSelected) const;
+      virtual QColor getAtomTextColor(const Context& context, const hotel::ReservationAtom& atom, bool isSelected) const;
 
     };
 
     class PrivacyReservationRenderer : public ReservationRenderer
     {
     public:
-      virtual void paintAtom(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const override;
+      virtual void paintAtom(QPainter *painter, const Context& context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const override;
 
     protected:
-      virtual QColor getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const override;
-      virtual void drawAtomBackground(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const override;
+      virtual QColor getAtomBackgroundColor(const Context& context, const hotel::ReservationAtom &atom, bool isSelected) const override;
+      virtual void drawAtomBackground(QPainter *painter, const Context& context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const override;
     };
 
     class HighlightArrivalsRenderer : public ReservationRenderer
     {
     protected:
-      virtual QColor getAtomBackgroundColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const override;
+      virtual QColor getAtomBackgroundColor(const Context& context, const hotel::ReservationAtom& atom, bool isSelected) const override;
     };
 
   } // namespace planningwidget

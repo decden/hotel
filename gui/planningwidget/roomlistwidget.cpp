@@ -7,25 +7,25 @@ namespace gui
   namespace planningwidget
   {
 
-    RoomListRoomItem::RoomListRoomItem(const PlanningBoardLayout* layout, const hotel::HotelRoom* room,
+    RoomListRoomItem::RoomListRoomItem(const Context *context, const hotel::HotelRoom* room,
                                        QGraphicsItem* parent)
-        : QGraphicsRectItem(parent), _layout(layout), _room(room)
+        : QGraphicsRectItem(parent), _context(context), _room(room)
     {
       updateLayout();
     }
 
     void RoomListRoomItem::updateLayout()
     {
-      auto rowGeometry = _layout->getRowGeometryForRoom(_room->id());
+      auto rowGeometry = _context->layout().getRowGeometryForRoom(_room->id());
       if (rowGeometry)
-        setRect(0, rowGeometry->top(), _layout->appearance().roomListWidth, rowGeometry->height());
+        setRect(0, rowGeometry->top(), _context->appearance().roomListWidth, rowGeometry->height());
       else
         setRect(0, 0, 0, 0);
     }
 
     void RoomListRoomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
     {
-      auto& appearance = _layout->appearance();
+      auto& appearance = _context->appearance();
       auto itemRect = rect().adjusted(0, 0, 0, 0);
 
       // Draw the color highlight
@@ -49,8 +49,8 @@ namespace gui
       painter->restore();
     }
 
-    RoomListWidget::RoomListWidget(const PlanningBoardLayout* layout, QWidget* parent)
-        : QGraphicsView(parent), _layout(layout)
+    RoomListWidget::RoomListWidget(const Context *context, QWidget* parent)
+        : QGraphicsView(parent), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -58,7 +58,7 @@ namespace gui
 
       // Set scene size
       _scene = new QGraphicsScene;
-      _scene->setSceneRect(QRectF(0, 0, _layout->appearance().roomListWidth, _layout->getHeight()));
+      _scene->setSceneRect(QRectF(0, 0, _context->appearance().roomListWidth, _context->layout().getHeight()));
       setScene(_scene);
 
       // No scrollbars
@@ -68,28 +68,32 @@ namespace gui
 
     QSize RoomListWidget::sizeHint() const
     {
-      auto width = _layout->appearance().roomListWidth;
+      auto width = _context->appearance().roomListWidth;
       return QSize(width, 0);
     }
 
     void RoomListWidget::drawBackground(QPainter* painter, const QRectF& rect)
     {
-      auto& appearance = _layout->appearance();
+      auto& layout = _context->layout();
+      auto& appearance = _context->appearance();
 
       painter->fillRect(rect, appearance.widgetBackground);
 
-      for (auto row : _layout->rowGeometries())
+      for (auto row : layout.rowGeometries())
         appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
     }
 
     void RoomListWidget::addRoomItem(hotel::HotelRoom* room)
     {
-      auto item = new RoomListRoomItem(_layout, room);
+      auto item = new RoomListRoomItem(_context, room);
       _scene->addItem(item);
     }
 
     void RoomListWidget::updateLayout()
     {
+      auto& layout = _context->layout();
+      auto& appearance = _context->appearance();
+
       for (auto item : _scene->items())
       {
         // TODO: We should maintain a list of reservation which are currently diplayed, instead of resorting do
@@ -99,7 +103,7 @@ namespace gui
           roomItem->updateLayout();
       }
 
-      _scene->setSceneRect(QRectF(0, 0, _layout->appearance().roomListWidth, _layout->getHeight()));
+      _scene->setSceneRect(QRectF(0, 0, appearance.roomListWidth, layout.getHeight()));
       invalidateBackground();
       invalidateForeground();
     }

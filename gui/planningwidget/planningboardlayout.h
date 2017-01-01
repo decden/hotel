@@ -165,13 +165,11 @@ namespace gui
       int dateColumnWidth() const { return _dateColumnWidth; }
 
       const std::vector<PlanningBoardRowGeometry>& rowGeometries() const { return _rows; }
-      const PlanningBoardAppearance& appearance() const { return _appearance; }
 
     private:
       int _roomRowHeight;
       int _dateColumnWidth;
 
-      PlanningBoardAppearance _appearance;
 
       // Scene rect
       QRectF _sceneRect;

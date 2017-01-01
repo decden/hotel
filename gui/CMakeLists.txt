@@ -2,6 +2,7 @@ set(SRC
     statusbar.cpp
     planningwidget.cpp
 
+    planningwidget/context.cpp
     planningwidget/datebarwidget.cpp
     planningwidget/planningboardlayout.cpp
     planningwidget/planningboardreservationitem.cpp
@@ -16,6 +17,7 @@ set(SRC_INCLUDES
     statusbar.h
     planningwidget.h
 
+    planningwidget/context.h
     planningwidget/datebarwidget.h
     planningwidget/planningboardlayout.h
     planningwidget/planningboardreservationitem.h

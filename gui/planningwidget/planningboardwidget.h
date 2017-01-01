@@ -1,6 +1,7 @@
 #ifndef GUI_PLANNINGBOARDWIDGET_H
 #define GUI_PLANNINGBOARDWIDGET_H
 
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/newreservationtool.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
@@ -31,7 +32,7 @@ namespace gui
     class PlanningBoardWidget : public QGraphicsView
     {
     public:
-      PlanningBoardWidget(const PlanningBoardLayout* layout);
+      PlanningBoardWidget(Context* context);
       void addReservations(const std::vector<const hotel::Reservation*>& reservations);
       void removeReservations(const std::vector<const hotel::Reservation*>& reservations);
       void removeAllReservations();
@@ -48,13 +49,8 @@ namespace gui
       virtual void mouseMoveEvent(QMouseEvent* event) override;
 
     private:
-      hotel::PlanningBoard* _planning;
-      hotel::HotelCollection* _hotels;
-
+      Context* _context;
       QGraphicsScene* _scene;
-      const PlanningBoardLayout* _layout;
-
-      std::unique_ptr<Tool> _tool = nullptr;
 
       void invalidateBackground();
       void invalidateForeground();

@@ -8,11 +8,11 @@ namespace gui
   PlanningWidget::PlanningWidget(hotel::HotelCollection* hotelCollection)
   {
     // Assign the data
-    _hotelCollection = hotelCollection;
+    _context.setHotelCollection(hotelCollection);
 
     // Initialize the layout object with the above data
-    _layout.setPivotDate(boost::gregorian::day_clock::local_day());
-    _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByHotel);
+    _context.setPivotDate(boost::gregorian::day_clock::local_day());
+    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
 
     updateDateRange();
 
@@ -23,9 +23,9 @@ namespace gui
 
     _verticalScrollbar = new QScrollBar(Qt::Vertical);
     _horizontalScrollbar = new QScrollBar(Qt::Horizontal);
-    _planningBoard = new planningwidget::PlanningBoardWidget(&_layout);
-    _roomList = new planningwidget::RoomListWidget(&_layout);
-    _dateBar = new planningwidget::DateBarWidget(&_layout);
+    _planningBoard = new planningwidget::PlanningBoardWidget(&_context);
+    _roomList = new planningwidget::RoomListWidget(&_context);
+    _dateBar = new planningwidget::DateBarWidget(&_context);
 
     // Wire up the scroll bars
     _planningBoard->setHorizontalScrollBar(_horizontalScrollbar);
@@ -44,14 +44,24 @@ namespace gui
     setLayout(grid);
 
     // Add data to the sub-widgets
-    for (auto room : _hotelCollection->allRooms())
+    for (auto room : hotelCollection->allRooms())
       _roomList->addRoomItem(room);
+  }
+
+  void PlanningWidget::registerTool(const std::string &toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
+  {
+    _context.registerTool(toolName, std::move(tool));
+  }
+
+  void PlanningWidget::activateTool(const std::string &toolName)
+  {
+    _context.activateTool(toolName);
   }
 
   void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
   {
     // TODO: This should not update the whole layout!
-    _layout.setPivotDate(pivotDate);
+    _context.setPivotDate(pivotDate);
     updateLayout();
     emit pivotDateChanged(pivotDate);
   }
@@ -59,9 +69,9 @@ namespace gui
   void PlanningWidget::keyPressEvent(QKeyEvent* event)
   {
     if (event->key() == Qt::Key_F1)
-      _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByHotel);
+      _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
     if (event->key() == Qt::Key_F2)
-      _layout.initializeLayout(*_hotelCollection, planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
+      _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
     if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
     {
@@ -90,7 +100,8 @@ namespace gui
 
   void PlanningWidget::updateDateRange()
   {
-    auto planningExtent = boost::gregorian::date_period(_layout.pivotDate(), _layout.pivotDate());
+    auto pivotDate = _context.layout().pivotDate();
+    auto planningExtent = boost::gregorian::date_period(pivotDate, pivotDate);
     auto planningBoard = observedPlanningBoard();
     if (planningBoard != nullptr)
       planningExtent = planningBoard->getPlanningExtent();
@@ -100,9 +111,10 @@ namespace gui
         planningExtent.begin() + boost::gregorian::days(-7), planningExtent.begin() + boost::gregorian::days(365)));
 
     // Apply the scene size
-    auto left = _layout.getDatePositionX(dateRange.begin()) - 10;
-    auto right = _layout.getDatePositionX(dateRange.end()) + 10;
-    _layout.setSceneRect(QRectF(left, 0, right - left, _layout.getHeight()));
+    auto& layout = _context.layout();
+    auto left = layout.getDatePositionX(dateRange.begin()) - 10;
+    auto right = layout.getDatePositionX(dateRange.end()) + 10;
+    layout.setSceneRect(QRectF(left, 0, right - left, layout.getHeight()));
   }
 
   void PlanningWidget::updateLayout()

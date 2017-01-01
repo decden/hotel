@@ -1,12 +1,12 @@
-#include "tool.h"
+#include "gui/planningwidget/tool.h"
 
 namespace gui {
-namespace planningwidget {
+  namespace planningwidget {
 
-Tool::Tool()
-{
+    Tool::Tool()
+    {
 
-}
+    }
 
-} // namespace planningwidget
+  } // namespace planningwidget
 } // namespace gui

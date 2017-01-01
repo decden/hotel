@@ -1,5 +1,6 @@
 #include "gui/planningwidget/reservationrenderer.h"
 
+#include "gui/planningwidget/context.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
 namespace gui
@@ -17,18 +18,18 @@ namespace gui
     );
   }
 
-  void ReservationRenderer::paintAtom(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
+  void ReservationRenderer::paintAtom(QPainter *painter, const Context &context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
   {
-    drawAtomBackground(painter, layout, atom, atomRect, isSelected);
-    drawAtomText(painter, layout, atom, atomRect, isSelected);
+    drawAtomBackground(painter, context, atom, atomRect, isSelected);
+    drawAtomText(painter, context, atom, atomRect, isSelected);
   }
 
-  void ReservationRenderer::paintReservationConnections(QPainter *painter, const PlanningBoardLayout &layout, const std::vector<QRectF> &atomRects, bool isSelected) const
+  void ReservationRenderer::paintReservationConnections(QPainter *painter, const Context &context, const std::vector<QRectF> &atomRects, bool isSelected) const
   {
     if (isSelected)
     {
       // Draw the connection links between items
-      auto& appearance = layout.appearance();
+      auto& appearance = context.appearance();
       if (atomRects.size() > 1)
       {
         painter->save();
@@ -64,9 +65,9 @@ namespace gui
     }
   }
 
-  void ReservationRenderer::drawAtomBackground(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
+  void ReservationRenderer::drawAtomBackground(QPainter *painter, const Context &context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
   {
-    auto itemColor = getAtomBackgroundColor(layout, atom, isSelected);
+    auto itemColor = getAtomBackgroundColor(context, atom, isSelected);
     const int cornerRadius = 5;
 
     painter->save();
@@ -89,21 +90,21 @@ namespace gui
     painter->restore();
   }
 
-  void ReservationRenderer::drawAtomText(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
+  void ReservationRenderer::drawAtomText(QPainter *painter, const Context& context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
     {
       painter->save();
       painter->setClipRect(atomRect);
-      painter->setPen(getAtomTextColor(layout, atom, isSelected));
-      painter->setFont(layout.appearance().atomTextFont);
+      painter->setPen(getAtomTextColor(context, atom, isSelected));
+      painter->setFont(context.appearance().atomTextFont);
       painter->drawText(atomRect.adjusted(5, 2, -2, -2), Qt::AlignLeft | Qt::AlignVCenter, getAtomText(atom, isSelected));
       painter->restore();
     }
 
-    QColor ReservationRenderer::getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const
+    QColor ReservationRenderer::getAtomBackgroundColor(const Context &context, const hotel::ReservationAtom &atom, bool isSelected) const
     {
       using ReservationStatus = hotel::Reservation::ReservationStatus;
 
-      auto& appearance = layout.appearance();
+      auto& appearance = context.appearance();
       if (isSelected)
       {
         if (atom.reservation()->status() == ReservationStatus::CheckedOut ||
@@ -130,10 +131,10 @@ namespace gui
       }
     }
 
-    QColor ReservationRenderer::getAtomTextColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const
+    QColor ReservationRenderer::getAtomTextColor(const Context &context, const hotel::ReservationAtom &atom, bool isSelected) const
     {
-      auto& appearance = layout.appearance();
-      auto itemColor = getAtomBackgroundColor(layout, atom, isSelected);
+      auto& appearance = context.appearance();
+      auto itemColor = getAtomBackgroundColor(context, atom, isSelected);
       if (itemColor.lightness() > 200)
         return appearance.atomDarkTextColor;
       else
@@ -152,35 +153,35 @@ namespace gui
       return text;
     }
 
-    void PrivacyReservationRenderer::paintAtom(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
+    void PrivacyReservationRenderer::paintAtom(QPainter *painter, const Context &context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
     {
-      drawAtomBackground(painter, layout, atom, atomRect, isSelected);
+      drawAtomBackground(painter, context, atom, atomRect, isSelected);
       if (isSelected)
-        drawAtomText(painter, layout, atom, atomRect, isSelected);
+        drawAtomText(painter, context, atom, atomRect, isSelected);
     }
 
-    QColor PrivacyReservationRenderer::getAtomBackgroundColor(const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, bool isSelected) const
+    QColor PrivacyReservationRenderer::getAtomBackgroundColor(const Context &context, const hotel::ReservationAtom &atom, bool isSelected) const
     {
-      auto& appearance = layout.appearance();
+      auto& appearance = context.appearance();
       return isSelected ? appearance.atomSelectedColor : appearance.atomDefaultColor;
     }
 
-    void PrivacyReservationRenderer::drawAtomBackground(QPainter *painter, const PlanningBoardLayout &layout, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
+    void PrivacyReservationRenderer::drawAtomBackground(QPainter *painter, const Context &context, const hotel::ReservationAtom &atom, const QRectF &atomRect, bool isSelected) const
     {
-      QColor backgroundColor = getAtomBackgroundColor(layout, atom, isSelected);
+      QColor backgroundColor = getAtomBackgroundColor(context, atom, isSelected);
       painter->fillRect(atomRect.adjusted(0, 0, 0, -1), backgroundColor);
     }
 
-    QColor HighlightArrivalsRenderer::getAtomBackgroundColor(const PlanningBoardLayout& layout, const hotel::ReservationAtom& atom, bool isSelected) const
+    QColor HighlightArrivalsRenderer::getAtomBackgroundColor(const Context &context, const hotel::ReservationAtom& atom, bool isSelected) const
     {
-      auto color = ReservationRenderer::getAtomBackgroundColor(layout, atom, isSelected);
-      color = mix(color, layout.appearance().atomDefaultColor);
+      auto color = ReservationRenderer::getAtomBackgroundColor(context, atom, isSelected);
+      color = mix(color, context.appearance().atomDefaultColor);
 
-      bool isHighlighted = atom.dateRange().begin() == layout.pivotDate();
+      bool isHighlighted = atom.dateRange().begin() == context.layout().pivotDate();
       if (isHighlighted)
         color = color.lighter(120);
       if (isSelected)
-        color = layout.appearance().atomSelectedColor;
+        color = context.appearance().atomSelectedColor;
 
       return color;
     }

@@ -9,7 +9,7 @@ namespace gui
   namespace planningwidget
   {
 
-    PlanningBoardWidget::PlanningBoardWidget(const PlanningBoardLayout* layout) : QGraphicsView(), _layout(layout)
+    PlanningBoardWidget::PlanningBoardWidget(Context *context) : QGraphicsView(), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -17,15 +17,8 @@ namespace gui
       setCacheMode(QGraphicsView::CacheBackground);
 
       _scene = new QGraphicsScene;
-      _scene->setSceneRect(_layout->sceneRect());
+      _scene->setSceneRect(_context->layout().sceneRect());
       setScene(_scene);
-
-      // Init tools
-      if (_tool)
-      {
-        _tool->init(layout, _scene);
-        _tool->load();
-      }
 
       // No scrollbars
       setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -34,24 +27,25 @@ namespace gui
 
     void PlanningBoardWidget::drawBackground(QPainter* painter, const QRectF& rect)
     {
-      auto& appearance = _layout->appearance();
+      auto& appearance = _context->appearance();
+      auto& layout = _context->layout();
       painter->fillRect(rect, appearance.widgetBackground);
 
       // Draw the horizontal alternating rows
-      for (auto& row : _layout->rowGeometries())
+      for (auto& row : layout.rowGeometries())
       {
         if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
           appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
       }
 
       // Get the horizontal date range
-      auto leftDatePos = _layout->getNearestDatePosition(rect.left() - _layout->dateColumnWidth());
+      auto leftDatePos = layout.getNearestDatePosition(rect.left() - layout.dateColumnWidth());
 
       // Draw the vertical day lines
       auto posX = leftDatePos.second;
       auto dayOfWeek = leftDatePos.first.day_of_week();
       painter->setPen(appearance.boardWeekdayColumnColor);
-      while (posX < rect.right() + _layout->dateColumnWidth())
+      while (posX < rect.right() + layout.dateColumnWidth())
       {
         if (dayOfWeek == boost::gregorian::Sunday)
         {
@@ -67,12 +61,12 @@ namespace gui
         }
         else
           painter->drawLine(posX - 1, rect.top(), posX - 1, rect.bottom());
-        posX += _layout->dateColumnWidth();
+        posX += layout.dateColumnWidth();
         dayOfWeek = (dayOfWeek + 1) % 7;
       }
 
       // Fill in the separator rows (we do not want to have vertical lines in there)
-      for (auto row : _layout->rowGeometries())
+      for (auto row : layout.rowGeometries())
       {
         if (row.rowType() == PlanningBoardRowGeometry::SeparatorRow)
           appearance.drawRowBackground(painter, row, QRect(rect.left(), row.top(), rect.width(), row.height()));
@@ -81,11 +75,13 @@ namespace gui
 
     void PlanningBoardWidget::drawForeground(QPainter* painter, const QRectF& rect)
     {
+      auto& layout = _context->layout();
+      auto& appearance = _context->appearance();
       // Draw the bar indicating the pivot day
-      auto pivotDay = _layout->pivotDate();
-      auto x = _layout->getDatePositionX(pivotDay);
+      auto pivotDay = layout.pivotDate();
+      auto x = layout.getDatePositionX(pivotDay);
       auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
-      auto lineColor = _layout->appearance().boardPivotTodayColor;
+      auto lineColor = appearance.boardPivotTodayColor;
       lineColor.setAlpha(0xA0);
       painter->fillRect(todayRect, lineColor);
     }
@@ -97,8 +93,9 @@ namespace gui
       if (!event->isAccepted())
       {
         auto pos = mapToScene(event->pos());
-        if (_tool)
-          _tool->mousePressEvent(event, pos);
+        auto tool = _context->activeTool();
+        if (tool)
+          tool->mousePressEvent(event, pos);
       }
     }
 
@@ -108,23 +105,26 @@ namespace gui
       if (!event->isAccepted())
       {
         auto pos = mapToScene(event->pos());
-        if (_tool)
-          _tool->mouseReleaseEvent(event, pos);
+        auto tool = _context->activeTool();
+        if (tool)
+          tool->mouseReleaseEvent(event, pos);
       }
     }
 
     void PlanningBoardWidget::mouseMoveEvent(QMouseEvent *event)
     {
       auto pos = mapToScene(event->pos());
-      if (_tool)
-        _tool->mouseMoveEvent(event, pos);
+      auto tool = _context->activeTool();
+      if (tool)
+        tool->mouseMoveEvent(event, pos);
     }
 
     void PlanningBoardWidget::addReservations(const std::vector<const hotel::Reservation*>& reservations)
     {
       for (auto& reservation : reservations)
       {
-        auto item = new PlanningBoardReservationItem(_layout, reservation);
+        assert(_context != nullptr);
+        auto item = new PlanningBoardReservationItem(_context, reservation);
         _scene->addItem(item);
       }
     }
@@ -170,7 +170,7 @@ namespace gui
           reservationItem->updateLayout();
       }
 
-      _scene->setSceneRect(_layout->sceneRect());
+      _scene->setSceneRect(_context->layout().sceneRect());
       invalidateBackground();
       invalidateForeground();
     }
