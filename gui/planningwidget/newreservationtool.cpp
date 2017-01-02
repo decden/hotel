@@ -128,5 +128,27 @@ namespace gui
       }
     }
 
+    void NewReservationTool::keyPressEvent(QKeyEvent *event)
+    {
+      // Ignore key events while manipulating a ghost
+      if (_currentGhost != nullptr)
+        return;
+
+      if (event->key() == Qt::Key_Escape)
+      {
+        unload();
+        load();
+      }
+      else if (event->key() == Qt::Key_Backspace)
+      {
+        if (!_ghosts.empty())
+        {
+          delete _ghosts[_ghosts.size() - 1];
+          _ghosts.pop_back();
+        }
+      }
+
+    }
+
   } // namespace planningwidget
 } // namespace gui

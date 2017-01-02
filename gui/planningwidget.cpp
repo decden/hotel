@@ -77,6 +77,10 @@ namespace gui
     {
       updateLayout();
     }
+
+    auto tool = _context.activeTool();
+    if (tool)
+      tool->keyPressEvent(event);
   }
 
   void PlanningWidget::reservationsAdded(const std::vector<const hotel::Reservation*>& reservations)

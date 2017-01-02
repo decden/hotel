@@ -64,6 +64,7 @@ namespace gui
       virtual void mousePressEvent(QMouseEvent *event, const QPointF &position) override;
       virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &position) override;
       virtual void mouseMoveEvent(QMouseEvent *event, const QPointF& position) override;
+      virtual void keyPressEvent(QKeyEvent* event) override;
 
     private:
       //! Information needed to draw on the planning widget
