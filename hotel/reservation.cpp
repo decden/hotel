@@ -15,7 +15,7 @@ namespace hotel
   void Reservation::setDescription(const std::string& newDescription) { _description = newDescription; }
   void Reservation::setNumberOfAdults(int adults) { _adults = adults; }
   void Reservation::setNumberOfChildren(int children) { _children = children; }
-
+  void Reservation::setReservationOwnerPerson(boost::optional<int> personId) { _reservationOwnerPersonId = personId; }
   ReservationAtom* Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
   {
     if (_atoms.empty() || _atoms[_atoms.size() - 1]->dateRange().end() == dateRange.begin())
@@ -56,6 +56,7 @@ namespace hotel
   const std::string& Reservation::description() const { return _description; }
   int Reservation::numberOfAdults() const { return _adults; }
   int Reservation::numberOfChildren() const { return _children; }
+  boost::optional<int> Reservation::reservationOwnerPersonId() { return _reservationOwnerPersonId; }
   const std::vector<std::unique_ptr<ReservationAtom>>& Reservation::atoms() const { return _atoms; }
 
   boost::gregorian::date_period Reservation::dateRange() const

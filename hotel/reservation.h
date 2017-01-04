@@ -5,6 +5,7 @@
 #include "hotel/reservation.h"
 
 #include <boost/date_time.hpp>
+#include <boost/optional.hpp>
 
 #include <memory>
 #include <string>
@@ -50,6 +51,7 @@ namespace hotel
     void setDescription(const std::string& newDescription);
     void setNumberOfAdults(int adults);
     void setNumberOfChildren(int adults);
+    void setReservationOwnerPerson(boost::optional<int> personId);
 
     ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
     ReservationAtom* addContinuation(int room, boost::gregorian::date date);
@@ -58,6 +60,7 @@ namespace hotel
     const std::string& description() const;
     int numberOfAdults() const;
     int numberOfChildren() const;
+    boost::optional<int> reservationOwnerPersonId();
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
 
     boost::gregorian::date_period dateRange() const;
@@ -69,6 +72,9 @@ namespace hotel
   private:
     ReservationStatus _status;
     std::string _description;
+
+    boost::optional<int> _reservationOwnerPersonId;
+
     int _adults;
     int _children;
     std::vector<std::unique_ptr<ReservationAtom>> _atoms;
