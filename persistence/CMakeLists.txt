@@ -1,9 +1,13 @@
 set(SRC
 	datasource.cpp
+
+	op/operations.cpp
 )
 
 set(SRC_INCLUDES
 	datasource.h
+
+	op/operations.h
 )
 
 add_library(persistence ${SRC} ${SRC_INCLUDES})

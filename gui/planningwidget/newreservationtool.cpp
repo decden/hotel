@@ -2,6 +2,8 @@
 
 #include "gui/planningwidget/context.h"
 
+#include "persistence/op/operations.h"
+
 #include <QGraphicsScene>
 #include <QPainter>
 
@@ -147,7 +149,21 @@ namespace gui
           _ghosts.pop_back();
         }
       }
+      else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)
+      {
+        // Gather reservations
+        std::vector<std::unique_ptr<hotel::Reservation>> reservations;
+        for(auto ghost : _ghosts)
+        {
+          reservations.push_back(std::make_unique<hotel::Reservation>(std::move(ghost->reservation)));
+          delete ghost;
+        }
+        _ghosts.clear();
 
+        namespace op = persistence::op;
+        for (auto& reservation : reservations)
+          _context->dataSource().queueOperation(op::StoreNewReservation{std::move(reservation)});
+      }
     }
 
   } // namespace planningwidget

@@ -36,6 +36,7 @@ namespace gui
       void setPlanningBoardScene(QGraphicsScene* scene);
       void setPlanning(const hotel::PlanningBoard *planning);
 
+      persistence::DataSource& dataSource();
       hotel::HotelCollection& hotelCollection();
       const hotel::HotelCollection& hotelCollection() const;
       const hotel::PlanningBoard& planning() const;

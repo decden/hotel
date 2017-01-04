@@ -57,7 +57,7 @@ namespace hotel
 
     // Notify the observers and return
     for (auto& observer : _observers)
-      observer->reservationsAdded({reservation.get()});
+      observer->reservationsAdded({reservationPtr});
     return reservationPtr;
   }
 

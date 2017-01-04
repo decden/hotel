@@ -1,6 +1,8 @@
 #ifndef PERSISTENCE_DATASOURCE_H
 #define PERSISTENCE_DATASOURCE_H
 
+#include "persistence/op/operations.h"
+
 #include "hotel/persistence/sqlitestorage.h"
 #include "hotel/planning.h"
 
@@ -8,7 +10,6 @@
 
 namespace persistence
 {
-
   /**
    * @brief The DataSource class handles all writing and reading access to the data.
    */
@@ -21,6 +22,14 @@ namespace persistence
     const hotel::HotelCollection& hotels() const;
     hotel::PlanningBoard& planning();
     const hotel::PlanningBoard& planning() const;
+
+    /**
+     * @brief queueOperation queues a given operation to perform on the data
+     * @param operation The operation to perform
+     *
+     * @note The operation might be performed immediately or queued for later execution
+     */
+    void queueOperation(op::Operation operation);
 
   private:
     // Backing store for the data

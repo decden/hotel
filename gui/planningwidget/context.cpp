@@ -14,6 +14,8 @@ namespace gui
     void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
     void Context::setPlanning(const hotel::PlanningBoard* planning) { _planning = planning; }
+
+    persistence::DataSource& Context::dataSource() { return *_dataSource; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 
     void Context::initializeLayout(PlanningBoardLayout::LayoutType layoutType)

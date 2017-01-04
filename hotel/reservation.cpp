@@ -3,12 +3,31 @@
 namespace hotel
 {
 
-  Reservation::Reservation(const std::string& description) : _status(Unknown), _description(description), _adults(0), _children(0) {}
+  Reservation::Reservation(const std::string& description)
+      : _status(Unknown), _description(description), _reservationOwnerPersonId(), _adults(0), _children(0), _atoms()
+  {
+  }
 
   hotel::Reservation::Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange)
-      : _status(Unknown), _description(description), _adults(0), _children(0)
+      : _status(Unknown), _description(description), _reservationOwnerPersonId(), _adults(0), _children(0), _atoms()
   {
     _atoms.push_back(std::make_unique<ReservationAtom>(this, roomId, dateRange));
+  }
+
+  Reservation::Reservation(Reservation&& that)
+      : _status(that._status), _description(std::move(that._description)),
+        _reservationOwnerPersonId(that._reservationOwnerPersonId), _adults(that._adults), _children(that._children),
+        _atoms(std::move(that._atoms))
+  {
+    that._status = Unknown;
+    that._description = "";
+    that._reservationOwnerPersonId = boost::optional<int>();
+    that._adults = 0;
+    that._children = 0;
+    that._atoms.clear();
+
+    for (auto& atom : _atoms)
+      atom->_reservation = this;
   }
 
   void Reservation::setStatus(Reservation::ReservationStatus status) { _status = status; }
