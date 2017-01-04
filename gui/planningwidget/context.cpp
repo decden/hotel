@@ -9,7 +9,7 @@ namespace gui
 
     Context::Context() {}
 
-    void Context::setHotelCollection(hotel::HotelCollection* hotelCollection) { _hotelCollection = hotelCollection; }
+    void Context::setDataSource(persistence::DataSource *dataSource) { _dataSource = dataSource; }
     void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
     void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
@@ -18,14 +18,14 @@ namespace gui
 
     void Context::initializeLayout(PlanningBoardLayout::LayoutType layoutType)
     {
-      assert(_hotelCollection != nullptr);
-      if (_hotelCollection)
-        _layout.initializeLayout(*_hotelCollection, layoutType);
+      assert(_dataSource != nullptr);
+      if (_dataSource)
+        _layout.initializeLayout(_dataSource->hotels(), layoutType);
     }
 
-    hotel::HotelCollection* Context::hotelCollection() { return _hotelCollection; }
-    const hotel::HotelCollection *Context::hotelCollection() const { return _hotelCollection; }
-    const hotel::PlanningBoard *Context::planning() const { return _planning; }
+    hotel::HotelCollection& Context::hotelCollection() { return _dataSource->hotels(); }
+    const hotel::HotelCollection& Context::hotelCollection() const { return _dataSource->hotels(); }
+    const hotel::PlanningBoard& Context::planning() const { return _dataSource->planning(); }
     PlanningBoardLayout& Context::layout() { return _layout; }
     const PlanningBoardLayout& Context::layout() const { return _layout; }
     PlanningBoardAppearance& Context::appearance() { return _appearance; }

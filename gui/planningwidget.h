@@ -7,6 +7,8 @@
 #include "gui/planningwidget/planningboardwidget.h"
 #include "gui/planningwidget/roomlistwidget.h"
 
+#include "persistence/datasource.h"
+
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
@@ -33,7 +35,7 @@ namespace gui
   {
     Q_OBJECT
   public:
-    PlanningWidget(hotel::HotelCollection* hotelCollection);
+    PlanningWidget(persistence::DataSource* dataSource);
 
     void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
     void activateTool(const std::string& toolName);

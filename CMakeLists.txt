@@ -27,6 +27,7 @@ find_package(Qt5Widgets REQUIRED)
 #
 
 add_subdirectory (hotel)
+add_subdirectory (persistence)
 add_subdirectory (cli)
 add_subdirectory (gui)
 

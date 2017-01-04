@@ -1,3 +1,5 @@
+#include "persistence/datasource.h"
+
 #include "hotel/persistence/sqlitestorage.h"
 
 #include "gui/planningwidget.h"
@@ -16,15 +18,11 @@ int main(int argc, char** argv)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
-  auto storage = std::make_unique<hotel::persistence::SqliteStorage>("test.db");
-  auto hotelCollection = storage->loadHotels();
-  auto planning = storage->loadPlanning(hotelCollection->allRoomIDs());
+  auto dataSource = std::make_unique<persistence::DataSource>("test.db");
 
-  gui::PlanningWidget widget(hotelCollection.get());
+  gui::PlanningWidget widget(dataSource.get());
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
   widget.activateTool("new-reservation");
-
-  widget.setObservedPlanningBoard(planning.get());
   widget.show();
 
   return app.exec();

@@ -5,10 +5,10 @@
 
 namespace gui
 {
-  PlanningWidget::PlanningWidget(hotel::HotelCollection* hotelCollection)
+  PlanningWidget::PlanningWidget(persistence::DataSource *dataSource)
   {
     // Assign the data
-    _context.setHotelCollection(hotelCollection);
+    _context.setDataSource(dataSource);
 
     // Initialize the layout object with the above data
     _context.setPivotDate(boost::gregorian::day_clock::local_day());
@@ -44,8 +44,10 @@ namespace gui
     setLayout(grid);
 
     // Add data to the sub-widgets
-    for (auto room : hotelCollection->allRooms())
+    for (auto room : dataSource->hotels().allRooms())
       _roomList->addRoomItem(room);
+
+    setObservedPlanningBoard(&dataSource->planning());
   }
 
   void PlanningWidget::registerTool(const std::string &toolName, std::unique_ptr<gui::planningwidget::Tool> tool)

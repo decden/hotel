@@ -62,10 +62,8 @@ namespace gui
         return;
 
       // Compute availability
-      auto planning = _context->planning();
-      if (!planning)
-        return;
-      auto availableDays = planning->getAvailableDaysFrom(row->id(), date);
+      auto& planning = _context->planning();
+      auto availableDays = planning.getAvailableDaysFrom(row->id(), date);
       auto maximumDate = date + boost::gregorian::days(availableDays);
 
       // Narrow down the availability by also considering the ghosts, such that the user cannot create two overlapping
@@ -127,6 +125,8 @@ namespace gui
         _currentGhost->updateLayout();
       }
     }
+
+
 
     void NewReservationTool::keyPressEvent(QKeyEvent *event)
     {
