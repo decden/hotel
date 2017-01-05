@@ -141,21 +141,79 @@ TEST(Hotel, HotelCollection)
 TEST(Hotel, ReservationAtom)
 {
   using namespace boost::gregorian;
-  hotel::ReservationAtom atom1(10, date_period(date(2017, 1, 1), date(2017, 10, 1)));
-  hotel::ReservationAtom atom2(12, date_period(date(2017, 1, 1), date(2017, 10, 1)));
-  hotel::ReservationAtom atom3(10, date_period(date(2017, 10, 1), date(2017, 11, 1)));
+  hotel::ReservationAtom atom1(10, date_period(date(2017, 1, 1), date(2017, 1, 10)));
+  hotel::ReservationAtom atom2(12, date_period(date(2017, 1, 1), date(2017, 1, 10)));
+  hotel::ReservationAtom atom3(10, date_period(date(2017, 1, 10), date(2017, 1, 20)));
   ASSERT_EQ(10, atom1.roomId());
   ASSERT_EQ(12, atom2.roomId());
   ASSERT_EQ(10, atom3.roomId());
-  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom1.dateRange());
-  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom2.dateRange());
-  ASSERT_EQ(date_period(date(2017, 10, 1), date(2017, 11, 1)), atom3.dateRange());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 1, 10)), atom1.dateRange());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 1, 10)), atom2.dateRange());
+  ASSERT_EQ(date_period(date(2017, 1, 10), date(2017, 1, 20)), atom3.dateRange());
   ASSERT_NE(atom1, atom2);
   ASSERT_NE(atom1, atom3);
   ASSERT_NE(atom2, atom3);
 
   auto atom1Copy = atom1;
   ASSERT_EQ(10, atom1Copy.roomId());
-  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom1Copy.dateRange());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 1, 10)), atom1Copy.dateRange());
   ASSERT_EQ(atom1Copy, atom1);
+}
+
+TEST(Hotel, Reservation)
+{
+  using namespace boost::gregorian;
+
+  hotel::Reservation emptyReservation("Empty");
+  ASSERT_EQ(hotel::Reservation::Unknown, emptyReservation.status());
+  ASSERT_EQ("Empty", emptyReservation.description());
+  ASSERT_EQ(0, emptyReservation.numberOfAdults());
+  ASSERT_EQ(0, emptyReservation.numberOfChildren());
+  ASSERT_EQ(boost::optional<int>(), emptyReservation.reservationOwnerPersonId());
+  ASSERT_EQ(0, emptyReservation.atoms().size());
+  ASSERT_EQ(nullptr, emptyReservation.firstAtom());
+  ASSERT_EQ(nullptr, emptyReservation.lastAtom());
+  ASSERT_TRUE(emptyReservation.dateRange().is_null());
+  ASSERT_FALSE(emptyReservation.isValid());
+  ASSERT_EQ(0, emptyReservation.length());
+
+  hotel::Reservation reservation("Valid", 1, date_period(date(2017, 1, 1), date(2017, 1, 10)));
+  ASSERT_EQ(hotel::Reservation::Unknown, reservation.status());
+  ASSERT_EQ("Valid", reservation.description());
+  ASSERT_EQ(0, reservation.numberOfAdults());
+  ASSERT_EQ(0, reservation.numberOfChildren());
+  ASSERT_EQ(boost::optional<int>(), reservation.reservationOwnerPersonId());
+  ASSERT_EQ(1, reservation.atoms().size());
+  ASSERT_NE(nullptr, reservation.firstAtom());
+  ASSERT_NE(nullptr, reservation.lastAtom());
+  ASSERT_EQ(reservation.firstAtom(), reservation.lastAtom());
+  ASSERT_FALSE(reservation.dateRange().is_null());
+  ASSERT_TRUE(reservation.isValid());
+  ASSERT_EQ(9, reservation.length());
+
+  // Add continuation
+  reservation.addContinuation(1, date(2017, 1, 20));
+  ASSERT_EQ(2, reservation.atoms().size());
+  ASSERT_NE(reservation.firstAtom(), reservation.lastAtom());
+  ASSERT_EQ(19, reservation.length());
+
+  // Add atom
+  reservation.addAtom(10, date_period(date(2017, 1, 20), date(2017, 1, 30)));
+  ASSERT_EQ(3, reservation.atoms().size());
+  ASSERT_NE(reservation.firstAtom(), reservation.lastAtom());
+  ASSERT_EQ(29, reservation.length());
+
+  // TODO: Copying and moving test
+
+  // Adding invalid continuations
+  // Dates are in the past
+  ASSERT_ANY_THROW(reservation.addContinuation(1, date(2016, 1, 1)));
+  ASSERT_ANY_THROW(reservation.addContinuation(1, date(2017, 1, 30)));
+  ASSERT_ANY_THROW(reservation.addAtom(1, date_period(date(2017, 1, 1), date(2017, 1, 10))));
+  // Dates are not contiguous
+  ASSERT_ANY_THROW(reservation.addAtom(1, date_period(date(2017, 2, 5), date(2017, 2, 10))));
+  // Date range is invalid (end date is smaller then start date)
+  ASSERT_ANY_THROW(reservation.addAtom(1, date_period(date(2017, 1, 30), date(2017, 1, 10))));
+  // Adding a continuation to an empty reservation is always forbidden
+  ASSERT_ANY_THROW(emptyReservation.addContinuation(1, date(2016, 1, 1)));
 }
