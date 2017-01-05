@@ -229,7 +229,7 @@ namespace hotel
       for (auto& atom : reservation.atoms())
       {
         auto& q = query("reservation_atom.insert");
-        q.execute(reservation.id(), atom->_roomId, atom->_dateRange.begin(), atom->_dateRange.end());
+        q.execute(reservation.id(), atom->roomId(), atom->dateRange().begin(), atom->dateRange().end());
         atom->setId(static_cast<int>(lastInsertId()));
       }
     }

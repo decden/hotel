@@ -62,7 +62,10 @@ namespace hotel
     int numberOfAdults() const;
     int numberOfChildren() const;
     boost::optional<int> reservationOwnerPersonId();
+
     const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
+    const ReservationAtom* firstAtom() const;
+    const ReservationAtom* lastAtom() const;
 
     boost::gregorian::date_period dateRange() const;
 
@@ -82,30 +85,27 @@ namespace hotel
   };
 
   /**
-   * @brief The ReservationAtom class represents one single reserved room over a given date period
-   *
-   * Objects of this class are owned by a Reservation. Each Atom keeps a back pointer to the parent reservation.
+   * @brief The ReservationAtom class represents one single reserved room over a given date period.
    */
   class ReservationAtom : public PersistentObject
   {
   public:
-    ReservationAtom(Reservation* reservation, const int room, boost::gregorian::date_period dateRange);
+    ReservationAtom(const int room, boost::gregorian::date_period dateRange);
+    ReservationAtom(const ReservationAtom& that) = default;
 
-    const Reservation* reservation() const { return _reservation; }
     int roomId() const { return _roomId; }
     boost::gregorian::date_period dateRange() const { return _dateRange; }
-
-    bool isFirst() const { return _reservation && this == _reservation->atoms().begin()->get(); }
-    bool isLast() const { return _reservation && this == _reservation->atoms().rbegin()->get(); }
 
     void setDateRange(boost::gregorian::date_period dateRange) { _dateRange = dateRange; }
     void setRoomId(int id) { _roomId = id; }
 
-  public: // TODO: Public for now...
-    Reservation* _reservation;
+  private:
     int _roomId;
     boost::gregorian::date_period _dateRange;
   };
+
+  bool operator==(const ReservationAtom& a, const ReservationAtom& b);
+  bool operator!=(const ReservationAtom& a, const ReservationAtom& b);
 
 } // namespace hotel
 

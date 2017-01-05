@@ -20,7 +20,7 @@ namespace gui
         return;
 
       auto renderer = _context.appearance().reservationRenderer();
-      renderer->paintAtom(painter, _context, *atom, rect(), false);
+      renderer->paintAtom(painter, _context, reservation, *atom, rect(), false);
     }
 
     NewReservationTool::NewReservationTool()

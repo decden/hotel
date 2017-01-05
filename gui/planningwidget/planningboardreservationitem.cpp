@@ -6,9 +6,9 @@ namespace gui
 {
   namespace planningwidget
   {
-    PlanningBoardAtomItem::PlanningBoardAtomItem(const Context *context, const hotel::ReservationAtom* atom,
-                                                 QGraphicsItem* parent)
-        : QGraphicsRectItem(parent), _context(context), _atom(atom)
+    PlanningBoardAtomItem::PlanningBoardAtomItem(const Context* context, const hotel::Reservation* reservation,
+                                                 const hotel::ReservationAtom* atom, QGraphicsItem* parent)
+        : QGraphicsRectItem(parent), _context(context), _reservation(reservation), _atom(atom)
     {
       setFlag(QGraphicsItem::ItemIsSelectable);
       updateLayout();
@@ -16,14 +16,14 @@ namespace gui
 
     void PlanningBoardAtomItem::updateLayout()
     {
-      auto itemRect = _context->layout().getAtomRect(_atom->roomId(), _atom->_dateRange);
+      auto itemRect = _context->layout().getAtomRect(_atom->roomId(), _atom->dateRange());
       setRect(itemRect);
     }
 
     void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
     {
       auto renderer = _context->appearance().reservationRenderer();
-      renderer->paintAtom(painter, *_context, *_atom, rect(), isSelected());
+      renderer->paintAtom(painter, *_context, *_reservation, *_atom, rect(), isSelected());
     }
 
     QVariant PlanningBoardAtomItem::itemChange(QGraphicsItem::GraphicsItemChange change, const QVariant& value)
@@ -45,7 +45,7 @@ namespace gui
     {
       for (auto& atom : _reservation->atoms())
       {
-        auto item = new PlanningBoardAtomItem(context, atom.get());
+        auto item = new PlanningBoardAtomItem(context, _reservation, atom.get());
         item->setParentItem(this);
       }
     }

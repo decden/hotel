@@ -3,6 +3,9 @@
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
 #include "hotel/person.h"
+#include "hotel/reservation.h"
+
+#include "hotel/planning.h"
 
 TEST(Hotel, Person)
 {
@@ -133,4 +136,26 @@ TEST(Hotel, HotelCollection)
   ASSERT_EQ(1, copy.allRoomsByCategory(1).size());
   ASSERT_EQ("Room", copy.allRooms()[0]->name());
   ASSERT_EQ("Room", copy.allRoomsByCategory(1)[0]->name());
+}
+
+TEST(Hotel, ReservationAtom)
+{
+  using namespace boost::gregorian;
+  hotel::ReservationAtom atom1(10, date_period(date(2017, 1, 1), date(2017, 10, 1)));
+  hotel::ReservationAtom atom2(12, date_period(date(2017, 1, 1), date(2017, 10, 1)));
+  hotel::ReservationAtom atom3(10, date_period(date(2017, 10, 1), date(2017, 11, 1)));
+  ASSERT_EQ(10, atom1.roomId());
+  ASSERT_EQ(12, atom2.roomId());
+  ASSERT_EQ(10, atom3.roomId());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom1.dateRange());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom2.dateRange());
+  ASSERT_EQ(date_period(date(2017, 10, 1), date(2017, 11, 1)), atom3.dateRange());
+  ASSERT_NE(atom1, atom2);
+  ASSERT_NE(atom1, atom3);
+  ASSERT_NE(atom2, atom3);
+
+  auto atom1Copy = atom1;
+  ASSERT_EQ(10, atom1Copy.roomId());
+  ASSERT_EQ(date_period(date(2017, 1, 1), date(2017, 10, 1)), atom1Copy.dateRange());
+  ASSERT_EQ(atom1Copy, atom1);
 }

@@ -32,11 +32,6 @@ namespace hotel
     }
   }
 
-  ReservationAtom::ReservationAtom(Reservation* reservation, const int room, boost::gregorian::date_period dateRange)
-      : _reservation(reservation), _roomId(room), _dateRange(dateRange)
-  {
-  }
-
   Reservation* PlanningBoard::addReservation(std::unique_ptr<Reservation> reservation)
   {
     if (!canAddReservation(*reservation))
@@ -66,7 +61,7 @@ namespace hotel
     // Remove the atoms
     for (auto& atom : reservation->atoms())
     {
-      auto& roomAtoms = _rooms[atom->_roomId];
+      auto& roomAtoms = _rooms[atom->roomId()];
       auto atomIt = std::find(roomAtoms.begin(), roomAtoms.end(), atom.get());
       if (atomIt != roomAtoms.end())
         roomAtoms.erase(atomIt);
@@ -100,7 +95,7 @@ namespace hotel
   {
     auto& atoms = reservation.atoms();
     return std::all_of(atoms.begin(), atoms.end(),
-                       [this](auto& atom) { return this->isFree(atom->_roomId, atom->_dateRange); });
+                       [this](auto& atom) { return this->isFree(atom->roomId(), atom->dateRange()); });
   }
 
   bool PlanningBoard::isFree(int roomId, boost::gregorian::date_period period) const
@@ -111,7 +106,7 @@ namespace hotel
     // TODO: This can be made more efficient! log(n) instead of linear
     auto& roomAtoms = _rooms.find(roomId)->second;
     return std::none_of(roomAtoms.begin(), roomAtoms.end(),
-                        [&period](auto x) { return x->_dateRange.intersects(period); });
+                        [&period](auto x) { return x->dateRange().intersects(period); });
   }
 
   bool PlanningBoard::hasRoom(int roomId) const { return _rooms.find(roomId) != _rooms.end(); }
@@ -125,12 +120,12 @@ namespace hotel
     // atom.period.end > date
     auto& roomAtoms = _rooms.find(roomId)->second;
     auto it = std::upper_bound(roomAtoms.begin(), roomAtoms.end(), date,
-                               [](auto date, auto& x) { return date < x->_dateRange.end(); });
+                               [](auto date, auto& x) { return date < x->dateRange().end(); });
 
     if (it == roomAtoms.end())
       return std::numeric_limits<int>::max();
     else
-      return std::max<int>(0, ((*it)->_dateRange.begin() - date).days());
+      return std::max<int>(0, ((*it)->dateRange().begin() - date).days());
   }
 
   std::vector<Reservation*> PlanningBoard::reservations()
@@ -202,10 +197,10 @@ namespace hotel
   void PlanningBoard::insertAtom(const ReservationAtom* atom)
   {
     // TODO: This can be made more efficient! Linear instead of n*log(n)
-    auto& roomAtoms = _rooms[atom->_roomId];
+    auto& roomAtoms = _rooms[atom->roomId()];
     roomAtoms.push_back(atom);
     std::sort(roomAtoms.begin(), roomAtoms.end(),
-              [](auto x, auto y) { return x->_dateRange.begin() < y->_dateRange.begin(); });
+              [](auto x, auto y) { return x->dateRange().begin() < y->dateRange().begin(); });
   }
 
 } // namespace hotel
