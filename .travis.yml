@@ -1,0 +1,15 @@
+sudo: required
+dist: trusty
+language: cpp
+compiler:
+  - clang
+  - gcc
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y sqlite3 libboost-all-dev
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+script:
+  - make && ./tests/test
