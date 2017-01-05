@@ -2,6 +2,7 @@
 #define GUI_STATUSBAR_H
 
 #include <QWidget>
+#include <QObject>
 
 namespace gui
 {
@@ -23,7 +24,7 @@ namespace gui
       Warning,
       Error
     };
-    Q_ENUM(MessageSeverity);
+    Q_ENUM(MessageSeverity)
 
   public slots:
     /**
