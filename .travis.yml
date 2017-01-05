@@ -4,16 +4,10 @@ language: cpp
 compiler:
   - clang
   - gcc
-before_install:
-  # Update apt lists (in order to install boost 1.58+)
-  - cat /etc/apt/sources.list
-  - cp /etc/apt/sources.list /tmp/sources.list
-  - echo 'deb http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
-  - echo 'deb-src http://archive.ubuntu.com/ubuntu xenial main restricted universe multiverse' >> /tmp/sources.list
-  - sudo mv /tmp/sources.list /etc/apt/sources.list
 addons:
   apt:
     sources:
+      - sourceline: 'ppa:kzemek/boost'
       - llvm-toolchain-precise
       - ubuntu-toolchain-r-test
       - boost-latest
@@ -24,7 +18,10 @@ addons:
       - cmake
       - cmake-data
       - sqlite3
-      - libboost-all-dev
+      - boost1.58
+      - libboost-date-time1.58
+      - libboost-thread1.58
+      - libboost-system1.58
       - qt5-default
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
