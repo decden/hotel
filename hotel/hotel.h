@@ -20,13 +20,10 @@ namespace hotel
   public:
     RoomCategory(const std::string& shortCode, const std::string& name);
 
-    void setHotel(const Hotel* hotel);
-
     const std::string& shortCode() const;
     const std::string& name() const;
 
   private:
-    const Hotel* _hotel;
     std::string _shortCode;
     std::string _name;
   };
@@ -50,6 +47,8 @@ namespace hotel
   {
   public:
     Hotel(const std::string& name);
+    //! The copy constructor performs a deep copy of the object
+    Hotel(const Hotel& that);
 
     const std::string& name() const;
     const std::vector<std::unique_ptr<HotelRoom>>& rooms() const;
@@ -59,9 +58,9 @@ namespace hotel
     void addRoom(std::unique_ptr<HotelRoom> room, const std::string& categoryShortCode);
 
     RoomCategory* getCategoryById(int id);
+    RoomCategory* getCategoryByShortCode(const std::string& shortCode);
 
   private:
-    std::vector<std::unique_ptr<RoomCategory>>::iterator getCategoryByShortCode(const std::string& shortCode);
 
     std::string _name;
     std::vector<std::unique_ptr<RoomCategory>> _categories;

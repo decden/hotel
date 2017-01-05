@@ -1,4 +1,7 @@
 cmake_minimum_required (VERSION 2.8.11)
+
+option(test "Build test application." ON)
+
 project (hotel)
 set (CMAKE_CXX_STANDARD 14)
 include_directories(.)
@@ -23,16 +26,28 @@ include_directories(./extern/nlohmann_json)
 find_package(Qt5Widgets REQUIRED)
 
 #
+# Tests
+#
+
+if (test)
+	add_subdirectory(extern/googletest-release-1.8.0)
+	enable_testing()
+	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+	add_subdirectory(tests)
+endif()
+
+#
 # Libraries
 #
 
-add_subdirectory (hotel)
-add_subdirectory (persistence)
-add_subdirectory (cli)
-add_subdirectory (gui)
+add_subdirectory(hotel)
+add_subdirectory(persistence)
+add_subdirectory(cli)
+add_subdirectory(gui)
 
 #
 # Applications
 #
 
-add_subdirectory (guiapp)
+add_subdirectory(guiapp)
