@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/person.h"
 
 TEST(Hotel, Person)
@@ -90,4 +91,46 @@ TEST(Hotel, Hotel)
   ASSERT_EQ("CODE", copy.getCategoryById(1)->shortCode());
   ASSERT_EQ(1, copy.getCategoryByShortCode("CODE")->id());
   ASSERT_EQ("Room 1", copy.rooms()[0]->name());
+}
+
+TEST(Hotel, HotelCollection)
+{
+  hotel::HotelCollection emptyCollection;
+  ASSERT_EQ(0, emptyCollection.allRoomIDs().size());
+  ASSERT_EQ(0, emptyCollection.allCategoryIDs().size());
+  ASSERT_EQ(nullptr, emptyCollection.findRoomById(1));
+  ASSERT_EQ(0, emptyCollection.allRooms().size());
+  ASSERT_EQ(0, emptyCollection.allRoomsByCategory(1).size());
+
+  // Build a collection with one hotel
+  std::vector<std::unique_ptr<hotel::Hotel>> hotels;
+  auto hotel = std::make_unique<hotel::Hotel>("Hotel");
+  hotel->addRoomCategory(std::make_unique<hotel::RoomCategory>("CAT", "Category"));
+  hotel->getCategoryByShortCode("CAT")->setId(1);
+  hotel->addRoom(std::make_unique<hotel::HotelRoom>("Room"), "CAT");
+  hotel->rooms()[0]->setId(2);
+  hotels.push_back(std::move(hotel));
+
+  hotel::HotelCollection collection(std::move(hotels));
+  ASSERT_EQ(1, collection.allRoomIDs().size());
+  ASSERT_EQ(1, collection.allCategoryIDs().size());
+  ASSERT_EQ(2, collection.allRoomIDs()[0]);
+  ASSERT_EQ(1, collection.allCategoryIDs()[0]);
+  ASSERT_EQ(nullptr, collection.findRoomById(1));
+  ASSERT_NE(nullptr, collection.findRoomById(2));
+  ASSERT_EQ(1, collection.allRooms().size());
+  ASSERT_EQ(1, collection.allRoomsByCategory(1).size());
+  ASSERT_EQ("Room", collection.allRooms()[0]->name());
+  ASSERT_EQ("Room", collection.allRoomsByCategory(1)[0]->name());
+
+  hotel::HotelCollection copy = collection;
+  ASSERT_EQ(1, copy.allRoomIDs().size());
+  ASSERT_EQ(1, copy.allCategoryIDs().size());
+  ASSERT_EQ(2, copy.allRoomIDs()[0]);
+  ASSERT_EQ(1, copy.allCategoryIDs()[0]);
+  ASSERT_EQ(nullptr, copy.findRoomById(1));
+  ASSERT_EQ(1, copy.allRooms().size());
+  ASSERT_EQ(1, copy.allRoomsByCategory(1).size());
+  ASSERT_EQ("Room", copy.allRooms()[0]->name());
+  ASSERT_EQ("Room", copy.allRoomsByCategory(1)[0]->name());
 }

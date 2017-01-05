@@ -18,6 +18,7 @@ namespace hotel
   public:
     HotelCollection();
     explicit HotelCollection(std::vector<std::unique_ptr<hotel::Hotel>> hotel);
+    HotelCollection(const HotelCollection& that);
 
     const std::vector<std::unique_ptr<Hotel>> &hotels() const;
 

@@ -6,6 +6,13 @@ namespace hotel
 
   HotelCollection::HotelCollection(std::vector<std::unique_ptr<Hotel>> hotel) : _hotels(std::move(hotel)) {}
 
+  HotelCollection::HotelCollection(const HotelCollection &that)
+  {
+    // Deep copy all hotels
+    for (auto& hotel : that._hotels)
+      _hotels.push_back(std::make_unique<Hotel>(*hotel));
+  }
+
   const std::vector<std::unique_ptr<Hotel>>& HotelCollection::hotels() const { return _hotels; }
 
   std::vector<int> HotelCollection::allRoomIDs() const
