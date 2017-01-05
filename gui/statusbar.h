@@ -23,7 +23,7 @@ namespace gui
       Warning,
       Error
     };
-    Q_ENUM(MessageSeverity)
+    Q_ENUM(MessageSeverity);
 
   public slots:
     /**
