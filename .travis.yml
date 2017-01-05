@@ -20,7 +20,7 @@ addons:
       - libboost-thread1.58
       - libboost-system1.58
 before_install:
-  - sudo add-apt-repository ppa:beineri/opt-qt562 --yes
+  - sudo add-apt-repository ppa:beineri/opt-qt562-trusty --yes
   - sudo apt-get update
   - sudo apt-get install qt56base qt56tools --force-yes
 install:
