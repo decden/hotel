@@ -1,5 +1,4 @@
 set(SRC
-    detailedreservation.cpp
     hotel.cpp
     hotelcollection.cpp
     persistentobject.cpp
@@ -13,7 +12,6 @@ set(SRC
 )
 
 set(SRC_INCLUDES
-    detailedreservation.h
     hotel.h
     hotelcollection.h
     persistentobject.h
