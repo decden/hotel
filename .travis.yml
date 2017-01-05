@@ -5,8 +5,9 @@ compiler:
   - clang
   - gcc
 before_install:
+  - sudo add-apt-repository ppa:george-edison55/precise-backports --yes
   - sudo apt-get -qq update
-  - sudo apt-get install -y sqlite3 libboost-all-dev qt5-default
+  - sudo apt-get install -y cmake cmake-data sqlite3 libboost-all-dev qt5-default
 before_script:
   - mkdir build
   - cd build
