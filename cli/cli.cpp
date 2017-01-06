@@ -22,7 +22,7 @@ void createTestDatabase(const std::string& db)
     dataSource.queueOperation(persistence::op::StoreNewHotel{ std::move(hotel) });
 
   // TODO: Wait for operations to complete
-  std::vector<persistence::op::Operation> operations;
+  persistence::op::Operations operations;
   auto planning = cli::createTestPlanning(rng, dataSource.hotels());
   for (auto& reservation : planning->reservations())
     operations.push_back(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(*reservation) });

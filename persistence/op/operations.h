@@ -26,6 +26,7 @@ namespace persistence
                            op::StoreNewReservation,
                            op::StoreNewPerson>
             Operation;
+    typedef std::vector<Operation> Operations;
 
   } // namespace op
 } // namespace persistence
