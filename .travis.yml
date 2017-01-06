@@ -25,7 +25,8 @@ before_script:
   - cmake --version
   - cmake -Dbuild_gui=Off ..
 script:
-  - make && ./tests/test
+  - make
+  - ./tests/tests
 notifications:
   email: false
 
