@@ -9,16 +9,17 @@ addons:
       - ubuntu-toolchain-r-test
       - boost-latest
     packages:
-      - g++-7
-      - gcc-7
+      - g++-6
+      - gcc-6
       - cmake
       - cmake-data
       - sqlite3
-      - libboost-date-time1.58
-      - libboost-thread1.58
-      - libboost-system1.58
+before_install:
+  - sudo add-apt-repository -y ppa:kojoley/boost
+  - sudo apt-get -qq update
+  - sudo apt-get -y install libboost-{chrono,program-options,date-time,thread,system,filesystem,regex,serialization}1.58{-dev,.0}
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
 before_script:
   - mkdir build
   - cd build
