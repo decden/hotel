@@ -14,7 +14,7 @@ addons:
       - cmake
       - cmake-data
       - sqlite3
-      - boost1.58      - libboost-date-time1.58
+      - libboost-date-time1.58
       - libboost-thread1.58
       - libboost-system1.58
 install:
