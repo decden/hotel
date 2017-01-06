@@ -47,14 +47,14 @@ TEST(Hotel, Hotel)
   // Construction
   hotel::Hotel hotel("Hotel X");
   ASSERT_EQ("Hotel X", hotel.name());
-  ASSERT_EQ(0, hotel.rooms().size());
-  ASSERT_EQ(0, hotel.categories().size());
+  ASSERT_EQ(0u, hotel.rooms().size());
+  ASSERT_EQ(0u, hotel.categories().size());
   ASSERT_EQ(nullptr, hotel.getCategoryById(1));
   ASSERT_EQ(nullptr, hotel.getCategoryByShortCode("CODE"));
 
   // Add a category
   hotel.addRoomCategory(std::make_unique<hotel::RoomCategory>("CODE", "My Category"));
-  ASSERT_EQ(1, hotel.categories().size());
+  ASSERT_EQ(1u, hotel.categories().size());
   ASSERT_EQ(nullptr, hotel.getCategoryById(1));
   ASSERT_NE(nullptr, hotel.getCategoryByShortCode("CODE"));
   hotel.categories()[0]->setId(1);
@@ -70,11 +70,11 @@ TEST(Hotel, Hotel)
 
   // Add a room
   hotel.addRoom(std::make_unique<hotel::HotelRoom>("Room 1"), "CODE");
-  ASSERT_EQ(1, hotel.rooms().size());
+  ASSERT_EQ(1u, hotel.rooms().size());
 
   // Add a room with a non existing category
   ASSERT_ANY_THROW(hotel.addRoom(std::make_unique<hotel::HotelRoom>("Room 1"), "IDONOTEXIST"));
-  ASSERT_EQ(1, hotel.rooms().size());
+  ASSERT_EQ(1u, hotel.rooms().size());
 
   // Add a nullptr room
   ASSERT_ANY_THROW(hotel.addRoom(nullptr, "CODE"));
@@ -82,8 +82,8 @@ TEST(Hotel, Hotel)
   // Copy construction
   hotel::Hotel copy = hotel;
   ASSERT_EQ("Hotel X", hotel.name());
-  ASSERT_EQ(1, copy.rooms().size());
-  ASSERT_EQ(1, copy.categories().size());
+  ASSERT_EQ(1u, copy.rooms().size());
+  ASSERT_EQ(1u, copy.categories().size());
   // Make sure copy is not shallow
   ASSERT_NE(hotel.getCategoryById(1), copy.getCategoryById(1));
   ASSERT_NE(hotel.getCategoryByShortCode("CODE"), copy.getCategoryByShortCode("CODE"));
@@ -97,11 +97,11 @@ TEST(Hotel, Hotel)
 TEST(Hotel, HotelCollection)
 {
   hotel::HotelCollection emptyCollection;
-  ASSERT_EQ(0, emptyCollection.allRoomIDs().size());
-  ASSERT_EQ(0, emptyCollection.allCategoryIDs().size());
+  ASSERT_EQ(0u, emptyCollection.allRoomIDs().size());
+  ASSERT_EQ(0u, emptyCollection.allCategoryIDs().size());
   ASSERT_EQ(nullptr, emptyCollection.findRoomById(1));
-  ASSERT_EQ(0, emptyCollection.allRooms().size());
-  ASSERT_EQ(0, emptyCollection.allRoomsByCategory(1).size());
+  ASSERT_EQ(0u, emptyCollection.allRooms().size());
+  ASSERT_EQ(0u, emptyCollection.allRoomsByCategory(1).size());
 
   // Build a collection with one hotel
   std::vector<std::unique_ptr<hotel::Hotel>> hotels;
@@ -113,25 +113,25 @@ TEST(Hotel, HotelCollection)
   hotels.push_back(std::move(hotel));
 
   hotel::HotelCollection collection(std::move(hotels));
-  ASSERT_EQ(1, collection.allRoomIDs().size());
-  ASSERT_EQ(1, collection.allCategoryIDs().size());
+  ASSERT_EQ(1u, collection.allRoomIDs().size());
+  ASSERT_EQ(1u, collection.allCategoryIDs().size());
   ASSERT_EQ(2, collection.allRoomIDs()[0]);
   ASSERT_EQ(1, collection.allCategoryIDs()[0]);
   ASSERT_EQ(nullptr, collection.findRoomById(1));
   ASSERT_NE(nullptr, collection.findRoomById(2));
-  ASSERT_EQ(1, collection.allRooms().size());
-  ASSERT_EQ(1, collection.allRoomsByCategory(1).size());
+  ASSERT_EQ(1u, collection.allRooms().size());
+  ASSERT_EQ(1u, collection.allRoomsByCategory(1).size());
   ASSERT_EQ("Room", collection.allRooms()[0]->name());
   ASSERT_EQ("Room", collection.allRoomsByCategory(1)[0]->name());
 
   hotel::HotelCollection copy = collection;
-  ASSERT_EQ(1, copy.allRoomIDs().size());
-  ASSERT_EQ(1, copy.allCategoryIDs().size());
+  ASSERT_EQ(1u, copy.allRoomIDs().size());
+  ASSERT_EQ(1u, copy.allCategoryIDs().size());
   ASSERT_EQ(2, copy.allRoomIDs()[0]);
   ASSERT_EQ(1, copy.allCategoryIDs()[0]);
   ASSERT_EQ(nullptr, copy.findRoomById(1));
-  ASSERT_EQ(1, copy.allRooms().size());
-  ASSERT_EQ(1, copy.allRoomsByCategory(1).size());
+  ASSERT_EQ(1u, copy.allRooms().size());
+  ASSERT_EQ(1u, copy.allRoomsByCategory(1).size());
   ASSERT_EQ("Room", copy.allRooms()[0]->name());
   ASSERT_EQ("Room", copy.allRoomsByCategory(1)[0]->name());
 }
@@ -168,7 +168,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ(0, emptyReservation.numberOfAdults());
   ASSERT_EQ(0, emptyReservation.numberOfChildren());
   ASSERT_EQ(boost::optional<int>(), emptyReservation.reservationOwnerPersonId());
-  ASSERT_EQ(0, emptyReservation.atoms().size());
+  ASSERT_EQ(0u, emptyReservation.atoms().size());
   ASSERT_EQ(nullptr, emptyReservation.firstAtom());
   ASSERT_EQ(nullptr, emptyReservation.lastAtom());
   ASSERT_TRUE(emptyReservation.dateRange().is_null());
@@ -181,7 +181,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ(0, reservation.numberOfAdults());
   ASSERT_EQ(0, reservation.numberOfChildren());
   ASSERT_EQ(boost::optional<int>(), reservation.reservationOwnerPersonId());
-  ASSERT_EQ(1, reservation.atoms().size());
+  ASSERT_EQ(1u, reservation.atoms().size());
   ASSERT_NE(nullptr, reservation.firstAtom());
   ASSERT_NE(nullptr, reservation.lastAtom());
   ASSERT_EQ(reservation.firstAtom(), reservation.lastAtom());
@@ -204,13 +204,13 @@ TEST(Hotel, Reservation)
 
   // Add continuation
   reservation.addContinuation(1, date(2017, 1, 20));
-  ASSERT_EQ(2, reservation.atoms().size());
+  ASSERT_EQ(2u, reservation.atoms().size());
   ASSERT_NE(reservation.firstAtom(), reservation.lastAtom());
   ASSERT_EQ(19, reservation.length());
 
   // Add atom
   reservation.addAtom(10, date_period(date(2017, 1, 20), date(2017, 1, 30)));
-  ASSERT_EQ(3, reservation.atoms().size());
+  ASSERT_EQ(3u, reservation.atoms().size());
   ASSERT_NE(reservation.firstAtom(), reservation.lastAtom());
   ASSERT_EQ(29, reservation.length());
 
@@ -234,7 +234,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ(2, copy.numberOfAdults());
   ASSERT_EQ(3, copy.numberOfChildren());
   ASSERT_EQ(10, *copy.reservationOwnerPersonId());
-  ASSERT_EQ(3, copy.atoms().size());
+  ASSERT_EQ(3u, copy.atoms().size());
   ASSERT_NE(nullptr, copy.firstAtom());
   ASSERT_NE(nullptr, copy.lastAtom());
   ASSERT_NE(copy.firstAtom(), copy.lastAtom());
@@ -251,7 +251,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ(2, moved.numberOfAdults());
   ASSERT_EQ(3, moved.numberOfChildren());
   ASSERT_EQ(10, *moved.reservationOwnerPersonId());
-  ASSERT_EQ(3, moved.atoms().size());
+  ASSERT_EQ(3u, moved.atoms().size());
   ASSERT_NE(nullptr, moved.firstAtom());
   ASSERT_NE(nullptr, moved.lastAtom());
   ASSERT_NE(moved.firstAtom(), moved.lastAtom());
