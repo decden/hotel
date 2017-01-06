@@ -79,6 +79,12 @@ namespace hotel
     void removeReservation(const Reservation* reservation);
 
     /**
+     * @brief clear deletes all reservations and rooms from the current planning board.
+     * The method also notifies the observers
+     */
+    void clear();
+
+    /**
      * @brief canAddReservation returns true if there is availability for the whole reservation
      */
     bool canAddReservation(const Reservation& reservation) const;

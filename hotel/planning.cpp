@@ -77,6 +77,14 @@ namespace hotel
     }
   }
 
+  void PlanningBoard::clear()
+  {
+    _reservations.clear();
+    _rooms.clear();
+    for (auto observer : _observers)
+      observer->allReservationsRemoved();
+  }
+
   PlanningBoard::~PlanningBoard()
   {
     auto observerListCopy = _observers;

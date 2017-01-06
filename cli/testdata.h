@@ -2,6 +2,7 @@
 #define CLI_TESTDATA_H
 
 #include "hotel/hotel.h"
+#include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
 #include <memory>
@@ -12,8 +13,7 @@ namespace cli
 {
 
   std::vector<std::unique_ptr<hotel::Hotel>> createTestHotels(std::mt19937& rng);
-  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng,
-                                                           std::vector<std::unique_ptr<hotel::Hotel>>& hotels);
+  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng, hotel::HotelCollection& hotels);
 
 } // namespaec cli
 

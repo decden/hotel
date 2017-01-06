@@ -13,6 +13,16 @@ namespace hotel
       _hotels.push_back(std::make_unique<Hotel>(*hotel));
   }
 
+  void HotelCollection::addHotel(std::unique_ptr<Hotel> hotel)
+  {
+    _hotels.push_back(std::move(hotel));
+  }
+
+  void HotelCollection::clear()
+  {
+    _hotels.clear();
+  }
+
   const std::vector<std::unique_ptr<Hotel>>& HotelCollection::hotels() const { return _hotels; }
 
   std::vector<int> HotelCollection::allRoomIDs() const

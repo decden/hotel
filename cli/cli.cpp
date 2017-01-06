@@ -1,11 +1,11 @@
 #include "cli/testdata.h"
 
-#include "persistence/json/jsonserializer.h"
+#include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
 #include <chrono>
-#include <fstream>
 #include <iostream>
+#include <memory>
 
 void createTestDatabase(const std::string& db)
 {
@@ -14,20 +14,19 @@ void createTestDatabase(const std::string& db)
   std::mt19937 rng(seed);
 
   // Store all of the random test data into the database
-  persistence::sqlite::SqliteStorage storage(db.c_str());
-  storage.deleteAll();
+  persistence::DataSource dataSource(db);
 
+  dataSource.queueOperation(persistence::op::EraseAllData());
   auto hotels = cli::createTestHotels(rng);
-  storage.beginTransaction();
   for (auto& hotel : hotels)
-    storage.storeNewHotel(*hotel);
-  storage.commitTransaction();
+    dataSource.queueOperation(persistence::op::StoreNewHotel{ std::move(hotel) });
 
-  auto planning = cli::createTestPlanning(rng, hotels);
-  storage.beginTransaction();
+  // TODO: Wait for operations to complete
+  std::vector<persistence::op::Operation> operations;
+  auto planning = cli::createTestPlanning(rng, dataSource.hotels());
   for (auto& reservation : planning->reservations())
-    storage.storeNewReservationAndAtoms(*reservation);
-  storage.commitTransaction();
+    operations.push_back(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(*reservation) });
+  dataSource.queueOperations(std::move(operations));
 }
 
 int main(int argc, char** argv)

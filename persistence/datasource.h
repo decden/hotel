@@ -31,6 +31,13 @@ namespace persistence
      */
     void queueOperation(op::Operation operation);
 
+    /**
+     * @brief queueOperations queues multiple operations
+     * The operations are executed together under a transaction if possible.
+     * @param operations List of operations to perform.
+     */
+    void queueOperations(std::vector<op::Operation> operations);
+
   private:
     // Backing store for the data
     persistence::sqlite::SqliteStorage _storage;

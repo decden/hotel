@@ -123,7 +123,7 @@ namespace cli
   }
 
   std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng,
-                                                           std::vector<std::unique_ptr<hotel::Hotel>>& hotels)
+                                                           hotel::HotelCollection& hotels)
   {
     using namespace boost::gregorian;
     auto today = day_clock::local_day();
@@ -134,11 +134,10 @@ namespace cli
 
     auto planning = std::make_unique<hotel::PlanningBoard>();
 
-    for (auto& hotel : hotels)
-      for (auto& room : hotel->rooms())
-        planning->addRoomId(room->id());
+    for (auto id : hotels.allRoomIDs())
+      planning->addRoomId(id);
 
-    for (auto& hotel : hotels)
+    for (auto& hotel : hotels.hotels())
       addRandomReservations(rng, *hotel, *planning, 200 * hotel->rooms().size(), period);
 
     return planning;

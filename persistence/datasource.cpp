@@ -7,6 +7,24 @@ namespace persistence
 {
   // TODO: Move these implementations to a backend specific file or class
   namespace {
+    void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::EraseAllData&)
+    {
+      storage.deleteAll();
+      dataSource.planning().clear();
+      dataSource.hotels().clear();
+    }
+
+    void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewHotel& op)
+    {
+      if (op.newHotel == nullptr)
+        return;
+
+      storage.storeNewHotel(*op.newHotel);
+      for (auto& room : op.newHotel->rooms())
+        dataSource.planning().addRoomId(room->id());
+      dataSource.hotels().addHotel(std::move(op.newHotel));
+    }
+
     void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewReservation& op)
     {
       if (op.newReservation == nullptr)
@@ -14,15 +32,11 @@ namespace persistence
       if (!dataSource.planning().canAddReservation(*op.newReservation))
         return;
 
-      op.newReservation->setStatus(hotel::Reservation::New);
+      if (op.newReservation->status() == hotel::Reservation::Unknown)
+        op.newReservation->setStatus(hotel::Reservation::New);
 
-      storage.beginTransaction();
       storage.storeNewReservationAndAtoms(*op.newReservation);
-      storage.commitTransaction();
-
       dataSource.planning().addReservation(std::move(op.newReservation));
-
-      std::cout << "Requesting storage of a reservation..." << std::endl;
     }
 
     void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewPerson& op)
@@ -46,7 +60,17 @@ namespace persistence
 
   void DataSource::queueOperation(op::Operation operation)
   {
+    _storage.beginTransaction();
     boost::apply_visitor([this](auto& op) { return executeOperation(_storage, *this, op); }, operation);
+    _storage.commitTransaction();
+  }
+
+  void DataSource::queueOperations(std::vector<op::Operation> operations)
+  {
+    _storage.beginTransaction();
+    for (auto& operation : operations)
+      boost::apply_visitor([this](auto& op) { return executeOperation(_storage, *this, op); }, operation);
+    _storage.commitTransaction();
   }
 
 } // namespace persistence
