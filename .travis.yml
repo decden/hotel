@@ -1,0 +1,31 @@
+sudo: required
+dist: trusty
+language: cpp
+compiler:
+  - gcc
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - boost-latest
+    packages:
+      - g++-7
+      - gcc-7
+      - cmake
+      - cmake-data
+      - sqlite3
+      - boost1.58      - libboost-date-time1.58
+      - libboost-thread1.58
+      - libboost-system1.58
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-7" CC="gcc-7"; fi
+before_script:
+  - mkdir build
+  - cd build
+  - cmake --version
+  - cmake -Dbuild_gui=Off ..
+script:
+  - make && ./tests/test
+notifications:
+  email: false
+

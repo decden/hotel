@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.1)
 
 option(test "Build test application." ON)
+option(build_gui "Build gui libraries and applications." ON)
 
 project (hotel)
 set (CMAKE_CXX_STANDARD 14)
@@ -24,7 +25,9 @@ include_directories(${SQLITE3_INCLUDE_DIR})
 
 include_directories(./extern/nlohmann_json)
 
-find_package(Qt5Widgets REQUIRED)
+if (build_gui)
+  find_package(Qt5Widgets REQUIRED)
+endif()
 
 #
 # Tests
@@ -39,16 +42,14 @@ if (test)
 endif()
 
 #
-# Libraries
+# Subdirectories
 #
 
 add_subdirectory(hotel)
 add_subdirectory(persistence)
 add_subdirectory(cli)
-add_subdirectory(gui)
 
-#
-# Applications
-#
-
-add_subdirectory(guiapp)
+if (build_gui)
+  add_subdirectory(gui)
+  add_subdirectory(guiapp)
+endif()
