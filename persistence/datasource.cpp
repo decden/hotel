@@ -7,7 +7,7 @@ namespace persistence
 {
   // TODO: Move these implementations to a backend specific file or class
   namespace {
-    void executeOperation(hotel::persistence::SqliteStorage& storage, DataSource& dataSource, op::StoreNewReservation& op)
+    void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewReservation& op)
     {
       if (op.newReservation == nullptr)
         return;
@@ -25,7 +25,7 @@ namespace persistence
       std::cout << "Requesting storage of a reservation..." << std::endl;
     }
 
-    void executeOperation(hotel::persistence::SqliteStorage& storage, DataSource& dataSource, op::StoreNewPerson& op)
+    void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewPerson& op)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;

@@ -5,9 +5,10 @@
 #include "gui/planningwidget/newreservationtool.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
+#include "persistence/sqlite/sqlitestorage.h"
+
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
-#include "hotel/persistence/sqlitestorage.h"
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
 

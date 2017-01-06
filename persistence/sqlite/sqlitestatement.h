@@ -1,14 +1,14 @@
-#ifndef HOTEL_PERSISTENCE_SQLITESTATEMENT_H
-#define HOTEL_PERSISTENCE_SQLITESTATEMENT_H
+#ifndef PERSISTENCE_SQLITE_SQLITESTATEMENT_H
+#define PERSISTENCE_SQLITE_SQLITESTATEMENT_H
 
 #include <boost/date_time.hpp>
 #include <sqlite3.h>
 
 #include <string>
 
-namespace hotel
+namespace persistence
 {
-  namespace persistence
+  namespace sqlite
   {
 
     /**
@@ -89,7 +89,7 @@ namespace hotel
       sqlite3_stmt* _statement;
     };
 
-  } // namespace persistence
-} // namespace hotel
+  } // namespace sqlite
+} // namespace persistence
 
-#endif // HOTEL_PERSISTENCE_SQLITESTATEMENT_H
+#endif // PERSISTENCE_SQLITE_SQLITESTATEMENT_H

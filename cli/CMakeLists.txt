@@ -8,4 +8,4 @@ set(SRC_INCLUDES
 )
 
 add_executable(hotel_cli  ${SRC} ${SRC_INCLUDES})
-target_link_libraries(hotel_cli hotel)
+target_link_libraries(hotel_cli hotel persistence)

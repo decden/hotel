@@ -1,8 +1,8 @@
-#include "sqlitestatement.h"
+#include "persistence/sqlite/sqlitestatement.h"
 
-namespace hotel
+namespace persistence
 {
-  namespace persistence
+  namespace sqlite
   {
 
     SqliteStatement::SqliteStatement(sqlite3* db, const std::string& query)
@@ -85,5 +85,5 @@ namespace hotel
       date = boost::gregorian::from_undelimited_string(val);
     }
 
-  } // namespace persistence
-} // namespace hotel
+  } // namespace sqlite
+} // namespace persistence

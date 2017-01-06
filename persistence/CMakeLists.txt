@@ -1,14 +1,25 @@
 set(SRC
-	datasource.cpp
+  datasource.cpp
 
-	op/operations.cpp
+  op/operations.cpp
+
+  json/jsonserializer.h
+
+  sqlite/sqlitestatement.cpp
+  sqlite/sqlitestorage.cpp
 )
 
 set(SRC_INCLUDES
-	datasource.h
+  datasource.h
 
-	op/operations.h
+  op/operations.h
+
+  json/jsonserializer.h
+
+  sqlite/sqlitestatement.h
+  sqlite/sqlitestorage.h
 )
 
 add_library(persistence ${SRC} ${SRC_INCLUDES})
-target_link_libraries(persistence hotel ${Boost_DATE_TIME_LIBRARY} ${SQLITE3_LIBRARY})
+target_link_libraries(persistence hotel)
+target_link_libraries(persistence ${Boost_DATE_TIME_LIBRARY} ${SQLITE3_LIBRARY})

@@ -1,6 +1,5 @@
 #include "persistence/datasource.h"
-
-#include "hotel/persistence/sqlitestorage.h"
+#include "persistence/sqlite/sqlitestorage.h"
 
 #include "gui/planningwidget.h"
 #include "gui/planningwidget/newreservationtool.h"

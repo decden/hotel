@@ -8,12 +8,11 @@
 #include "gui/planningwidget/roomlistwidget.h"
 
 #include "persistence/datasource.h"
+#include "persistence/sqlite/sqlitestorage.h"
 
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
-
-#include "hotel/persistence/sqlitestorage.h"
 
 #include <QScrollBar>
 #include <QWidget>

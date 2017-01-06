@@ -1,12 +1,12 @@
-#ifndef HOTEL_PERSISTENCE_SQLITESTORAGE_H
-#define HOTEL_PERSISTENCE_SQLITESTORAGE_H
+#ifndef PERSISTENCE_SQLITE_SQLITESTORAGE_H
+#define PERSISTENCE_SQLITE_SQLITESTORAGE_H
+
+#include "persistence/sqlite/sqlitestatement.h"
 
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
-
-#include "hotel/persistence/sqlitestatement.h"
 
 #include <sqlite3.h>
 
@@ -15,9 +15,9 @@
 #include <memory>
 #include <string>
 
-namespace hotel
+namespace persistence
 {
-  namespace persistence
+  namespace sqlite
   {
 
     class SqliteStorage
@@ -50,7 +50,7 @@ namespace hotel
       std::map<std::string, SqliteStatement> _statements;
     };
 
-  } // namespace persistence
-} // namespace hotel
+  } // namespace sqlite
+} // namespace persistence
 
-#endif // HOTEL_PERSISTENCE_SQLITESTORAGE_H
+#endif // PERSISTENCE_SQLITE_SQLITESTORAGE_H

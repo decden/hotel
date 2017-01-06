@@ -2,8 +2,8 @@
 #define PERSISTENCE_DATASOURCE_H
 
 #include "persistence/op/operations.h"
+#include "persistence/sqlite/sqlitestorage.h"
 
-#include "hotel/persistence/sqlitestorage.h"
 #include "hotel/planning.h"
 
 #include <memory>
@@ -33,7 +33,7 @@ namespace persistence
 
   private:
     // Backing store for the data
-    hotel::persistence::SqliteStorage _storage;
+    persistence::sqlite::SqliteStorage _storage;
 
     std::unique_ptr<hotel::PlanningBoard> _planning;
     std::unique_ptr<hotel::HotelCollection> _hotels;

@@ -1,14 +1,14 @@
-#include "hotel/persistence/jsonserializer.h"
+#include "persistence/json/jsonserializer.h"
 
 #include <sstream>
 
-namespace hotel
+namespace persistence
 {
-  namespace persistence
+  namespace json
   {
     JsonSerializer::JsonSerializer() {}
 
-    nlohmann::json JsonSerializer::serializeHotelCollection(const HotelCollection &hotelCollection)
+    nlohmann::json JsonSerializer::serializeHotelCollection(const hotel::HotelCollection &hotelCollection)
     {
       using json = nlohmann::json;
       json resultJson = json::array();
@@ -48,7 +48,7 @@ namespace hotel
       return resultJson;
     }
 
-    nlohmann::json JsonSerializer::serializePlanning(const PlanningBoard &planning)
+    nlohmann::json JsonSerializer::serializePlanning(const hotel::PlanningBoard &planning)
     {
       using json = nlohmann::json;
       json resultJson;
@@ -78,5 +78,5 @@ namespace hotel
       return resultJson;
     }
 
-  } // namespace persistence
-} // namespace hotel
+  } // namespace json
+} // namespace persistence

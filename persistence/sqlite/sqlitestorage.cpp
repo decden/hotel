@@ -1,10 +1,10 @@
-#include "sqlitestorage.h"
+#include "persistence/sqlite/sqlitestorage.h"
 
 #include <iostream>
 
-namespace hotel
+namespace persistence
 {
-  namespace persistence
+  namespace sqlite
   {
 
     namespace
@@ -98,7 +98,7 @@ namespace hotel
 
     std::unique_ptr<hotel::HotelCollection> SqliteStorage::loadHotels()
     {
-      std::vector<std::unique_ptr<Hotel>> results;
+      std::vector<std::unique_ptr<hotel::Hotel>> results;
 
       // Read hotels
       auto& hotelsQuery = query("hotel.all");
@@ -152,7 +152,7 @@ namespace hotel
       return std::make_unique<hotel::HotelCollection>(std::move(results));
     }
 
-    std::unique_ptr<PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int>& roomIds)
+    std::unique_ptr<hotel::PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int>& roomIds)
     {
       auto result = std::make_unique<hotel::PlanningBoard>();
 
@@ -199,7 +199,7 @@ namespace hotel
       return result;
     }
 
-    void SqliteStorage::storeNewHotel(Hotel& hotel)
+    void SqliteStorage::storeNewHotel(hotel::Hotel& hotel)
     {
       // First, store the hotel
       query("hotel.insert").execute(hotel.name());
@@ -220,7 +220,7 @@ namespace hotel
       }
     }
 
-    void SqliteStorage::storeNewReservationAndAtoms(Reservation& reservation)
+    void SqliteStorage::storeNewReservationAndAtoms(hotel::Reservation& reservation)
     {
       auto reservationStatus = serializeReservationStatus(reservation.status());
       query("reservation.insert").execute(reservation.description(), reservationStatus,
@@ -307,5 +307,5 @@ namespace hotel
                       "date_to TEXT NOT NULL);");
     }
 
-  } // namespace persistence
-} // namespace hotel
+  } // namespace sqlite
+} // namespace persistence

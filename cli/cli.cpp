@@ -1,7 +1,7 @@
 #include "cli/testdata.h"
 
-#include "hotel/persistence/jsonserializer.h"
-#include "hotel/persistence/sqlitestorage.h"
+#include "persistence/json/jsonserializer.h"
+#include "persistence/sqlite/sqlitestorage.h"
 
 #include <chrono>
 #include <fstream>
@@ -14,7 +14,7 @@ void createTestDatabase(const std::string& db)
   std::mt19937 rng(seed);
 
   // Store all of the random test data into the database
-  hotel::persistence::SqliteStorage storage(db.c_str());
+  persistence::sqlite::SqliteStorage storage(db.c_str());
   storage.deleteAll();
 
   auto hotels = cli::createTestHotels(rng);
