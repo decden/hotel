@@ -34,7 +34,7 @@ namespace gui
   {
     Q_OBJECT
   public:
-    PlanningWidget(persistence::DataSource* dataSource);
+    PlanningWidget(persistence::DataSource& dataSource);
 
     void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
     void activateTool(const std::string& toolName);
