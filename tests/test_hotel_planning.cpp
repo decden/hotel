@@ -118,11 +118,6 @@ TEST_F(HotelPlanning, Planning)
   board.removeReservation(allReservations[3]);
   ASSERT_EQ(0, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   ASSERT_ANY_THROW(board.removeReservation(nullptr));
-
-  /*
-    void addObserver(PlanningBoardObserver* observer);
-    void removeObserver(PlanningBoardObserver* observer);
-  */
 }
 
 TEST_F(HotelPlanning, PlanningBoardObserver)
