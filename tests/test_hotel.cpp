@@ -5,8 +5,6 @@
 #include "hotel/person.h"
 #include "hotel/reservation.h"
 
-#include "hotel/planning.h"
-
 TEST(Hotel, Person)
 {
   hotel::Person person("First", "Last");

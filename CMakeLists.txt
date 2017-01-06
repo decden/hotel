@@ -37,6 +37,7 @@ if (test)
 	add_subdirectory(extern/googletest-release-1.8.0)
 	enable_testing()
 	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+	include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 
 	add_subdirectory(tests)
 endif()

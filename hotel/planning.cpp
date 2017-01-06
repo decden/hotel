@@ -34,16 +34,11 @@ namespace hotel
 
   Reservation* PlanningBoard::addReservation(std::unique_ptr<Reservation> reservation)
   {
+    if (reservation == nullptr)
+      throw std::invalid_argument("cannot add nullptr reservation to planning board");
+
     if (!canAddReservation(*reservation))
-    {
-      std::cerr << "addReservation(): Cannot add reservation " << reservation->description() << std::endl;
-      for (auto& atom : reservation->atoms())
-      {
-        std::cerr << "  atom: " << atom.roomId() << " " << boost::gregorian::to_iso_string(atom.dateRange().begin())
-                  << " " << boost::gregorian::to_iso_string(atom.dateRange().end()) << std::endl;
-      }
-      return nullptr;
-    }
+      throw std::logic_error("cannot add reservation " + reservation->description());
 
     // Insert reservation and atoms
     for (auto& atom : reservation->atoms())
@@ -59,6 +54,9 @@ namespace hotel
 
   void PlanningBoard::removeReservation(const Reservation* reservation)
   {
+    if (reservation == nullptr)
+      throw std::invalid_argument("cannot remove nullptr reservation from planning board");
+
     // Remove the atoms
     for (auto& atom : reservation->atoms())
     {
@@ -94,6 +92,9 @@ namespace hotel
 
   bool PlanningBoard::canAddReservation(const Reservation& reservation) const
   {
+    if (!reservation.isValid())
+      return false;
+
     auto& atoms = reservation.atoms();
     return std::all_of(atoms.begin(), atoms.end(),
                        [this](auto& atom) { return this->isFree(atom.roomId(), atom.dateRange()); });
