@@ -191,7 +191,7 @@ namespace hotel
         {
           current->addContinuation(roomId, dateTo);
         }
-        (*current->atoms().rbegin())->setId(atomId);
+        (*current->atoms().rbegin()).setId(atomId);
       }
       if (current)
         result->addReservation(std::move(current));
@@ -229,8 +229,8 @@ namespace hotel
       for (auto& atom : reservation.atoms())
       {
         auto& q = query("reservation_atom.insert");
-        q.execute(reservation.id(), atom->roomId(), atom->dateRange().begin(), atom->dateRange().end());
-        atom->setId(static_cast<int>(lastInsertId()));
+        q.execute(reservation.id(), atom.roomId(), atom.dateRange().begin(), atom.dateRange().end());
+        atom.setId(static_cast<int>(lastInsertId()));
       }
     }
 

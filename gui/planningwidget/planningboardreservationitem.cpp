@@ -45,7 +45,7 @@ namespace gui
     {
       for (auto& atom : _reservation->atoms())
       {
-        auto item = new PlanningBoardAtomItem(context, _reservation, atom.get());
+        auto item = new PlanningBoardAtomItem(context, _reservation, &atom);
         item->setParentItem(this);
       }
     }

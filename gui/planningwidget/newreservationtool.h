@@ -22,9 +22,8 @@ namespace gui
     {
     public:
       ReservationGhostItem(const Context& context)
-          : QGraphicsRectItem(), reservation("new"), _context(context)
+          : QGraphicsRectItem(), reservation("new"), atom(-1, date_period(date(), date())), _context(context)
       {
-        atom = reservation.addAtom(-1, date_period(date(), date()));
         reservation.setStatus(hotel::Reservation::Temporary);
       }
 
@@ -33,12 +32,12 @@ namespace gui
 
       void updateLayout()
       {
-        auto rect = _context.layout().getAtomRect(atom->roomId(), atom->dateRange());
+        auto rect = _context.layout().getAtomRect(atom.roomId(), atom.dateRange());
         setRect(rect);
       }
 
       hotel::Reservation reservation;
-      hotel::ReservationAtom* atom;
+      hotel::ReservationAtom atom;
       boost::gregorian::date maximumDate;
 
     private:

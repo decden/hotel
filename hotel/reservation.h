@@ -46,6 +46,7 @@ namespace hotel
 
     Reservation(const std::string& description);
     Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange);
+    Reservation(const Reservation& that) = default;
     Reservation(Reservation&& that);
 
     void setStatus(ReservationStatus status);
@@ -54,16 +55,18 @@ namespace hotel
     void setNumberOfChildren(int adults);
     void setReservationOwnerPerson(boost::optional<int> personId);
 
-    ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
-    ReservationAtom* addContinuation(int room, boost::gregorian::date date);
+    const ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
+    const ReservationAtom* addAtom(const ReservationAtom& atom);
+    const ReservationAtom* addContinuation(int room, boost::gregorian::date date);
 
     ReservationStatus status() const;
     const std::string& description() const;
     int numberOfAdults() const;
     int numberOfChildren() const;
-    boost::optional<int> reservationOwnerPersonId();
+    boost::optional<int> reservationOwnerPersonId() const;
 
-    const std::vector<std::unique_ptr<ReservationAtom>>& atoms() const;
+    const std::vector<ReservationAtom>& atoms() const;
+    std::vector<ReservationAtom>& atoms();
     const ReservationAtom* firstAtom() const;
     const ReservationAtom* lastAtom() const;
 
@@ -81,8 +84,11 @@ namespace hotel
 
     int _adults;
     int _children;
-    std::vector<std::unique_ptr<ReservationAtom>> _atoms;
+    std::vector<ReservationAtom> _atoms;
   };
+
+  bool operator==(const Reservation& a, const Reservation& b);
+  bool operator!=(const Reservation& a, const Reservation& b);
 
   /**
    * @brief The ReservationAtom class represents one single reserved room over a given date period.

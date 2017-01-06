@@ -191,6 +191,19 @@ TEST(Hotel, Reservation)
   ASSERT_TRUE(reservation.isValid());
   ASSERT_EQ(9, reservation.length());
 
+  // Setters
+  reservation.setStatus(hotel::Reservation::CheckedIn);
+  reservation.setDescription("Valid Reservation");
+  reservation.setNumberOfAdults(2);
+  reservation.setNumberOfChildren(3);
+  reservation.setReservationOwnerPerson(10);
+  ASSERT_EQ(hotel::Reservation::CheckedIn, reservation.status());
+  ASSERT_EQ("Valid Reservation", reservation.description());
+  ASSERT_EQ(2, reservation.numberOfAdults());
+  ASSERT_EQ(3, reservation.numberOfChildren());
+  ASSERT_EQ(10, *reservation.reservationOwnerPersonId());
+
+
   // Add continuation
   reservation.addContinuation(1, date(2017, 1, 20));
   ASSERT_EQ(2, reservation.atoms().size());
@@ -203,8 +216,6 @@ TEST(Hotel, Reservation)
   ASSERT_NE(reservation.firstAtom(), reservation.lastAtom());
   ASSERT_EQ(29, reservation.length());
 
-  // TODO: Copying and moving test
-
   // Adding invalid continuations
   // Dates are in the past
   ASSERT_ANY_THROW(reservation.addContinuation(1, date(2016, 1, 1)));
@@ -216,4 +227,41 @@ TEST(Hotel, Reservation)
   ASSERT_ANY_THROW(reservation.addAtom(1, date_period(date(2017, 1, 30), date(2017, 1, 10))));
   // Adding a continuation to an empty reservation is always forbidden
   ASSERT_ANY_THROW(emptyReservation.addContinuation(1, date(2016, 1, 1)));
+
+  // Copy
+  auto copy = reservation;
+  ASSERT_EQ(copy, reservation);
+  ASSERT_EQ(hotel::Reservation::CheckedIn, copy.status());
+  ASSERT_EQ("Valid Reservation", copy.description());
+  ASSERT_EQ(2, copy.numberOfAdults());
+  ASSERT_EQ(3, copy.numberOfChildren());
+  ASSERT_EQ(10, *copy.reservationOwnerPersonId());
+  ASSERT_EQ(3, copy.atoms().size());
+  ASSERT_NE(nullptr, copy.firstAtom());
+  ASSERT_NE(nullptr, copy.lastAtom());
+  ASSERT_NE(copy.firstAtom(), copy.lastAtom());
+  ASSERT_FALSE(copy.dateRange().is_null());
+  ASSERT_TRUE(copy.isValid());
+  ASSERT_EQ(29, copy.length());
+
+  // Move
+  hotel::Reservation moved(std::move(copy));
+  ASSERT_FALSE(copy.isValid());
+  ASSERT_EQ(moved, reservation);
+  ASSERT_EQ(hotel::Reservation::CheckedIn, moved.status());
+  ASSERT_EQ("Valid Reservation", moved.description());
+  ASSERT_EQ(2, moved.numberOfAdults());
+  ASSERT_EQ(3, moved.numberOfChildren());
+  ASSERT_EQ(10, *moved.reservationOwnerPersonId());
+  ASSERT_EQ(3, moved.atoms().size());
+  ASSERT_NE(nullptr, moved.firstAtom());
+  ASSERT_NE(nullptr, moved.lastAtom());
+  ASSERT_NE(moved.firstAtom(), moved.lastAtom());
+  ASSERT_FALSE(moved.dateRange().is_null());
+  ASSERT_TRUE(moved.isValid());
+  ASSERT_EQ(29, moved.length());
+
+  // Test equality
+  ASSERT_EQ(reservation, reservation);
+  ASSERT_NE(reservation, emptyReservation);
 }

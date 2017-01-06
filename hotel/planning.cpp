@@ -39,14 +39,15 @@ namespace hotel
       std::cerr << "addReservation(): Cannot add reservation " << reservation->description() << std::endl;
       for (auto& atom : reservation->atoms())
       {
-        std::cerr << "  atom: " << atom->roomId() << " " << boost::gregorian::to_iso_string(atom->dateRange().begin()) << " " << boost::gregorian::to_iso_string(atom->dateRange().end()) << std::endl;
+        std::cerr << "  atom: " << atom.roomId() << " " << boost::gregorian::to_iso_string(atom.dateRange().begin())
+                  << " " << boost::gregorian::to_iso_string(atom.dateRange().end()) << std::endl;
       }
       return nullptr;
     }
 
     // Insert reservation and atoms
     for (auto& atom : reservation->atoms())
-      insertAtom(atom.get());
+      insertAtom(&atom);
     auto reservationPtr = reservation.get();
     _reservations.push_back(std::move(reservation));
 
@@ -61,8 +62,8 @@ namespace hotel
     // Remove the atoms
     for (auto& atom : reservation->atoms())
     {
-      auto& roomAtoms = _rooms[atom->roomId()];
-      auto atomIt = std::find(roomAtoms.begin(), roomAtoms.end(), atom.get());
+      auto& roomAtoms = _rooms[atom.roomId()];
+      auto atomIt = std::find(roomAtoms.begin(), roomAtoms.end(), &atom);
       if (atomIt != roomAtoms.end())
         roomAtoms.erase(atomIt);
     }
@@ -95,7 +96,7 @@ namespace hotel
   {
     auto& atoms = reservation.atoms();
     return std::all_of(atoms.begin(), atoms.end(),
-                       [this](auto& atom) { return this->isFree(atom->roomId(), atom->dateRange()); });
+                       [this](auto& atom) { return this->isFree(atom.roomId(), atom.dateRange()); });
   }
 
   bool PlanningBoard::isFree(int roomId, boost::gregorian::date_period period) const

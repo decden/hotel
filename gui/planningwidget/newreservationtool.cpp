@@ -16,11 +16,11 @@ namespace gui
     void ReservationGhostItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
     {
       // Date range is empty or invalid: no need to draw something
-      if (atom->dateRange().is_null())
+      if (atom.dateRange().is_null())
         return;
 
       auto renderer = _context.appearance().reservationRenderer();
-      renderer->paintAtom(painter, _context, reservation, *atom, rect(), false);
+      renderer->paintAtom(painter, _context, reservation, atom, rect(), false);
     }
 
     NewReservationTool::NewReservationTool()
@@ -72,11 +72,11 @@ namespace gui
       // temporary reservation atoms
       for (auto ghost : _ghosts)
       {
-        if (ghost->atom->roomId() == row->id())
+        if (ghost->atom.roomId() == row->id())
         {
-          if (ghost->atom->dateRange().contains(date))
+          if (ghost->atom.dateRange().contains(date))
             return;
-          auto atomBeginDate = ghost->atom->dateRange().begin();
+          auto atomBeginDate = ghost->atom.dateRange().begin();
           if (atomBeginDate >= date && atomBeginDate < maximumDate)
             maximumDate = atomBeginDate;
         }
@@ -87,8 +87,8 @@ namespace gui
 
       _currentGhost = new ReservationGhostItem(*_context);
       _currentGhost->maximumDate = maximumDate;
-      _currentGhost->atom->setDateRange(date_period(date, date));
-      _currentGhost->atom->setRoomId(row->id());
+      _currentGhost->atom.setDateRange(date_period(date, date));
+      _currentGhost->atom.setRoomId(row->id());
       _currentGhost->updateLayout();
       _context->planningBoardScene()->addItem(_currentGhost);
     }
@@ -97,7 +97,7 @@ namespace gui
     {
       if (_currentGhost)
       {
-        if (_currentGhost->atom->dateRange().is_null())
+        if (_currentGhost->atom.dateRange().is_null())
           delete _currentGhost;
         else
           _ghosts.push_back(_currentGhost);
@@ -113,7 +113,7 @@ namespace gui
         int dateXPos;
         std::tie(currentDate, dateXPos) = _context->layout().getNearestDatePosition(position.x());
 
-        auto currentPeriod = _currentGhost->atom->dateRange();
+        auto currentPeriod = _currentGhost->atom.dateRange();
 
         // Dates cannot be extended in the past by dragging
         if (currentDate < currentPeriod.begin())
@@ -122,7 +122,7 @@ namespace gui
           currentDate = _currentGhost->maximumDate;
 
         auto newPeriod = date_period(currentPeriod.begin(), currentDate);
-        _currentGhost->atom->setDateRange(newPeriod);
+        _currentGhost->atom.setDateRange(newPeriod);
 
         _currentGhost->updateLayout();
       }
@@ -155,7 +155,9 @@ namespace gui
         std::vector<std::unique_ptr<hotel::Reservation>> reservations;
         for(auto ghost : _ghosts)
         {
-          reservations.push_back(std::make_unique<hotel::Reservation>(std::move(ghost->reservation)));
+          auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
+          reservation->addAtom(ghost->atom);
+          reservations.push_back(std::move(reservation));
           delete ghost;
         }
         _ghosts.clear();

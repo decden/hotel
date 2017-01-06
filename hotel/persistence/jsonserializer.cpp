@@ -65,9 +65,9 @@ namespace hotel
         for (auto& atom : reservation->atoms())
         {
           json atomJson = {
-            {"roomId", atom->roomId()},
-            {"from", boost::gregorian::to_iso_extended_string(atom->dateRange().begin())},
-            {"to", boost::gregorian::to_iso_extended_string(atom->dateRange().end())}
+            {"roomId", atom.roomId()},
+            {"from", boost::gregorian::to_iso_extended_string(atom.dateRange().begin())},
+            {"to", boost::gregorian::to_iso_extended_string(atom.dateRange().end())}
           };
           reservationJson["atoms"].push_back(atomJson);
         }

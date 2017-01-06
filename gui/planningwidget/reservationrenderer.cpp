@@ -84,9 +84,9 @@ namespace gui
       QPainterPath path;
       path.setFillRule(Qt::WindingFill);
       path.addRoundedRect(borderRect, cornerRadius, cornerRadius, Qt::AbsoluteSize);
-      if (&atom == reservation.firstAtom())
+      if (&atom != reservation.firstAtom())
         path.addRect(borderRect.adjusted(0, 0, -cornerRadius, 0));
-      if (&atom == reservation.lastAtom())
+      if (&atom != reservation.lastAtom())
         path.addRect(borderRect.adjusted(cornerRadius, 0, 0, 0));
       painter->drawPath(path.simplified());
       painter->restore();
@@ -162,14 +162,16 @@ namespace gui
       if (reservation.status() == ReservationStatus::Temporary)
         text = QString("%1 (%2)").arg(description).arg(reservation.length());
       else
+      {
         text = QString("%1+%2 %3 (%4)")
                    .arg(reservation.numberOfAdults())
                    .arg(reservation.numberOfChildren())
                    .arg(description)
                    .arg(reservation.length());
+        if (&atom != reservation.firstAtom())
+          text = "\xE2\x96\xB8 " + text;
+      }
 
-      if (&atom != reservation.firstAtom())
-        text = "\xE2\x96\xB8 " + text;
       return text;
     }
 
