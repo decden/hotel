@@ -59,5 +59,11 @@ namespace persistence
       return op::NoResult();
     }
 
+    op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
+    {
+      _storage.deleteReservationById(op.reservationId);
+      return op::DeleteReservationResult { op.reservationId };
+    }
+
   } // namespace sqlite
 } // namespace persistence

@@ -204,6 +204,15 @@ namespace hotel
     return result;
   }
 
+  const Reservation *PlanningBoard::getReservationById(int id) const
+  {
+    auto it = std::find_if(_reservations.begin(), _reservations.end(), [id](auto& x) { return x->id() == id; });
+    if (it != _reservations.end())
+      return it->get();
+    else
+      return nullptr;
+  }
+
   boost::gregorian::date_period PlanningBoard::getPlanningExtent() const
   {
     using namespace boost::gregorian;

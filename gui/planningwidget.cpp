@@ -75,10 +75,16 @@ namespace gui
     if (event->key() == Qt::Key_F2)
       _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
-    if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
+    if (event->key() == Qt::Key_Delete)
     {
-      updateLayout();
+      persistence::op::Operations removals;
+      for (auto reservation : _context.selectedReservations())
+        removals.push_back(persistence::op::DeleteReservation { reservation->id() });
+      _context.dataSource().queueOperations(std::move(removals));
     }
+
+    if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
+      updateLayout();
 
     auto tool = _context.activeTool();
     if (tool)

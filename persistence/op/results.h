@@ -31,13 +31,16 @@ namespace persistence
     struct StoreNewReservationResult { std::unique_ptr<hotel::Reservation> storedReservation; };
     struct StoreNewPersonResult { std::unique_ptr<hotel::Person> storedPerson; };
 
+    struct DeleteReservationResult { int deletedReservationId; };
+
     // Define a union type of all known operation results
     typedef boost::variant<op::NoResult,
                            op::EraseAllDataResult,
                            op::LoadInitialDataResult,
                            op::StoreNewHotelResult,
                            op::StoreNewReservationResult,
-                           op::StoreNewPersonResult>
+                           op::StoreNewPersonResult,
+                           op::DeleteReservationResult>
             OperationResult;
     typedef std::vector<OperationResult> OperationResults;
 

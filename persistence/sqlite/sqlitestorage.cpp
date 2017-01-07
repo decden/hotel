@@ -96,6 +96,11 @@ namespace persistence
       prepareQueries();
     }
 
+    void SqliteStorage::deleteReservationById(int id)
+    {
+      query("reservation.delete").execute(id, id);
+    }
+
     std::unique_ptr<hotel::HotelCollection> SqliteStorage::loadHotels()
     {
       std::vector<std::unique_ptr<hotel::Hotel>> results;
@@ -272,6 +277,8 @@ namespace persistence
                                "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
       _statements.emplace("reservation.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
+      _statements.emplace("reservation.delete",
+                          SqliteStatement(_db, "DELETE FROM h_reservation_atom where reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
       _statements.emplace("reservation_atom.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation_atom (reservation_id, room_id, "
                                                "date_from, date_to) VALUES (?, ?, ?, ?);"));

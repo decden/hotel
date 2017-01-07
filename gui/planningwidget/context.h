@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 
 namespace gui
 {
@@ -35,6 +36,10 @@ namespace gui
       void setRoomListScene(QGraphicsScene* scene);
       void setPlanningBoardScene(QGraphicsScene* scene);
       void setPlanning(const hotel::PlanningBoard *planning);
+
+      const std::unordered_set<const hotel::Reservation*> selectedReservations() const;
+      void addSelectedReservation(const hotel::Reservation* reservation);
+      void removeSelectedReservation(const hotel::Reservation* reservation);
 
       persistence::DataSource& dataSource();
       hotel::HotelCollection& hotelCollection();
@@ -62,6 +67,8 @@ namespace gui
       // Hotel data
       persistence::DataSource* _dataSource;
       const hotel::PlanningBoard* _planning;
+
+      std::unordered_set<const hotel::Reservation*> _selectedReservations;
 
       // Object with information on how to layout the individual elements in the planning widget, such as e.g.
       // reservations and rooms.

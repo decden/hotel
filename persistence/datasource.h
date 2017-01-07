@@ -50,6 +50,7 @@ namespace persistence
     void integrateResult(op::StoreNewReservationResult& res);
     void integrateResult(op::StoreNewHotelResult& res);
     void integrateResult(op::StoreNewPersonResult& res);
+    void integrateResult(op::DeleteReservationResult& res);
 
     // Backing store for the data
     persistence::sqlite::SqliteBackend _backend;

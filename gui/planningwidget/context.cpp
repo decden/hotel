@@ -15,6 +15,10 @@ namespace gui
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
     void Context::setPlanning(const hotel::PlanningBoard* planning) { _planning = planning; }
 
+    const std::unordered_set<const hotel::Reservation*> Context::selectedReservations() const { return _selectedReservations; }
+    void Context::addSelectedReservation(const hotel::Reservation *reservation) { _selectedReservations.insert(reservation); }
+    void Context::removeSelectedReservation(const hotel::Reservation *reservation) { _selectedReservations.erase(reservation); }
+
     persistence::DataSource& Context::dataSource() { return *_dataSource; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 

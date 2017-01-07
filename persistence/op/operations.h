@@ -23,12 +23,15 @@ namespace persistence
     struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
     struct StoreNewPerson { std::unique_ptr<hotel::Person> newPerson; };
 
+    struct DeleteReservation { int reservationId; };
+
     // Define a union type of all known operations
     typedef boost::variant<op::EraseAllData,
                            op::LoadInitialData,
                            op::StoreNewHotel,
                            op::StoreNewReservation,
-                           op::StoreNewPerson>
+                           op::StoreNewPerson,
+                           op::DeleteReservation>
             Operation;
     typedef std::vector<Operation> Operations;
 

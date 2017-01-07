@@ -37,7 +37,7 @@ namespace gui
       return newValue;
     }
 
-    PlanningBoardReservationItem::PlanningBoardReservationItem(const Context *context,
+    PlanningBoardReservationItem::PlanningBoardReservationItem(Context *context,
                                                                const hotel::Reservation* reservation,
                                                                QGraphicsItem* parent)
         : QGraphicsItem(parent), _context(context), _reservation(reservation), _isSelected(false),
@@ -48,6 +48,12 @@ namespace gui
         auto item = new PlanningBoardAtomItem(context, _reservation, &atom);
         item->setParentItem(this);
       }
+    }
+
+    PlanningBoardReservationItem::~PlanningBoardReservationItem()
+    {
+      if (_isSelected)
+        _context->removeSelectedReservation(_reservation);
     }
 
     void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -72,6 +78,12 @@ namespace gui
         return;
       _isUpdatingSelection = true;
       _isSelected = select;
+
+      // Add/remove selection to/from context
+      if (select)
+        _context->addSelectedReservation(_reservation);
+      else
+        _context->removeSelectedReservation(_reservation);
 
       // Update selection of the children
       for (auto child : childItems())

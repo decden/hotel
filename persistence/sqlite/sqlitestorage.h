@@ -27,6 +27,7 @@ namespace persistence
       ~SqliteStorage();
 
       void deleteAll();
+      void deleteReservationById(int id);
 
       std::unique_ptr<hotel::HotelCollection> loadHotels();
       std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);

@@ -132,7 +132,10 @@ namespace gui
       // Make a set out of the list
       std::set<const hotel::Reservation*> reservationSet;
       for (auto& reservation : reservations)
+      {
+        _context->removeSelectedReservation(reservation);
         reservationSet.insert(reservation);
+      }
 
       // Remove all of the corresponiding reservations
       for (auto item : _scene->items())
@@ -141,7 +144,9 @@ namespace gui
         if (reservationItem != nullptr)
         {
           if (reservationSet.find(reservationItem->reservation()) != reservationSet.end())
+          {
             _scene->removeItem(reservationItem);
+          }
         }
       }
     }

@@ -107,6 +107,8 @@ namespace hotel
     std::vector<Reservation*> getReservationsInPeriod(boost::gregorian::date_period period);
     std::vector<const Reservation*> getReservationsInPeriod(boost::gregorian::date_period period) const;
 
+    const Reservation* getReservationById(int id) const;
+
     /**
      * @brief getPlanningExtent Returns the date period encompassing all of the reservations
      * @return If there are no reservation, an empty period is returned, encompassing the current day.

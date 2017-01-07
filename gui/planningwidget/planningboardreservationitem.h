@@ -56,8 +56,9 @@ namespace gui
     class PlanningBoardReservationItem : public QGraphicsItem
     {
     public:
-      PlanningBoardReservationItem(const Context* context, const hotel::Reservation* reservation,
+      PlanningBoardReservationItem(Context* context, const hotel::Reservation* reservation,
                                    QGraphicsItem* parent = nullptr);
+      virtual ~PlanningBoardReservationItem();
 
       // QGraphicsItem interface
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
@@ -72,7 +73,7 @@ namespace gui
       void updateLayout();
 
     private:
-      const Context* _context;
+      Context* _context;
       const hotel::Reservation* _reservation;
       bool _isSelected;
       /**

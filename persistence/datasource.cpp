@@ -87,4 +87,14 @@ namespace persistence
     std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
   }
 
+  void DataSource::integrateResult(op::DeleteReservationResult &res)
+  {
+    auto reservation = _planning.getReservationById(res.deletedReservationId);
+    if (reservation != nullptr)
+      _planning.removeReservation(reservation);
+    else
+      std::cerr << "Cannot remove reservation with id " << res.deletedReservationId << " from planning board: no such id" << std::endl;
+
+  }
+
 } // namespace persistence
