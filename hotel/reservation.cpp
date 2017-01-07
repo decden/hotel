@@ -15,19 +15,6 @@ namespace hotel
     _atoms.push_back(ReservationAtom(roomId, dateRange));
   }
 
-  Reservation::Reservation(Reservation&& that)
-      : PersistentObject(that), _status(that._status), _description(std::move(that._description)),
-        _reservationOwnerPersonId(that._reservationOwnerPersonId), _adults(that._adults), _children(that._children),
-        _atoms(std::move(that._atoms))
-  {
-    that._status = Unknown;
-    that._description = "";
-    that._reservationOwnerPersonId = boost::optional<int>();
-    that._adults = 0;
-    that._children = 0;
-    that._atoms.clear();
-  }
-
   void Reservation::setStatus(Reservation::ReservationStatus status) { _status = status; }
   void Reservation::setDescription(const std::string& newDescription) { _description = newDescription; }
   void Reservation::setNumberOfAdults(int adults) { _adults = adults; }

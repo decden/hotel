@@ -47,7 +47,9 @@ namespace hotel
     Reservation(const std::string& description);
     Reservation(const std::string& description, int roomId, boost::gregorian::date_period dateRange);
     Reservation(const Reservation& that) = default;
-    Reservation(Reservation&& that);
+    Reservation(Reservation&& that) = default;
+    Reservation& operator=(const Reservation& that) = default;
+    Reservation& operator=(Reservation&& that) = default;
 
     void setStatus(ReservationStatus status);
     void setDescription(const std::string& newDescription);
@@ -77,6 +79,8 @@ namespace hotel
     const int length() const;
 
   private:
+    void clear();
+
     ReservationStatus _status;
     std::string _description;
 

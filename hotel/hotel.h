@@ -20,6 +20,9 @@ namespace hotel
   public:
     RoomCategory(const std::string& shortCode, const std::string& name);
 
+    bool operator==(const RoomCategory& that) const;
+    bool operator!=(const RoomCategory& that) const;
+
     const std::string& shortCode() const;
     const std::string& name() const;
 
@@ -32,6 +35,9 @@ namespace hotel
   {
   public:
     HotelRoom(const std::string& name);
+
+    bool operator==(const HotelRoom& that) const;
+    bool operator!=(const HotelRoom& that) const;
 
     void setCategory(const RoomCategory* category);
 
@@ -50,6 +56,9 @@ namespace hotel
     //! The copy constructor performs a deep copy of the object
     Hotel(const Hotel& that);
 
+    bool operator==(const Hotel& that) const;
+    bool operator!=(const Hotel& that) const;
+
     const std::string& name() const;
     const std::vector<std::unique_ptr<HotelRoom>>& rooms() const;
     const std::vector<std::unique_ptr<RoomCategory>>& categories() const;
@@ -61,7 +70,6 @@ namespace hotel
     RoomCategory* getCategoryByShortCode(const std::string& shortCode);
 
   private:
-
     std::string _name;
     std::vector<std::unique_ptr<RoomCategory>> _categories;
     std::vector<std::unique_ptr<HotelRoom>> _rooms;

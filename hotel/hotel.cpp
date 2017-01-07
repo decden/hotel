@@ -6,20 +6,26 @@
 
 namespace hotel
 {
-
   RoomCategory::RoomCategory(const std::string& shortCode, const std::string& name)
       : _shortCode(shortCode), _name(name)
   {
   }
+
+  bool RoomCategory::operator==(const RoomCategory& that) const { return _name == that._name && _shortCode == that._shortCode; }
+  bool RoomCategory::operator!=(const RoomCategory& that) const { return !(*this == that); }
 
   const std::string& RoomCategory::shortCode() const { return _shortCode; }
   const std::string& RoomCategory::name() const { return _name; }
 
   HotelRoom::HotelRoom(const std::string& name) : _category(nullptr), _name(name) {}
 
+  bool HotelRoom::operator==(const HotelRoom &that) const { return _name == that._name && *_category == *that._category; }
+  bool HotelRoom::operator!=(const HotelRoom &that) const { return !(*this == that); }
+
   void HotelRoom::setCategory(const RoomCategory* category) { _category = category; }
   const RoomCategory* HotelRoom::category() const { return _category; }
   const std::string& HotelRoom::name() const { return _name; }
+
 
   Hotel::Hotel(const std::string& name) : _name(name) {}
 
@@ -33,6 +39,27 @@ namespace hotel
     for (auto& room : that._rooms)
       addRoom(std::make_unique<hotel::HotelRoom>(*room), room->category()->shortCode());
   }
+
+  bool Hotel::operator==(const Hotel &that) const
+  {
+    if (_name != that._name)
+      return false;
+
+    if (_categories.size() != that._categories.size() || _rooms.size() != that._rooms.size())
+      return false;
+
+    for (auto i = 0u; i < _categories.size(); ++i)
+      if (*_categories[i] != *that._categories[i])
+        return false;
+
+    for (auto i = 0u; i < _rooms.size(); ++i)
+      if (*_rooms[i] != *that._rooms[i])
+        return false;
+
+    return true;
+  }
+
+  bool Hotel::operator!=(const Hotel &that) const { return !(*this == that); }
 
   const std::string& Hotel::name() const { return _name; }
   const std::vector<std::unique_ptr<HotelRoom>>& Hotel::rooms() const { return _rooms; }
