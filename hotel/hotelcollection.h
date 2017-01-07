@@ -19,6 +19,8 @@ namespace hotel
     HotelCollection();
     explicit HotelCollection(std::vector<std::unique_ptr<hotel::Hotel>> hotel);
     HotelCollection(const HotelCollection& that);
+    HotelCollection& operator=(const HotelCollection& that);
+    HotelCollection& operator=(HotelCollection&& that);
 
     void addHotel(std::unique_ptr<hotel::Hotel> hotel);
     void clear();

@@ -59,6 +59,8 @@ namespace hotel
   class PlanningBoard
   {
   public:
+    PlanningBoard& operator=(const PlanningBoard& that);
+    PlanningBoard& operator=(PlanningBoard&& that);
     ~PlanningBoard();
 
     /**

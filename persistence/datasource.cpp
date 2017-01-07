@@ -14,6 +14,15 @@ namespace persistence
       dataSource.hotels().clear();
     }
 
+    void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::LoadInitialData&)
+    {
+      auto hotels = storage.loadHotels();
+      auto planning = storage.loadPlanning(hotels->allRoomIDs());
+
+      dataSource.hotels() = std::move(*hotels);
+      dataSource.planning() = std::move(*planning);
+    }
+
     void executeOperation(sqlite::SqliteStorage& storage, DataSource& dataSource, op::StoreNewHotel& op)
     {
       if (op.newHotel == nullptr)
@@ -49,28 +58,39 @@ namespace persistence
 
   DataSource::DataSource(const std::string& databaseFile) : _storage(databaseFile)
   {
-    _hotels = _storage.loadHotels();
-    _planning = _storage.loadPlanning(_hotels->allRoomIDs());
+    queueOperation(op::LoadInitialData());
+    processQueue();
   }
 
-  hotel::HotelCollection& DataSource::hotels() { return *_hotels; }
-  const hotel::HotelCollection& DataSource::hotels() const { return *_hotels; }
-  hotel::PlanningBoard& DataSource::planning() { return *_planning; }
-  const hotel::PlanningBoard& DataSource::planning() const { return *_planning; }
+  hotel::HotelCollection& DataSource::hotels() { return _hotels; }
+  const hotel::HotelCollection& DataSource::hotels() const { return _hotels; }
+  hotel::PlanningBoard& DataSource::planning() { return _planning; }
+  const hotel::PlanningBoard& DataSource::planning() const { return _planning; }
 
   void DataSource::queueOperation(op::Operation operation)
   {
-    _storage.beginTransaction();
-    boost::apply_visitor([this](auto& op) { return executeOperation(_storage, *this, op); }, operation);
-    _storage.commitTransaction();
+    op::Operations item;
+    item.push_back(std::move(operation));
+    _operationsQueue.push_back(std::move(item));
+    processQueue();
   }
 
   void DataSource::queueOperations(std::vector<op::Operation> operations)
   {
-    _storage.beginTransaction();
-    for (auto& operation : operations)
-      boost::apply_visitor([this](auto& op) { return executeOperation(_storage, *this, op); }, operation);
-    _storage.commitTransaction();
+    _operationsQueue.push_back(std::move(operations));
+    processQueue();
+  }
+
+  void DataSource::processQueue()
+  {
+    for (auto& item : _operationsQueue)
+    {
+      _storage.beginTransaction();
+      for (auto& operation : item)
+        boost::apply_visitor([this](auto& op) { return executeOperation(_storage, *this, op); }, operation);
+      _storage.commitTransaction();
+    }
+    _operationsQueue.clear();
   }
 
 } // namespace persistence

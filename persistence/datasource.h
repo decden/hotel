@@ -7,6 +7,7 @@
 #include "hotel/planning.h"
 
 #include <memory>
+#include <deque>
 
 namespace persistence
 {
@@ -39,11 +40,15 @@ namespace persistence
     void queueOperations(std::vector<op::Operation> operations);
 
   private:
+    void processQueue();
+
     // Backing store for the data
     persistence::sqlite::SqliteStorage _storage;
 
-    std::unique_ptr<hotel::PlanningBoard> _planning;
-    std::unique_ptr<hotel::HotelCollection> _hotels;
+    hotel::PlanningBoard _planning;
+    hotel::HotelCollection _hotels;
+
+    std::deque<persistence::op::Operations> _operationsQueue;
   };
 
 } // namespace persistence

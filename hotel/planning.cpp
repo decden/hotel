@@ -32,6 +32,36 @@ namespace hotel
     }
   }
 
+  PlanningBoard& PlanningBoard::operator=(const PlanningBoard& that)
+  {
+    assert(this != &that);
+    if (this == &that) return *this;
+
+    clear();
+
+    // Copy rooms
+    for (auto room : that._rooms)
+      this->addRoomId(room.first);
+
+    // Copy reservations
+    for (auto& reservation : that._reservations)
+      addReservation(std::make_unique<Reservation>(*reservation));
+
+    return *this;
+  }
+
+  PlanningBoard& PlanningBoard::operator=(PlanningBoard&& that)
+  {
+    assert(this != &that);
+    assert(that._observers.empty());
+
+    clear();
+    _rooms = std::move(that._rooms);
+    _reservations = std::move(that._reservations);
+    that.clear();
+    return *this;
+  }
+
   Reservation* PlanningBoard::addReservation(std::unique_ptr<Reservation> reservation)
   {
     if (reservation == nullptr)

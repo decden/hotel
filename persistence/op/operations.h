@@ -16,12 +16,16 @@ namespace persistence
     //! Operations which deletes everyghing present in the database
     struct EraseAllData { };
 
+    //! Loads inital hotel, rooms, and planning data
+    struct LoadInitialData { };
+
     struct StoreNewHotel { std::unique_ptr<hotel::Hotel> newHotel; };
     struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
     struct StoreNewPerson { std::unique_ptr<hotel::Person> newPerson; };
 
     // Define a union type of all known operations
     typedef boost::variant<op::EraseAllData,
+                           op::LoadInitialData,
                            op::StoreNewHotel,
                            op::StoreNewReservation,
                            op::StoreNewPerson>

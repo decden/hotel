@@ -1,5 +1,7 @@
 #include "hotelcollection.h"
 
+#include <cassert>
+
 namespace hotel
 {
   HotelCollection::HotelCollection() : _hotels() {}
@@ -8,9 +10,27 @@ namespace hotel
 
   HotelCollection::HotelCollection(const HotelCollection &that)
   {
+    *this = that;
+  }
+
+  HotelCollection& HotelCollection::operator=(const HotelCollection& that)
+  {
+    assert(this != &that);
+    if (this == &that) return *this;
+
+    _hotels.clear();
+
     // Deep copy all hotels
     for (auto& hotel : that._hotels)
       _hotels.push_back(std::make_unique<Hotel>(*hotel));
+
+    return *this;
+  }
+
+  HotelCollection& HotelCollection::operator=(HotelCollection&& that)
+  {
+    _hotels = std::move(that._hotels);
+    return *this;
   }
 
   void HotelCollection::addHotel(std::unique_ptr<Hotel> hotel)
