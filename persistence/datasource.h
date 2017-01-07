@@ -2,6 +2,7 @@
 #define PERSISTENCE_DATASOURCE_H
 
 #include "persistence/op/operations.h"
+#include "persistence/op/results.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
 #include "hotel/planning.h"
@@ -41,6 +42,7 @@ namespace persistence
 
   private:
     void processQueue();
+    void processIntegrationQueue();
 
     // Backing store for the data
     persistence::sqlite::SqliteStorage _storage;
@@ -48,7 +50,8 @@ namespace persistence
     hotel::PlanningBoard _planning;
     hotel::HotelCollection _hotels;
 
-    std::deque<persistence::op::Operations> _operationsQueue;
+    std::deque<op::Operations> _operationsQueue;
+    std::deque<op::OperationResults> _integrationQueue;
   };
 
 } // namespace persistence

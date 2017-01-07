@@ -2,6 +2,7 @@ set(SRC
   datasource.cpp
 
   op/operations.cpp
+  op/results.cpp
 
   json/jsonserializer.h
 
@@ -13,6 +14,7 @@ set(SRC_INCLUDES
   datasource.h
 
   op/operations.h
+  op/results.h
 
   json/jsonserializer.h
 
