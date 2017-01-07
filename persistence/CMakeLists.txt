@@ -6,6 +6,7 @@ set(SRC
 
   json/jsonserializer.h
 
+  sqlite/sqlitebackend.cpp
   sqlite/sqlitestatement.cpp
   sqlite/sqlitestorage.cpp
 )
@@ -18,6 +19,7 @@ set(SRC_INCLUDES
 
   json/jsonserializer.h
 
+  sqlite/sqlitebackend.h
   sqlite/sqlitestatement.h
   sqlite/sqlitestorage.h
 )

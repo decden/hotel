@@ -3,7 +3,7 @@
 
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
-#include "persistence/sqlite/sqlitestorage.h"
+#include "persistence/sqlite/sqlitebackend.h"
 
 #include "hotel/planning.h"
 
@@ -44,8 +44,15 @@ namespace persistence
     void processQueue();
     void processIntegrationQueue();
 
+    void integrateResult(op::NoResult& res);
+    void integrateResult(op::EraseAllDataResult& res);
+    void integrateResult(op::LoadInitialDataResult& res);
+    void integrateResult(op::StoreNewReservationResult& res);
+    void integrateResult(op::StoreNewHotelResult& res);
+    void integrateResult(op::StoreNewPersonResult& res);
+
     // Backing store for the data
-    persistence::sqlite::SqliteStorage _storage;
+    persistence::sqlite::SqliteBackend _backend;
 
     hotel::PlanningBoard _planning;
     hotel::HotelCollection _hotels;
