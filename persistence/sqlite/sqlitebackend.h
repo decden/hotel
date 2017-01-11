@@ -6,10 +6,17 @@
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
 
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 #include <string>
+#include <queue>
 
 namespace persistence
 {
+  class DataSource;
+
   namespace sqlite
   {
     class SqliteBackend
@@ -17,9 +24,15 @@ namespace persistence
     public:
       SqliteBackend(const std::string& databasePath);
 
-      op::OperationResults execute(op::Operations operationBlock);
+      void queueOperation(op::Operations operationBlock);
+
+      // TODO: Remove back-pointer to data source here!
+      void start(persistence::DataSource& dataSource);
+      void stopAndJoin();
 
     private:
+      void threadMain(persistence::DataSource& dataSource);
+
       op::OperationResult executeOperation(op::EraseAllData&);
       op::OperationResult executeOperation(op::LoadInitialData&);
       op::OperationResult executeOperation(op::StoreNewHotel& op);
@@ -28,6 +41,13 @@ namespace persistence
       op::OperationResult executeOperation(op::DeleteReservation& op);
 
       SqliteStorage _storage;
+
+      std::thread _backendThread;
+      std::atomic<bool> _quitBackendThread;
+      std::condition_variable _workAvailableCondition;
+
+      std::mutex _queueMutex;
+      std::queue<op::Operations> _operationsQueue;
     };
 
   } // namespace sqlite

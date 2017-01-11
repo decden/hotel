@@ -9,6 +9,7 @@
 #include <QWindow>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QTimer>
 
 #include <memory>
 
@@ -23,6 +24,14 @@ int main(int argc, char** argv)
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
   widget.activateTool("new-reservation");
   widget.show();
+
+  // TODO: We are basically polling for changes here. This should be replaced with a more robust notification mechanism
+  QTimer timer;
+  timer.setInterval(100);
+  QObject::connect(&timer, &QTimer::timeout, [&]() {
+    dataSource.processIntegrationQueue();
+  });  timer.start();
+
 
   return app.exec();
 }

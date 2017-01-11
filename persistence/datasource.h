@@ -8,7 +8,8 @@
 #include "hotel/planning.h"
 
 #include <memory>
-#include <deque>
+#include <mutex>
+#include <queue>
 
 namespace persistence
 {
@@ -19,6 +20,7 @@ namespace persistence
   {
   public:
     DataSource(const std::string& databaseFile);
+    ~DataSource();
 
     hotel::HotelCollection& hotels();
     const hotel::HotelCollection& hotels() const;
@@ -38,11 +40,17 @@ namespace persistence
      * The operations are executed together under a transaction if possible.
      * @param operations List of operations to perform.
      */
-    void queueOperations(std::vector<op::Operation> operations);
+    void queueOperations(op::Operations operations);
+
+    // Method used by the data backend to notify the data source of results
+    // TODO: It is not nice to have a method in the public interface here which should only be called by a particlar
+    //       class. A better design would probably be of separating result integration into an external class and use
+    //       composition here.
+    void reportResult(op::OperationResults results);
+
+    void processIntegrationQueue();
 
   private:
-    void processQueue();
-    void processIntegrationQueue();
 
     void integrateResult(op::NoResult& res);
     void integrateResult(op::EraseAllDataResult& res);
@@ -58,8 +66,8 @@ namespace persistence
     hotel::PlanningBoard _planning;
     hotel::HotelCollection _hotels;
 
-    std::deque<op::Operations> _operationsQueue;
-    std::deque<op::OperationResults> _integrationQueue;
+    std::mutex _queueMutex;
+    std::queue<op::OperationResults> _integrationQueue;
   };
 
 } // namespace persistence

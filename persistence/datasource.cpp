@@ -7,7 +7,13 @@ namespace persistence
 {
   DataSource::DataSource(const std::string& databaseFile) : _backend(databaseFile)
   {
+    _backend.start(*this);
     queueOperation(op::LoadInitialData());
+  }
+
+  DataSource::~DataSource()
+  {
+    _backend.stopAndJoin();
   }
 
   hotel::HotelCollection& DataSource::hotels() { return _hotels; }
@@ -19,34 +25,29 @@ namespace persistence
   {
     op::Operations item;
     item.push_back(std::move(operation));
-    _operationsQueue.push_back(std::move(item));
-    processQueue();
-    processIntegrationQueue();
+    _backend.queueOperation(std::move(item));
   }
 
-  void DataSource::queueOperations(std::vector<op::Operation> operations)
+  void DataSource::queueOperations(op::Operations operations)
   {
-    _operationsQueue.push_back(std::move(operations));
-    processQueue();
-    processIntegrationQueue();
+    _backend.queueOperation(std::move(operations));
   }
 
-  void DataSource::processQueue()
+  void DataSource::reportResult(op::OperationResults results)
   {
-    for (auto& item : _operationsQueue)
-      _integrationQueue.push_back(_backend.execute(std::move(item)));
-
-    _operationsQueue.clear();
+    std::unique_lock<std::mutex> lock(_queueMutex);
+    _integrationQueue.push(std::move(results));
   }
 
   void DataSource::processIntegrationQueue()
   {
-    for (auto& item : _integrationQueue)
+    std::unique_lock<std::mutex> lock(_queueMutex);
+    while (!_integrationQueue.empty())
     {
-      for (auto& result : item)
+      for (auto& result : _integrationQueue.front())
         boost::apply_visitor([this](auto& result) { return this->integrateResult(result); }, result);
+      _integrationQueue.pop();
     }
-    _integrationQueue.clear();
   }
 
   void DataSource::integrateResult(op::NoResult&) { }

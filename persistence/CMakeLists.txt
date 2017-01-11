@@ -26,4 +26,4 @@ set(SRC_INCLUDES
 
 add_library(persistence ${SRC} ${SRC_INCLUDES})
 target_link_libraries(persistence hotel)
-target_link_libraries(persistence ${Boost_DATE_TIME_LIBRARY} ${SQLITE3_LIBRARY})
+target_link_libraries(persistence ${Boost_DATE_TIME_LIBRARY} ${SQLITE3_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})

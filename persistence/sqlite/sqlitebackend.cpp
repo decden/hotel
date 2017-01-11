@@ -1,19 +1,67 @@
 #include "persistence/sqlite/sqlitebackend.h"
 
+#include "persistence/datasource.h"
+
+#include <cassert>
+
 namespace persistence
 {
   namespace sqlite
   {
-    SqliteBackend::SqliteBackend(const std::string& databasePath) : _storage(databasePath) {}
-
-    op::OperationResults SqliteBackend::execute(op::Operations operationBlock)
+    SqliteBackend::SqliteBackend(const std::string& databasePath)
+        : _storage(databasePath), _backendThread(), _quitBackendThread(false), _workAvailableCondition(), _queueMutex(),
+          _operationsQueue()
     {
-      op::OperationResults results;
-      _storage.beginTransaction();
-      for (auto& operation : operationBlock)
-        results.push_back(boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
-      _storage.commitTransaction();
-      return results;
+    }
+
+    void SqliteBackend::queueOperation(op::Operations operationBlock)
+    {
+      std::unique_lock<std::mutex> lock(_queueMutex);
+      _operationsQueue.push(std::move(operationBlock));
+
+      lock.unlock();
+      _workAvailableCondition.notify_one();
+
+    }
+
+    void SqliteBackend::start(persistence::DataSource &dataSource)
+    {
+      assert(!_backendThread.joinable());
+      _backendThread = std::thread([this, &dataSource]() { this->threadMain(dataSource); });
+    }
+
+    void SqliteBackend::stopAndJoin()
+    {
+      assert(_backendThread.joinable());
+
+      _quitBackendThread = true;
+      _workAvailableCondition.notify_one();
+      _backendThread.join();
+    }
+
+    void SqliteBackend::threadMain(persistence::DataSource &dataSource)
+    {
+      while (!_quitBackendThread)
+      {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        if (_operationsQueue.empty())
+        {
+          _workAvailableCondition.wait(lock);
+        }
+        else
+        {
+          auto operationBlock = std::move(_operationsQueue.front());
+          _operationsQueue.pop();
+          lock.unlock();
+
+          op::OperationResults results;
+          _storage.beginTransaction();
+          for (auto& operation : operationBlock)
+            results.push_back(boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
+          _storage.commitTransaction();
+          dataSource.reportResult(std::move(results));
+        }
+      }
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)

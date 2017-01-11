@@ -59,6 +59,18 @@ namespace hotel
     _rooms = std::move(that._rooms);
     _reservations = std::move(that._reservations);
     that.clear();
+
+    std::vector<const Reservation*> newReservations;
+    for (auto& r : _reservations)
+      newReservations.push_back(r.get());
+
+    // Notify the observers and return
+    for (auto& observer : _observers)
+    {
+      observer->allReservationsRemoved();
+      observer->reservationsAdded(newReservations);
+    }
+
     return *this;
   }
 
