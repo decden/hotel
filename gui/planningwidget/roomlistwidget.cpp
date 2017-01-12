@@ -90,6 +90,11 @@ namespace gui
       _scene->addItem(item);
     }
 
+    void RoomListWidget::clear()
+    {
+      _scene->clear();
+    }
+
     void RoomListWidget::updateLayout()
     {
       auto& layout = _context->layout();

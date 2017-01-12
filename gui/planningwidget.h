@@ -14,23 +14,42 @@
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
+#include <QObject>
 #include <QScrollBar>
 #include <QWidget>
 
 #include <boost/date_time.hpp>
+#include <boost/signals2.hpp>
 
 #include <memory>
 #include <vector>
 
 namespace gui
 {
+  class PlanningWidget;
+
+  template <class T>
+  class CollectionObserverAdapter : public hotel::CollectionObserver<T>
+  {
+  public:
+    // CollectionObserver<T> interface
+    virtual void itemsAdded(const std::vector<T>& reservations) override { itemsAddedSignal(reservations); }
+    virtual void itemsRemoved(const std::vector<T>& reservations) override { itemsRemovedSignal(reservations); }
+    virtual void allItemsRemoved() override { allItemsRemovedSignal(); }
+
+    // Public signals
+    boost::signals2::signal<void(const std::vector<T>&)> itemsAddedSignal;
+    boost::signals2::signal<void(const std::vector<T>&)> itemsRemovedSignal;
+    boost::signals2::signal<void()> allItemsRemovedSignal;
+  };
+
   /**
    * @brief The PlanningWidget class displays a list of reservations
    *
    * In a nutshell, the planning widget is composed of three main parts: A list of rooms, a date bar and a planning
    * board containing all of the reservations.
    */
-  class PlanningWidget : public QWidget, public hotel::PlanningBoardObserver
+  class PlanningWidget : public QWidget
   {
     Q_OBJECT
   public:
@@ -48,13 +67,13 @@ namespace gui
   protected:
     virtual void keyPressEvent(QKeyEvent* event) override;
 
-    // PlanningBoardObserver interface
-    virtual void itemsAdded(const std::vector<const hotel::Reservation*>& reservations) override;
-    virtual void itemsRemoved(const std::vector<const hotel::Reservation*>& reservations) override;
-    virtual void allItemsRemoved() override;
-
   private:
-    // Layout objects, holding layout information for this widget
+    virtual void reservationsAdded(const std::vector<const hotel::Reservation*>& reservations);
+    virtual void reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations);
+    virtual void allReservationsRemoved();
+    virtual void hotelsAdded(const std::vector<const hotel::Hotel*>& hotels);
+    virtual void hotelsRemoved(const std::vector<const hotel::Hotel*>& hotels);
+    virtual void allHotelsRemoved();
 
     // Widgets
     QScrollBar* _verticalScrollbar;
@@ -65,6 +84,9 @@ namespace gui
 
     // Shared widget state
     planningwidget::Context _context;
+
+    CollectionObserverAdapter<const hotel::Reservation*> _planningObserver;
+    CollectionObserverAdapter<const hotel::Hotel*> _hotelObserver;
 
     void updateDateRange();
 

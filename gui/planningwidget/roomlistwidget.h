@@ -37,6 +37,7 @@ namespace gui
       virtual QSize sizeHint() const override;
 
       void addRoomItem(hotel::HotelRoom* room);
+      void clear();
 
       //! When the layout changes, call this methods to update the scene.
       void updateLayout();

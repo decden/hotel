@@ -35,6 +35,12 @@ namespace gui
 
     // Wire up events
     connect(_dateBar, SIGNAL(dateClicked(boost::gregorian::date)), this, SLOT(setPivotDate(boost::gregorian::date)));
+    _planningObserver.itemsAddedSignal.connect(boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
+    _planningObserver.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
+    _planningObserver.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
+    _hotelObserver.itemsAddedSignal.connect(boost::bind(&PlanningWidget::hotelsAdded, this, boost::placeholders::_1));
+    _hotelObserver.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
+    _hotelObserver.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
 
     grid->addWidget(_dateBar, 0, 1);
     grid->addWidget(_roomList, 1, 0);
@@ -43,22 +49,16 @@ namespace gui
     grid->addWidget(_horizontalScrollbar, 2, 1);
     setLayout(grid);
 
-    // Add data to the sub-widgets
-    for (auto room : dataSource.hotels().allRooms())
-      _roomList->addRoomItem(room);
-
-    dataSource.planning().addObserver(this);
+    dataSource.planning().addObserver(&_planningObserver);
+    dataSource.hotels().addObserver(&_hotelObserver);
   }
 
-  void PlanningWidget::registerTool(const std::string &toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
+  void PlanningWidget::registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
   {
     _context.registerTool(toolName, std::move(tool));
   }
 
-  void PlanningWidget::activateTool(const std::string &toolName)
-  {
-    _context.activateTool(toolName);
-  }
+  void PlanningWidget::activateTool(const std::string& toolName) { _context.activateTool(toolName); }
 
   void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
   {
@@ -79,7 +79,7 @@ namespace gui
     {
       persistence::op::Operations removals;
       for (auto reservation : _context.selectedReservations())
-        removals.push_back(persistence::op::DeleteReservation { reservation->id() });
+        removals.push_back(persistence::op::DeleteReservation{reservation->id()});
       _context.dataSource().queueOperations(std::move(removals));
     }
 
@@ -91,18 +91,43 @@ namespace gui
       tool->keyPressEvent(event);
   }
 
-  void PlanningWidget::itemsAdded(const std::vector<const hotel::Reservation*>& reservations)
+  void PlanningWidget::reservationsAdded(const std::vector<const hotel::Reservation*>& reservations)
   {
     _planningBoard->addReservations(reservations);
     updateDateRange();
   }
 
-  void PlanningWidget::itemsRemoved(const std::vector<const hotel::Reservation*>& reservations)
+  void PlanningWidget::reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations)
   {
     _planningBoard->removeReservations(reservations);
   }
 
-  void PlanningWidget::allItemsRemoved() { _planningBoard->removeAllReservations(); }
+  void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }
+
+  void PlanningWidget::hotelsAdded(const std::vector<const hotel::Hotel*>& hotels)
+  {
+    _roomList->clear();
+    for (auto room : _context.hotelCollection().allRooms())
+      _roomList->addRoomItem(room);
+    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    updateLayout();
+  }
+
+  void PlanningWidget::hotelsRemoved(const std::vector<const hotel::Hotel*>& hotels)
+  {
+
+    _roomList->clear();
+    for (auto room : _context.hotelCollection().allRooms())
+      _roomList->addRoomItem(room);
+    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    updateLayout();
+  }
+
+  void PlanningWidget::allHotelsRemoved()
+  {
+    _roomList->clear();
+    updateLayout();
+  }
 
   void PlanningWidget::updateDateRange()
   {

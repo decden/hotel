@@ -1,6 +1,7 @@
 #ifndef HOTEL_OBSERVABLECOLLECTION_H
 #define HOTEL_OBSERVABLECOLLECTION_H
 
+#include <cassert>
 #include <set>
 #include <vector>
 
