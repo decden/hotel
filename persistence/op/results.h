@@ -44,6 +44,11 @@ namespace persistence
             OperationResult;
     typedef std::vector<OperationResult> OperationResults;
 
+    struct OperationResultsMessage {
+      int uniqueId;
+      OperationResults results;
+    };
+
   } // namespace op
 } // namespace persistence
 

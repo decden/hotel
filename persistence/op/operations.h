@@ -35,6 +35,11 @@ namespace persistence
             Operation;
     typedef std::vector<Operation> Operations;
 
+    struct OperationsMessage{
+      int uniqueId;
+      Operations operations;
+    };
+
   } // namespace op
 } // namespace persistence
 

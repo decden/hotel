@@ -14,10 +14,10 @@ namespace persistence
     {
     }
 
-    void SqliteBackend::queueOperation(op::Operations operationBlock)
+    void SqliteBackend::queueOperation(op::OperationsMessage operationsMessage)
     {
       std::unique_lock<std::mutex> lock(_queueMutex);
-      _operationsQueue.push(std::move(operationBlock));
+      _operationsQueue.push(std::move(operationsMessage));
 
       lock.unlock();
       _workAvailableCondition.notify_one();
@@ -50,16 +50,17 @@ namespace persistence
         }
         else
         {
-          auto operationBlock = std::move(_operationsQueue.front());
+          auto operationsMessage = std::move(_operationsQueue.front());
           _operationsQueue.pop();
           lock.unlock();
 
-          op::OperationResults results;
+          op::OperationResultsMessage resultsMessage;
+          resultsMessage.uniqueId = operationsMessage.uniqueId;
           _storage.beginTransaction();
-          for (auto& operation : operationBlock)
-            results.push_back(boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
+          for (auto& operation : operationsMessage.operations)
+            resultsMessage.results.push_back(boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
           _storage.commitTransaction();
-          dataSource.reportResult(std::move(results));
+          dataSource.reportResult(std::move(resultsMessage));
         }
       }
     }

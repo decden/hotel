@@ -24,7 +24,7 @@ namespace persistence
     public:
       SqliteBackend(const std::string& databasePath);
 
-      void queueOperation(op::Operations operationBlock);
+      void queueOperation(op::OperationsMessage operationsMessage);
 
       // TODO: Remove back-pointer to data source here!
       void start(persistence::DataSource& dataSource);
@@ -47,7 +47,7 @@ namespace persistence
       std::condition_variable _workAvailableCondition;
 
       std::mutex _queueMutex;
-      std::queue<op::Operations> _operationsQueue;
+      std::queue<op::OperationsMessage> _operationsQueue;
     };
 
   } // namespace sqlite

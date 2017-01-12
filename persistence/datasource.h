@@ -7,9 +7,12 @@
 
 #include "hotel/planning.h"
 
+#include "boost/signals2.hpp"
+
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <set>
 
 namespace persistence
 {
@@ -42,13 +45,22 @@ namespace persistence
      */
     void queueOperations(op::Operations operations);
 
+    void processIntegrationQueue();
+
     // Method used by the data backend to notify the data source of results
     // TODO: It is not nice to have a method in the public interface here which should only be called by a particlar
     //       class. A better design would probably be of separating result integration into an external class and use
     //       composition here.
-    void reportResult(op::OperationResults results);
+    void reportResult(op::OperationResultsMessage results);
 
-    void processIntegrationQueue();
+    //! Returns the number of operations that the backend has yet to process
+    int pendingOperationCount() { return static_cast<int>(_pendingOperations.size()); }
+
+    /**
+     * @brief resultsAvailableSignal returns the signal which is triggered when new results are waiting to be integrated
+     * @note The signal is not called on the main thread, but on the backend worker thread
+     */
+    boost::signals2::signal<void()>& resultsAvailableSignal() { return _resultsAvailableSignal; }
 
   private:
 
@@ -66,8 +78,12 @@ namespace persistence
     hotel::PlanningBoard _planning;
     hotel::HotelCollection _hotels;
 
+    boost::signals2::signal<void()> _resultsAvailableSignal;
+
     std::mutex _queueMutex;
-    std::queue<op::OperationResults> _integrationQueue;
+    int _nextOperationId;
+    std::set<int> _pendingOperations; // Operations which are not yet integrated
+    std::queue<op::OperationResultsMessage> _integrationQueue;
   };
 
 } // namespace persistence
