@@ -22,10 +22,9 @@ public:
 class MockPlanningBoardObserver : public hotel::PlanningBoardObserver
 {
 public:
-  MOCK_METHOD1(reservationsAdded, void(const std::vector<const hotel::Reservation*>& reservations));
-  MOCK_METHOD1(reservationsRemoved, void(const std::vector<const hotel::Reservation*>& reservations));
-  MOCK_METHOD1(initialUpdate, void(const hotel::PlanningBoard&));
-  MOCK_METHOD0(allReservationsRemoved, void());
+  MOCK_METHOD1(itemsAdded, void(const std::vector<const hotel::Reservation*>& reservations));
+  MOCK_METHOD1(itemsRemoved, void(const std::vector<const hotel::Reservation*>& reservations));
+  MOCK_METHOD0(allItemsRemoved, void());
 };
 
 TEST_F(HotelPlanning, Planning)
@@ -126,32 +125,31 @@ TEST_F(HotelPlanning, PlanningBoardObserver)
   board.addRoomId(2);
   MockPlanningBoardObserver observer;
 
-  EXPECT_CALL(observer, initialUpdate(testing::_)).Times(1);
-  observer.setObservedPlanningBoard(&board);
+  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(1);
+  board.addObserver(&observer);
   testing::Mock::VerifyAndClear(&observer);
 
   // Add reservations
-  EXPECT_CALL(observer, reservationsAdded(testing::_)).Times(2);
+  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(2);
   board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 2, 4)));
   board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 6, 8)));
   testing::Mock::VerifyAndClear(&observer);
 
   // Remove reservations
-  EXPECT_CALL(observer, reservationsRemoved(testing::_)).Times(1);
+  EXPECT_CALL(observer, itemsRemoved(testing::_)).Times(1);
   auto allReservations = board.getReservationsInPeriod(board.getPlanningExtent());
   board.removeReservation(allReservations[0]);
   testing::Mock::VerifyAndClear(&observer);
 
   // Reset observed board to nullptr
-  EXPECT_CALL(observer, allReservationsRemoved()).Times(1);
-  observer.setObservedPlanningBoard(nullptr);
+  EXPECT_CALL(observer, allItemsRemoved()).Times(1);
+  board.removeObserver(&observer);
   testing::Mock::VerifyAndClear(&observer);
 
   // Add reservations while no observer attached
-  EXPECT_CALL(observer, initialUpdate(testing::_)).Times(1);
-  EXPECT_CALL(observer, reservationsAdded(testing::_)).Times(0);
+  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(1);
   board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 10, 11)));
   board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 11, 12)));
-  observer.setObservedPlanningBoard(&board);
+  board.addObserver(&observer);
   testing::Mock::VerifyAndClear(&observer);
 }

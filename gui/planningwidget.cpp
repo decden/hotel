@@ -47,7 +47,7 @@ namespace gui
     for (auto room : dataSource.hotels().allRooms())
       _roomList->addRoomItem(room);
 
-    setObservedPlanningBoard(&dataSource.planning());
+    dataSource.planning().addObserver(this);
   }
 
   void PlanningWidget::registerTool(const std::string &toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
@@ -91,33 +91,24 @@ namespace gui
       tool->keyPressEvent(event);
   }
 
-  void PlanningWidget::reservationsAdded(const std::vector<const hotel::Reservation*>& reservations)
+  void PlanningWidget::itemsAdded(const std::vector<const hotel::Reservation*>& reservations)
   {
     _planningBoard->addReservations(reservations);
+    updateDateRange();
   }
 
-  void PlanningWidget::reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations)
+  void PlanningWidget::itemsRemoved(const std::vector<const hotel::Reservation*>& reservations)
   {
     _planningBoard->removeReservations(reservations);
   }
 
-  void PlanningWidget::initialUpdate(const hotel::PlanningBoard& board)
-  {
-    _context.setPlanning(&board);
-    _planningBoard->addReservations(board.reservations());
-    updateDateRange();
-    updateLayout();
-  }
-
-  void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }
+  void PlanningWidget::allItemsRemoved() { _planningBoard->removeAllReservations(); }
 
   void PlanningWidget::updateDateRange()
   {
     auto pivotDate = _context.layout().pivotDate();
     auto planningExtent = boost::gregorian::date_period(pivotDate, pivotDate);
-    auto planningBoard = observedPlanningBoard();
-    if (planningBoard != nullptr)
-      planningExtent = planningBoard->getPlanningExtent();
+    planningExtent = _context.planning().getPlanningExtent();
 
     // Extend the date range so that it starts one week prior to the first reservation and extends for at least one year
     auto dateRange = planningExtent.merge(boost::gregorian::date_period(

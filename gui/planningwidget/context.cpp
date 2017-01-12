@@ -13,7 +13,6 @@ namespace gui
     void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
     void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
-    void Context::setPlanning(const hotel::PlanningBoard* planning) { _planning = planning; }
 
     const std::unordered_set<const hotel::Reservation*> Context::selectedReservations() const { return _selectedReservations; }
     void Context::addSelectedReservation(const hotel::Reservation *reservation) { _selectedReservations.insert(reservation); }

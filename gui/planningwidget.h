@@ -49,10 +49,9 @@ namespace gui
     virtual void keyPressEvent(QKeyEvent* event) override;
 
     // PlanningBoardObserver interface
-    virtual void reservationsAdded(const std::vector<const hotel::Reservation*>& reservations) override;
-    virtual void reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations) override;
-    virtual void initialUpdate(const hotel::PlanningBoard& board) override;
-    virtual void allReservationsRemoved() override;
+    virtual void itemsAdded(const std::vector<const hotel::Reservation*>& reservations) override;
+    virtual void itemsRemoved(const std::vector<const hotel::Reservation*>& reservations) override;
+    virtual void allItemsRemoved() override;
 
   private:
     // Layout objects, holding layout information for this widget

@@ -3,6 +3,8 @@
 
 #include "hotel/reservation.h"
 
+#include "hotel/observablecollection.h"
+
 #include <boost/date_time.hpp>
 
 #include <map>
@@ -13,37 +15,8 @@
 
 namespace hotel
 {
-  class PlanningBoard;
-
-  /**
-   * @brief The PlanningBoardObserver class is an interface that can be implemented by classes wishing to be notified
-   *        when the planning board changes
-   *
-   * @see PlanningBoard
-   */
-  class PlanningBoardObserver
-  {
-  public:
-    PlanningBoardObserver();
-    virtual ~PlanningBoardObserver();
-
-    const PlanningBoard* observedPlanningBoard() const;
-    void setObservedPlanningBoard(PlanningBoard* board);
-
-  protected:
-    friend class PlanningBoard;
-
-    // Update methods called by the planning board when its contents change
-    virtual void reservationsAdded(const std::vector<const Reservation*>& reservations) = 0;
-    virtual void reservationsRemoved(const std::vector<const Reservation*>& reservations) = 0;
-
-    // Update methods called when changing/setting the observed planning board
-    virtual void initialUpdate(const PlanningBoard& board) = 0;
-    virtual void allReservationsRemoved() = 0;
-
-  private:
-    PlanningBoard* _observedPlanningBoard;
-  };
+typedef ObservableCollection<const Reservation*> ObservablePlanningBoard;
+typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
 
   /**
    * @brief The PlanningBoard class holds planning information for a given set of rooms.
@@ -61,7 +34,6 @@ namespace hotel
   public:
     PlanningBoard& operator=(const PlanningBoard& that);
     PlanningBoard& operator=(PlanningBoard&& that);
-    ~PlanningBoard();
 
     /**
      * @brief addRoomId Adds a room on the planning board
@@ -128,8 +100,8 @@ namespace hotel
     std::vector<std::unique_ptr<Reservation>> _reservations;
     std::map<int, std::vector<const ReservationAtom*>> _rooms;
 
-    //! List fo observers which are notified of changes
-    std::set<PlanningBoardObserver*> _observers;
+    //! Used to notify observers about changes to the collection
+    ObservablePlanningBoard _observableCollection;
   };
 
 } // namespace hotel

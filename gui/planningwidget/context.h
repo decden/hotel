@@ -35,7 +35,6 @@ namespace gui
       void setDateBarScene(QGraphicsScene* scene);
       void setRoomListScene(QGraphicsScene* scene);
       void setPlanningBoardScene(QGraphicsScene* scene);
-      void setPlanning(const hotel::PlanningBoard *planning);
 
       const std::unordered_set<const hotel::Reservation*> selectedReservations() const;
       void addSelectedReservation(const hotel::Reservation* reservation);
@@ -66,7 +65,6 @@ namespace gui
     private:
       // Hotel data
       persistence::DataSource* _dataSource;
-      const hotel::PlanningBoard* _planning;
 
       std::unordered_set<const hotel::Reservation*> _selectedReservations;
 

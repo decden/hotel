@@ -2,36 +2,6 @@
 
 namespace hotel
 {
-
-  PlanningBoardObserver::PlanningBoardObserver() : _observedPlanningBoard(nullptr) {}
-
-  PlanningBoardObserver::~PlanningBoardObserver()
-  {
-    if (_observedPlanningBoard)
-      _observedPlanningBoard->removeObserver(this);
-  }
-
-  const PlanningBoard* PlanningBoardObserver::observedPlanningBoard() const { return _observedPlanningBoard; }
-
-  void PlanningBoardObserver::setObservedPlanningBoard(PlanningBoard* board)
-  {
-    if (board == _observedPlanningBoard)
-      return;
-
-    if (_observedPlanningBoard)
-    {
-      _observedPlanningBoard->removeObserver(this);
-      allReservationsRemoved();
-    }
-
-    _observedPlanningBoard = board;
-    if (board)
-    {
-      board->addObserver(this);
-      initialUpdate(*board);
-    }
-  }
-
   PlanningBoard& PlanningBoard::operator=(const PlanningBoard& that)
   {
     assert(this != &that);
@@ -53,22 +23,24 @@ namespace hotel
   PlanningBoard& PlanningBoard::operator=(PlanningBoard&& that)
   {
     assert(this != &that);
-    assert(that._observers.empty());
+    assert(!that._observableCollection.hasObservers());
 
     clear();
     _rooms = std::move(that._rooms);
     _reservations = std::move(that._reservations);
     that.clear();
 
-    std::vector<const Reservation*> newReservations;
-    for (auto& r : _reservations)
-      newReservations.push_back(r.get());
-
-    // Notify the observers and return
-    for (auto& observer : _observers)
+    if (_observableCollection.hasObservers())
     {
-      observer->allReservationsRemoved();
-      observer->reservationsAdded(newReservations);
+      std::vector<const Reservation*> newReservations;
+      for (auto& r : _reservations)
+        newReservations.push_back(r.get());
+
+      // Notify the observers
+      _observableCollection.foreachObserver([&](auto& observer) {
+        observer.allItemsRemoved();
+        observer.itemsAdded(newReservations);
+      });
     }
 
     return *this;
@@ -89,8 +61,9 @@ namespace hotel
     _reservations.push_back(std::move(reservation));
 
     // Notify the observers and return
-    for (auto& observer : _observers)
-      observer->reservationsAdded({reservationPtr});
+    _observableCollection.foreachObserver([&](auto& observer) {
+      observer.itemsAdded({reservationPtr});
+    });
     return reservationPtr;
   }
 
@@ -114,8 +87,9 @@ namespace hotel
     if (reservationIt != _reservations.end())
     {
       _reservations.erase(reservationIt);
-      for (auto& observer : _observers)
-        observer->reservationsRemoved({reservation});
+      _observableCollection.foreachObserver([&](auto& observer) {
+        observer.itemsRemoved({reservation});
+      });
     }
   }
 
@@ -123,15 +97,9 @@ namespace hotel
   {
     _reservations.clear();
     _rooms.clear();
-    for (auto observer : _observers)
-      observer->allReservationsRemoved();
-  }
-
-  PlanningBoard::~PlanningBoard()
-  {
-    auto observerListCopy = _observers;
-    for (auto observer : observerListCopy)
-      observer->setObservedPlanningBoard(nullptr);
+    _observableCollection.foreachObserver([&](auto& observer) {
+      observer.allItemsRemoved();
+    });
   }
 
   void PlanningBoard::addRoomId(int roomId)
@@ -251,9 +219,21 @@ namespace hotel
     }
   }
 
-  void PlanningBoard::addObserver(PlanningBoardObserver* observer) { _observers.insert(observer); }
+  void PlanningBoard::addObserver(PlanningBoardObserver* observer)
+  {
+    _observableCollection.addObserver(observer);
 
-  void PlanningBoard::removeObserver(PlanningBoardObserver* observer) { _observers.erase(observer); }
+    std::vector<const Reservation*> newReservations;
+    for (auto& r : _reservations)
+      newReservations.push_back(r.get());
+
+    // Notify the observers
+    _observableCollection.foreachObserver([&](auto& observer) {
+      observer.itemsAdded(newReservations);
+    });
+  }
+
+  void PlanningBoard::removeObserver(PlanningBoardObserver* observer) { _observableCollection.removeObserver(observer); }
 
   void PlanningBoard::insertAtom(const ReservationAtom* atom)
   {
