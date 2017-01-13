@@ -1,6 +1,7 @@
 #include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
+#include "gui/datasourcechangeintegrator.h"
 #include "gui/planningwidget.h"
 #include "gui/planningwidget/newreservationtool.h"
 
@@ -9,7 +10,6 @@
 #include <QWindow>
 #include <QPushButton>
 #include <QScrollBar>
-#include <QTimer>
 
 #include <memory>
 
@@ -26,12 +26,7 @@ int main(int argc, char** argv)
   widget.show();
 
   // TODO: We are basically polling for changes here. This should be replaced with a more robust notification mechanism
-  QTimer timer;
-  timer.setInterval(100);
-  QObject::connect(&timer, &QTimer::timeout, [&]() {
-    dataSource.processIntegrationQueue();
-  });  timer.start();
-
+  gui::ChangeIntegrator integrator(&dataSource);
 
   return app.exec();
 }

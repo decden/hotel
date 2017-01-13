@@ -1,4 +1,5 @@
 set(SRC
+    datasourcechangeintegrator.cpp
     statusbar.cpp
     planningwidget.cpp
 
@@ -14,6 +15,7 @@ set(SRC
 )
 
 set(SRC_INCLUDES
+    datasourcechangeintegrator.h
     statusbar.h
     planningwidget.h
 
