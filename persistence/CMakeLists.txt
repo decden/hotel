@@ -1,5 +1,6 @@
 set(SRC
   datasource.cpp
+  resultintegrator.cpp
 
   op/operations.cpp
   op/results.cpp
@@ -13,6 +14,7 @@ set(SRC
 
 set(SRC_INCLUDES
   datasource.h
+  resultintegrator.h
 
   op/operations.h
   op/results.h

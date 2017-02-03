@@ -3,6 +3,7 @@
 
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
+#include "persistence/resultintegrator.h"
 #include "persistence/sqlite/sqlitebackend.h"
 
 #include "hotel/planning.h"
@@ -16,6 +17,7 @@
 
 namespace persistence
 {
+
   /**
    * @brief The DataSource class handles all writing and reading access to the data.
    */
@@ -47,12 +49,6 @@ namespace persistence
 
     void processIntegrationQueue();
 
-    // Method used by the data backend to notify the data source of results
-    // TODO: It is not nice to have a method in the public interface here which should only be called by a particlar
-    //       class. A better design would probably be of separating result integration into an external class and use
-    //       composition here.
-    void reportResult(op::OperationResultsMessage results);
-
     //! Returns the number of operations that the backend has yet to process
     int pendingOperationCount() { return static_cast<int>(_pendingOperations.size()); }
 
@@ -60,30 +56,17 @@ namespace persistence
      * @brief resultsAvailableSignal returns the signal which is triggered when new results are waiting to be integrated
      * @note The signal is not called on the main thread, but on the backend worker thread
      */
-    boost::signals2::signal<void()>& resultsAvailableSignal() { return _resultsAvailableSignal; }
+    boost::signals2::signal<void()>& resultsAvailableSignal() { return _resultIntegrator.resultsAvailableSignal(); }
 
   private:
+    void markOperationAsCompleted(int id);
 
-    void integrateResult(op::NoResult& res);
-    void integrateResult(op::EraseAllDataResult& res);
-    void integrateResult(op::LoadInitialDataResult& res);
-    void integrateResult(op::StoreNewReservationResult& res);
-    void integrateResult(op::StoreNewHotelResult& res);
-    void integrateResult(op::StoreNewPersonResult& res);
-    void integrateResult(op::DeleteReservationResult& res);
-
-    // Backing store for the data
+    // Backing store and result integrator
     persistence::sqlite::SqliteBackend _backend;
+    persistence::ResultIntegrator _resultIntegrator;
 
-    hotel::PlanningBoard _planning;
-    hotel::HotelCollection _hotels;
-
-    boost::signals2::signal<void()> _resultsAvailableSignal;
-
-    std::mutex _queueMutex;
     int _nextOperationId;
-    std::set<int> _pendingOperations; // Operations which are not yet integrated
-    std::queue<op::OperationResultsMessage> _integrationQueue;
+    std::set<int> _pendingOperations; // Operation IDs which have not yet been integrated
   };
 
 } // namespace persistence

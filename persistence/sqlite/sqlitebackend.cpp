@@ -1,6 +1,6 @@
 #include "persistence/sqlite/sqlitebackend.h"
 
-#include "persistence/datasource.h"
+#include "persistence/resultintegrator.h"
 
 #include <cassert>
 
@@ -21,13 +21,12 @@ namespace persistence
 
       lock.unlock();
       _workAvailableCondition.notify_one();
-
     }
 
-    void SqliteBackend::start(persistence::DataSource &dataSource)
+    void SqliteBackend::start(persistence::ResultIntegrator& resultIntegrator)
     {
       assert(!_backendThread.joinable());
-      _backendThread = std::thread([this, &dataSource]() { this->threadMain(dataSource); });
+      _backendThread = std::thread([this, &resultIntegrator]() { this->threadMain(resultIntegrator); });
     }
 
     void SqliteBackend::stopAndJoin()
@@ -39,7 +38,7 @@ namespace persistence
       _backendThread.join();
     }
 
-    void SqliteBackend::threadMain(persistence::DataSource &dataSource)
+    void SqliteBackend::threadMain(persistence::ResultIntegrator& resultIntegrator)
     {
       while (!_quitBackendThread)
       {
@@ -58,9 +57,11 @@ namespace persistence
           resultsMessage.uniqueId = operationsMessage.uniqueId;
           _storage.beginTransaction();
           for (auto& operation : operationsMessage.operations)
-            resultsMessage.results.push_back(boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
+            resultsMessage.results.push_back(
+                boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
           _storage.commitTransaction();
-          dataSource.reportResult(std::move(resultsMessage));
+
+          resultIntegrator.reportResult(std::move(resultsMessage));
         }
       }
     }
@@ -75,7 +76,7 @@ namespace persistence
     {
       auto hotels = _storage.loadHotels();
       auto planning = _storage.loadPlanning(hotels->allRoomIDs());
-      return op::LoadInitialDataResult { std::move(hotels), std::move(planning) };
+      return op::LoadInitialDataResult{std::move(hotels), std::move(planning)};
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::StoreNewHotel& op)
@@ -84,7 +85,7 @@ namespace persistence
         return op::NoResult();
 
       _storage.storeNewHotel(*op.newHotel);
-      return op::StoreNewHotelResult { std::move(op.newHotel) };
+      return op::StoreNewHotelResult{std::move(op.newHotel)};
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::StoreNewReservation& op)
@@ -97,7 +98,7 @@ namespace persistence
         op.newReservation->setStatus(hotel::Reservation::New);
 
       _storage.storeNewReservationAndAtoms(*op.newReservation);
-      return op::StoreNewReservationResult { std::move(op.newReservation) };
+      return op::StoreNewReservationResult{std::move(op.newReservation)};
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson& op)
@@ -111,7 +112,7 @@ namespace persistence
     op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
-      return op::DeleteReservationResult { op.reservationId };
+      return op::DeleteReservationResult{op.reservationId};
     }
 
   } // namespace sqlite

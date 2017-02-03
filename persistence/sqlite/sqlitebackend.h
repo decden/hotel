@@ -15,7 +15,7 @@
 
 namespace persistence
 {
-  class DataSource;
+  class ResultIntegrator;
 
   namespace sqlite
   {
@@ -27,11 +27,11 @@ namespace persistence
       void queueOperation(op::OperationsMessage operationsMessage);
 
       // TODO: Remove back-pointer to data source here!
-      void start(persistence::DataSource& dataSource);
+      void start(persistence::ResultIntegrator& resultIntegrator);
       void stopAndJoin();
 
     private:
-      void threadMain(persistence::DataSource& dataSource);
+      void threadMain(persistence::ResultIntegrator& dataSource);
 
       op::OperationResult executeOperation(op::EraseAllData&);
       op::OperationResult executeOperation(op::LoadInitialData&);
