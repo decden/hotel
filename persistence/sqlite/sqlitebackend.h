@@ -5,6 +5,9 @@
 
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
+#include "persistence/op/task.h"
+
+#include <boost/signals2.hpp>
 
 #include <atomic>
 #include <mutex>
@@ -24,11 +27,17 @@ namespace persistence
     public:
       SqliteBackend(const std::string& databasePath);
 
-      void queueOperation(op::OperationsMessage operationsMessage);
+      op::Task<op::OperationResults> queueOperation(op::Operations operations);
 
       // TODO: Remove back-pointer to data source here!
       void start(persistence::ResultIntegrator& resultIntegrator);
       void stopAndJoin();
+
+      /**
+       * @brief taskCompletedSignal returns the signal which is triggered when operations have been completed and results are available
+       * @note The signal is not called on the main thread, but on the backend worker thread
+       */
+      boost::signals2::signal<void(int)>& taskCompletedSignal() { return _taskCompletedSignal; }
 
     private:
       void threadMain(persistence::ResultIntegrator& dataSource);
@@ -42,12 +51,17 @@ namespace persistence
 
       SqliteStorage _storage;
 
+      int _nextOperationId;
+
       std::thread _backendThread;
       std::atomic<bool> _quitBackendThread;
       std::condition_variable _workAvailableCondition;
 
       std::mutex _queueMutex;
-      std::queue<op::OperationsMessage> _operationsQueue;
+      typedef std::shared_ptr<op::TaskSharedState<op::OperationResults>> SharedState;
+      typedef std::pair<op::Operations, SharedState> QueuedOperation;
+      std::queue<QueuedOperation> _operationsQueue;
+      boost::signals2::signal<void(int)> _taskCompletedSignal;
     };
 
   } // namespace sqlite

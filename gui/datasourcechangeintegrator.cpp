@@ -6,10 +6,10 @@ namespace gui
   ChangeIntegrator::ChangeIntegrator(persistence::DataSource* dataSource) : _ds(dataSource)
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
-    _ds->resultsAvailableSignal().connect([this]() { this->emitResultsAvailable(); });
+    _ds->taskCompletedSignal().connect([this](int) { this->emitResultsAvailable(); });
   }
 
-  ChangeIntegrator::~ChangeIntegrator() { _ds->resultsAvailableSignal().disconnect_all_slots(); }
+  ChangeIntegrator::~ChangeIntegrator() { _ds->taskCompletedSignal().disconnect_all_slots(); }
 
   void ChangeIntegrator::handleAvailableResults() { _ds->processIntegrationQueue(); }
 

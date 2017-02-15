@@ -1,7 +1,5 @@
 #include "persistence/sqlite/sqlitebackend.h"
 
-#include "persistence/resultintegrator.h"
-
 #include <cassert>
 
 namespace persistence
@@ -9,18 +7,24 @@ namespace persistence
   namespace sqlite
   {
     SqliteBackend::SqliteBackend(const std::string& databasePath)
-        : _storage(databasePath), _backendThread(), _quitBackendThread(false), _workAvailableCondition(), _queueMutex(),
-          _operationsQueue()
+        : _storage(databasePath), _nextOperationId(1), _backendThread(), _quitBackendThread(false),
+          _workAvailableCondition(), _queueMutex(), _operationsQueue()
     {
     }
 
-    void SqliteBackend::queueOperation(op::OperationsMessage operationsMessage)
+    op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
     {
-      std::unique_lock<std::mutex> lock(_queueMutex);
-      _operationsQueue.push(std::move(operationsMessage));
+      // Create a task
+      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
+      op::Task<op::OperationResults> task(sharedState);
 
+      std::unique_lock<std::mutex> lock(_queueMutex);
+      auto pair = QueuedOperation{std::move(operations), sharedState};
+      _operationsQueue.push(std::move(pair));
       lock.unlock();
       _workAvailableCondition.notify_one();
+
+      return task;
     }
 
     void SqliteBackend::start(persistence::ResultIntegrator& resultIntegrator)
@@ -53,15 +57,14 @@ namespace persistence
           _operationsQueue.pop();
           lock.unlock();
 
-          op::OperationResultsMessage resultsMessage;
-          resultsMessage.uniqueId = operationsMessage.uniqueId;
+          op::OperationResults results;
           _storage.beginTransaction();
-          for (auto& operation : operationsMessage.operations)
-            resultsMessage.results.push_back(
+          for (auto& operation : operationsMessage.first)
+            results.push_back(
                 boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation));
           _storage.commitTransaction();
-
-          resultIntegrator.reportResult(std::move(resultsMessage));
+          operationsMessage.second->setCompleted(std::move(results));
+          _taskCompletedSignal(operationsMessage.second->uniqueId());
         }
       }
     }

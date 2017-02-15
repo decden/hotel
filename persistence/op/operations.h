@@ -8,6 +8,8 @@
 #include "boost/variant.hpp"
 
 #include <memory>
+#include <mutex>
+#include <condition_variable>
 
 namespace persistence
 {
@@ -34,11 +36,6 @@ namespace persistence
                            op::DeleteReservation>
             Operation;
     typedef std::vector<Operation> Operations;
-
-    struct OperationsMessage{
-      int uniqueId;
-      Operations operations;
-    };
 
   } // namespace op
 } // namespace persistence

@@ -14,17 +14,23 @@ void waitForAllOperations(persistence::DataSource& ds)
   std::unique_lock<std::mutex> lock(mutex);
   std::condition_variable condition;
 
-  ds.resultsAvailableSignal().connect([&]() { condition.notify_one(); });
+  ds.taskCompletedSignal().connect([&](int) { condition.notify_one(); });
 
-  while(ds.pendingOperationCount() != 0)
+  while(ds.pendingOperationsCount() != 0)
   {
     ds.processIntegrationQueue();
     condition.wait_for(lock, std::chrono::milliseconds(10));
   }
 
-  ds.resultsAvailableSignal().disconnect_all_slots();
+  ds.taskCompletedSignal().disconnect_all_slots();
 }
 
+void waitForTask(persistence::DataSource& ds, persistence::op::Task<persistence::op::OperationResults>& task)
+{
+  // Waits for one task to complete and to be integrated
+  task.waitForCompletion();
+  ds.processIntegrationQueue();
+}
 
 
 class Persistence : public testing::Test
@@ -34,8 +40,8 @@ public:
   {
     // Make sure the database is empty before each test
     persistence::DataSource dataSource("test.db");
-    dataSource.queueOperation(persistence::op::EraseAllData());
-    waitForAllOperations(dataSource);
+    auto task = dataSource.queueOperation(persistence::op::EraseAllData());
+    waitForTask(dataSource, task);
   }
 
   hotel::Hotel makeNewHotel(const std::string& name, const std::string& category, int numberOfRooms)
@@ -59,16 +65,16 @@ public:
   const hotel::Hotel& storeHotel(persistence::DataSource& dataSource, const hotel::Hotel& hotel)
   {
     // TODO: Right now this test function only works for storing one instance
-    dataSource.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
-    waitForAllOperations(dataSource);
+    auto task = dataSource.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
+    waitForTask(dataSource, task);
     return *dataSource.hotels().hotels()[0];
   }
 
   const hotel::Reservation& storeReservation(persistence::DataSource& dataSource, const hotel::Reservation& reservation)
   {
     // TODO: Right now this test function only works for storing one instance
-    dataSource.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
-    waitForAllOperations(dataSource);
+    auto task = dataSource.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
+    waitForTask(dataSource, task);
     return *dataSource.planning().reservations()[0];
   }
 };

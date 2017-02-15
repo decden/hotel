@@ -1,5 +1,7 @@
 #include "persistence/resultintegrator.h"
 
+#include <algorithm>
+
 namespace persistence
 {
   hotel::HotelCollection& ResultIntegrator::hotels() { return _hotels; }
@@ -7,29 +9,34 @@ namespace persistence
   hotel::PlanningBoard& ResultIntegrator::planning() { return _planning; }
   const hotel::PlanningBoard& ResultIntegrator::planning() const { return _planning; }
 
-  void ResultIntegrator::reportResult(op::OperationResultsMessage results)
-  {
-    {
-      std::unique_lock<std::mutex> lock(_queueMutex);
-      _integrationQueue.push(std::move(results));
-    }
-    _resultsAvailableSignal();
-  }
-
-  boost::signals2::signal<void()>& ResultIntegrator::resultsAvailableSignal() { return _resultsAvailableSignal; }
-
-  boost::signals2::signal<void(int)>& ResultIntegrator::resultIntegratedSignal() { return _resultIntegratedSignal; }
-
   void ResultIntegrator::processIntegrationQueue()
   {
     std::unique_lock<std::mutex> lock(_queueMutex);
-    while (!_integrationQueue.empty())
+
+    // Move all of the completed tasks to the end of the list
+    auto readyBegin = std::stable_partition(begin(_integrationQueue), end(_integrationQueue),
+                                            [](auto& task) { return !task.completed(); });
+
+    // For each of the completed tasks: integrate it!
+    for (auto it = readyBegin; it != end(_integrationQueue); ++it)
     {
-      for (auto& result : _integrationQueue.front().results)
+      for (auto& result : it->results())
         boost::apply_visitor([this](auto& result) { return this->integrateResult(result); }, result);
-      _resultIntegratedSignal(_integrationQueue.front().uniqueId);
-      _integrationQueue.pop();
     }
+
+    // Erase all completed tasks
+    _integrationQueue.erase(readyBegin, end(_integrationQueue));
+  }
+
+  void ResultIntegrator::addPendingOperation(op::Task<op::OperationResults> task)
+  {
+    std::unique_lock<std::mutex> lock(_queueMutex);
+    _integrationQueue.push_back(std::move(task));
+  }
+
+  size_t ResultIntegrator::pendingOperationsCount() const
+  {
+    return _integrationQueue.size();
   }
 
   void ResultIntegrator::integrateResult(op::NoResult&) {}
