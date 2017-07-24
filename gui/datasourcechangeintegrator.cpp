@@ -7,6 +7,8 @@ namespace gui
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
     _ds->taskCompletedSignal().connect([this](int) { this->emitResultsAvailable(); });
+    // Initial update...
+    handleAvailableResults();
   }
 
   ChangeIntegrator::~ChangeIntegrator() { _ds->taskCompletedSignal().disconnect_all_slots(); }
