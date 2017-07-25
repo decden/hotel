@@ -137,8 +137,6 @@ namespace gui
         grad.setColorAt(0.5, boardSeparatorColor);
 
         painter->fillRect(rect, grad);
-        painter->setPen(boardEvenRowColor);
-        painter->drawLine(rect.left(), rect.bottom(), rect.right(), rect.bottom());
       }
       else if (row.rowType() == PlanningBoardRowGeometry::RoomRow)
       {
