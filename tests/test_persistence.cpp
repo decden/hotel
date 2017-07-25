@@ -16,7 +16,7 @@ void waitForAllOperations(persistence::DataSource& ds)
 
   ds.taskCompletedSignal().connect([&](int) { condition.notify_one(); });
 
-  while(ds.pendingOperationsCount() != 0)
+  while(ds.hasPendingTasks())
   {
     ds.processIntegrationQueue();
     condition.wait_for(lock, std::chrono::milliseconds(10));

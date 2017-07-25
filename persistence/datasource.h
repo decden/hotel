@@ -49,8 +49,13 @@ namespace persistence
 
     void processIntegrationQueue();
 
-    //! Returns the number of operations that the backend has yet to process
-    size_t pendingOperationsCount() const;
+    /**
+     * @brief hasPendingTasks returns whether there any queued operations are still being processed.
+     * Note that his method does only consider the tasks which have been queued with the queueOperation() or
+     * queueOperations() method.
+     * @return false if some tasks are still being processed, true otherwise.
+     */
+    bool hasPendingTasks() const;
 
     /**
      * @brief taskCompletedSignal returns the signal which is triggered when new results are waiting to be integrated
@@ -62,6 +67,8 @@ namespace persistence
     // Backing store and result integrator
     persistence::sqlite::SqliteBackend _backend;
     persistence::ResultIntegrator _resultIntegrator;
+
+    std::vector<op::Task<op::OperationResults>> _pendingTasks;
 
     int _nextOperationId;
   };

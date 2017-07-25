@@ -33,17 +33,24 @@ namespace persistence
   {
     auto task = _backend.queueOperation(std::move(operations));
     _resultIntegrator.addPendingOperation(task);
+    _pendingTasks.push_back(task);
     return task;
   }
 
   void DataSource::processIntegrationQueue()
   {
     _resultIntegrator.processIntegrationQueue();
+
+    // Remove completed tasks
+    _pendingTasks.erase(std::remove_if(_pendingTasks.begin(), _pendingTasks.end(),
+      [](const op::Task<op::OperationResults>& task) {
+        return task.completed();
+    }), _pendingTasks.end());
   }
 
-  size_t DataSource::pendingOperationsCount() const
+  bool DataSource::hasPendingTasks() const
   {
-    return _resultIntegrator.pendingOperationsCount();
+    return !_pendingTasks.empty();
   }
 
 } // namespace persistence

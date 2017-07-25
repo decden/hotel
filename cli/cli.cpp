@@ -27,6 +27,12 @@ void createTestDatabase(const std::string& db)
   for (auto& reservation : planning->reservations())
     operations.push_back(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(*reservation) });
   dataSource.queueOperations(std::move(operations));
+
+  while (dataSource.hasPendingTasks())
+  {
+      dataSource.processIntegrationQueue();
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 }
 
 int main(int argc, char** argv)
