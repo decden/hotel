@@ -88,7 +88,7 @@ namespace persistence
         lock.unlock();
 
         // Initialize new data streams
-        _dataStreams.initialize([this](auto& stream) { initializeStream(stream); });
+        _dataStreams.initialize([this](auto& stream) { this->initializeStream(stream); });
 
         // Process tasks
         for (auto& operationsMessage : newTasks)
