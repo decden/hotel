@@ -6,12 +6,6 @@ namespace persistence
 {
   namespace detail
   {
-    template<class T>
-    void DataStreamManager::addNewStream(const std::shared_ptr<DataStream<T>> &stream)
-    {
-      _newStreams.push_back(stream);
-    }
-
     bool DataStreamManager::collectNewStreams()
     {
       assert(_uninitializedStreams.size() == 0);
@@ -35,7 +29,7 @@ namespace persistence
     {
       for (auto& activeStream : _activeStreams)
       {
-        if (activeStream.type() == typeid(typename StreamPtrType<T>::Type))
+        if (activeStream.type() == typeid(std::shared_ptr<DataStream<T>>))
           func(*boost::get<std::shared_ptr<DataStream<T>>>(activeStream));
       }
     }
@@ -79,18 +73,6 @@ namespace persistence
       _backendThread.join();
     }
 
-    std::shared_ptr<DataStream<hotel::Hotel>> SqliteBackend::createStream(DataStreamObserver<hotel::Hotel> *observer)
-    {
-      std::unique_lock<std::mutex> lock(_queueMutex);
-      auto sharedState = std::make_shared<DataStream<hotel::Hotel>>(_nextStreamId++, observer);
-      _dataStreams.addNewStream(sharedState);
-      lock.unlock();
-
-      _workAvailableCondition.notify_one();
-
-      return sharedState;
-    }
-
     void SqliteBackend::threadMain(persistence::ResultIntegrator& resultIntegrator)
     {
       while (!_quitBackendThread)
@@ -130,10 +112,14 @@ namespace persistence
     {
       _storage.deleteAll();
       results.push_back(op::EraseAllDataResult());
+
+      _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream<hotel::Reservation>& stream) { stream.clear(); });
+      _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream<hotel::Hotel>& stream) { stream.clear(); });
     }
 
     void SqliteBackend::executeOperation(op::OperationResults& results, op::LoadInitialData&)
     {
+      // TODO: Remove this! This makes no sense in a stream world!
       auto hotels = _storage.loadHotels();
       auto planning = _storage.loadPlanning(hotels->allRoomIDs());
       results.push_back(op::LoadInitialDataResult{std::move(hotels), std::move(planning)});
@@ -145,11 +131,9 @@ namespace persistence
       if (op.newHotel == nullptr)
         return;
 
-      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream<hotel::Hotel>& stream) {
-        stream.addItems({*op.newHotel});
-      });
-
       _storage.storeNewHotel(*op.newHotel);
+
+      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream<hotel::Hotel>& stream) { stream.addItems({*op.newHotel}); });
       results.push_back(op::StoreNewHotelResult{std::move(op.newHotel)});
     }
 
@@ -161,8 +145,9 @@ namespace persistence
       // "Unknown" is not a valid reservation status for serialization
       if (op.newReservation->status() == hotel::Reservation::Unknown)
         op.newReservation->setStatus(hotel::Reservation::New);
-
       _storage.storeNewReservationAndAtoms(*op.newReservation);
+
+      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.addItems({*op.newReservation}); });
       results.push_back(op::StoreNewReservationResult{std::move(op.newReservation)});
     }
 
@@ -177,6 +162,7 @@ namespace persistence
     void SqliteBackend::executeOperation(op::OperationResults& results, op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
+      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.removeItems({op.reservationId}); });
       results.push_back(op::DeleteReservationResult{op.reservationId});
     }
 
@@ -188,14 +174,13 @@ namespace persistence
       std::vector<hotel::Hotel> hotels;
       for (auto& hotel : hotelsCollection->hotels())
         hotels.push_back(*hotel);
-      std::cout << "Initialized stream with " << hotels.size() << " items" << std::endl;
       dataStream.addItems(std::move(hotels));
     }
 
     void SqliteBackend::initializeStream(DataStream<hotel::Reservation>& dataStream)
     {
-      // TODO: Implement this
-      std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
+      auto reservations = _storage.loadReservations();
+      dataStream.addItems(std::move(*reservations));
     }
 
   } // namespace sqlite

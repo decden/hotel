@@ -157,6 +157,56 @@ namespace persistence
       return std::make_unique<hotel::HotelCollection>(std::move(results));
     }
 
+    std::unique_ptr<std::vector<hotel::Reservation>> SqliteStorage::loadReservations()
+    {
+      auto result = std::make_unique<std::vector<hotel::Reservation>>();
+
+      auto& reservationsQuery = query("reservation_and_atoms.all");
+      reservationsQuery.execute();
+      std::unique_ptr<hotel::Reservation> current = nullptr;
+      while (reservationsQuery.hasResultRow())
+      {
+        int reservationId;
+        std::string description;
+        std::string reservationStatus;
+        int adults;
+        int children;
+        int atomId;
+        int roomId;
+        boost::gregorian::date dateFrom;
+        boost::gregorian::date dateTo;
+        reservationsQuery.readRow(reservationId, description, reservationStatus, adults, children,
+                                  atomId, roomId, dateFrom, dateTo);
+
+        if (current == nullptr || current->id() != reservationId)
+        {
+          if (current)
+          {
+            result->push_back(std::move(*current));
+            current = nullptr;
+          }
+          current = std::make_unique<hotel::Reservation>(description, roomId,
+                                                         boost::gregorian::date_period(dateFrom, dateTo));
+          current->setId(reservationId);
+          current->setStatus(parseReservationStatus(reservationStatus));
+          current->setNumberOfAdults(adults);
+          current->setNumberOfChildren(children);
+        }
+        else
+        {
+          current->addContinuation(roomId, dateTo);
+        }
+        (*current->atoms().rbegin()).setId(atomId);
+      }
+      if (current)
+      {
+        result->push_back(std::move(*current));
+        current = nullptr;
+      }
+
+      return result;
+    }
+
     std::unique_ptr<hotel::PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int>& roomIds)
     {
       auto result = std::make_unique<hotel::PlanningBoard>();

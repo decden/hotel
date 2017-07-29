@@ -37,13 +37,6 @@ namespace persistence
     return task;
   }
 
-  UniqueDataStreamHandle<hotel::Hotel> DataSource::connectStream(DataStreamObserver<hotel::Hotel> *observer)
-  {
-    auto stream = _backend.createStream(observer);
-    _resultIntegrator.addStream(stream);
-    return UniqueDataStreamHandle<hotel::Hotel>(stream);
-  }
-
   void DataSource::processIntegrationQueue()
   {
     _resultIntegrator.processIntegrationQueue();

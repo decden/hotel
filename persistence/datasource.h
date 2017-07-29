@@ -48,7 +48,13 @@ namespace persistence
      */
     op::Task<op::OperationResults> queueOperations(op::Operations operations);
 
-    UniqueDataStreamHandle<hotel::Hotel> connectStream(DataStreamObserver<hotel::Hotel>* observer);
+    template <class T>
+    UniqueDataStreamHandle<T> connectStream(DataStreamObserver<T>* observer)
+    {
+      auto stream = _backend.createStream(observer);
+      _resultIntegrator.addStream(stream);
+      return UniqueDataStreamHandle<T>(stream);
+    }
 
     void processIntegrationQueue();
 

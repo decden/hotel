@@ -30,6 +30,7 @@ namespace persistence
       void deleteReservationById(int id);
 
       std::unique_ptr<hotel::HotelCollection> loadHotels();
+      std::unique_ptr<std::vector<hotel::Reservation>> loadReservations();
       std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);
 
       void storeNewHotel(hotel::Hotel& hotel);

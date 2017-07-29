@@ -16,12 +16,12 @@ namespace persistence
     // First, integrate all of the changes in the data streams...
     {
       // Remove invalid streams (streams which no longer have a listener)
-      _hotelDataStreams.erase(std::remove_if(_hotelDataStreams.begin(), _hotelDataStreams.end(),
-                                             [](auto& stream) { return !stream->isValid(); }),
-                              _hotelDataStreams.end());
+      _dataStreams.erase(std::remove_if(_dataStreams.begin(), _dataStreams.end(),
+                                        [](auto& stream) { return boost::apply_visitor([](auto& stream) { return !stream->isValid(); }, stream); }),
+                              _dataStreams.end());
 
-      for (auto& stream : _hotelDataStreams)
-        stream->integrateChanges();
+      for (auto& stream : _dataStreams)
+        boost::apply_visitor([](auto& stream) { stream->integrateChanges(); }, stream);
     }
 
     // Second, integrate all of the results for tasks...
@@ -51,11 +51,6 @@ namespace persistence
   size_t ResultIntegrator::pendingOperationsCount() const
   {
     return _integrationQueue.size();
-  }
-
-  void ResultIntegrator::addStream(std::shared_ptr<DataStream<hotel::Hotel>> dataStream)
-  {
-    _hotelDataStreams.push_back(std::move(dataStream));
   }
 
   void ResultIntegrator::integrateResult(op::NoResult&) {}

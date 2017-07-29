@@ -136,10 +136,27 @@ TEST_F(Persistence, DataStreams)
   persistence::DataSource dataSource("test.db");
 
   persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
-  auto streamHandle = dataSource.connectStream(&hotels);
+  persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
+  auto hotelsStreamHandle = dataSource.connectStream(&hotels);
+  auto reservationsStreamHandle = dataSource.connectStream(&reservations);
 
-  auto hotel = makeNewHotel("Hotel 1", "Category 1", 10);
-  storeHotel(dataSource, hotel);
+  ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
+
+  storeHotel(dataSource, makeNewHotel("Hotel 1", "Category 1", 10));
 
   ASSERT_EQ(1u, hotels.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
+
+  storeReservation(dataSource, makeNewReservation("", hotels.items()[0].rooms()[0]->id()));
+  storeReservation(dataSource, makeNewReservation("", hotels.items()[0].rooms()[1]->id()));
+
+  ASSERT_EQ(1u, hotels.items().size());
+  ASSERT_EQ(2u, reservations.items().size());
+
+  auto task = dataSource.queueOperation(persistence::op::EraseAllData());
+  waitForTask(dataSource, task);
+
+  ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
 }

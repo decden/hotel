@@ -1,6 +1,9 @@
 #ifndef PERSISTENCE_DATASTREAM_H
 #define PERSISTENCE_DATASTREAM_H
 
+#include "hotel/hotel.h"
+#include "hotel/reservation.h"
+
 #include <boost/variant.hpp>
 
 #include <algorithm>
@@ -109,6 +112,10 @@ namespace persistence
     std::mutex _pendingOperationsMutex;
     std::vector<StreamOperation> _pendingOperations;
   };
+
+  typedef boost::variant<std::shared_ptr<DataStream<hotel::Hotel>>,
+                         std::shared_ptr<DataStream<hotel::Reservation>>>
+          DataStreamVariant;
 
   template <class T>
   class UniqueDataStreamHandle

@@ -25,8 +25,6 @@ namespace persistence
   class ResultIntegrator;
 
   namespace detail {
-    template <class T>
-    struct StreamPtrType { typedef std::shared_ptr<DataStream<T>> Type; };
     class DataStreamManager
     {
     public:
@@ -35,7 +33,7 @@ namespace persistence
        * @see collectNewStreams
        */
       template<class T>
-      void addNewStream(const std::shared_ptr<DataStream<T>>& stream);
+      void addNewStream(const std::shared_ptr<DataStream<T>>& stream) { _newStreams.push_back(stream); }
 
       /**
        * @brief The purpose of this method is to move all new streams into the uninitializedStreams list
@@ -64,10 +62,6 @@ namespace persistence
       void foreachActiveStream(Func func);
 
     private:
-      typedef boost::variant<StreamPtrType<hotel::Hotel>::Type,
-                             StreamPtrType<hotel::Reservation>::Type>
-              DataStreamVariant;
-
       // Access to this list has to be synchronized by the backend
       std::vector<DataStreamVariant> _newStreams;
       // The following two lists can be operated on by the worker thread without lock!
@@ -101,7 +95,18 @@ namespace persistence
        */
       boost::signals2::signal<void()>& streamsUpdatedSignal() { return _streamsUpdatedSignal; }
 
-      std::shared_ptr<DataStream<hotel::Hotel>> createStream(DataStreamObserver<hotel::Hotel> *observer);
+      template <class T>
+      std::shared_ptr<DataStream<T>> createStream(DataStreamObserver<T> *observer)
+      {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        auto sharedState = std::make_shared<DataStream<T>>(_nextStreamId++, observer);
+        _dataStreams.addNewStream(sharedState);
+        lock.unlock();
+
+        _workAvailableCondition.notify_one();
+
+        return sharedState;
+      }
 
     private:
       void threadMain(persistence::ResultIntegrator& dataSource);

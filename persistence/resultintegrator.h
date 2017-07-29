@@ -36,7 +36,8 @@ namespace persistence
     void addPendingOperation(op::Task<op::OperationResults> task);
     size_t pendingOperationsCount() const;
 
-    void addStream(std::shared_ptr<DataStream<hotel::Hotel>> dataStream);
+    template <class T>
+    void addStream(std::shared_ptr<DataStream<T>> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
 
   private:
     void integrateResult(op::NoResult& res);
@@ -52,7 +53,7 @@ namespace persistence
 
     std::mutex _queueMutex;
     std::vector<op::Task<op::OperationResults>> _integrationQueue;
-    std::vector<std::shared_ptr<DataStream<hotel::Hotel>>> _hotelDataStreams;
+    std::vector<DataStreamVariant> _dataStreams;
   };
 
 } // namespace persistence
