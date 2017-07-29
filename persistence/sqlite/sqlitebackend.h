@@ -18,13 +18,67 @@
 #include <thread>
 #include <string>
 #include <queue>
+#include <typeindex>
 
 namespace persistence
 {
   class ResultIntegrator;
 
+  namespace detail {
+    template <class T>
+    struct StreamPtrType { typedef std::shared_ptr<DataStream<T>> Type; };
+    class DataStreamManager
+    {
+    public:
+      /**
+       * @note addNewStream must be synchronized!
+       * @see collectNewStreams
+       */
+      template<class T>
+      void addNewStream(const std::shared_ptr<DataStream<T>>& stream);
+
+      /**
+       * @brief The purpose of this method is to move all new streams into the uninitializedStreams list
+       * When this method is called it has to be ensured that no one accesses either the newStreams or
+       * uninitializedStreams list.
+       *
+       * @note Before calling this method again, initialize() has to be called.
+       * @note initialize() can only be called on the worker thread while no other thread is accessing _newStreams.
+       *
+       * @return True if there are uninitialized streams to process
+       */
+      bool collectNewStreams();
+
+      /**
+       * @brief Initializes all new streams
+       * This function has to be called after collectNewStreams()
+       * @note initialize() can only be called on the worker thread!
+       */
+      template <class Func>
+      void initialize(Func initializerFunction);
+
+      /**
+       * @brief Calls func for each data stream in the active queue
+       */
+      template <class T, class Func>
+      void foreachActiveStream(Func func);
+
+    private:
+      typedef boost::variant<StreamPtrType<hotel::Hotel>::Type,
+                             StreamPtrType<hotel::Reservation>::Type>
+              DataStreamVariant;
+
+      // Access to this list has to be synchronized by the backend
+      std::vector<DataStreamVariant> _newStreams;
+      // The following two lists can be operated on by the worker thread without lock!
+      std::vector<DataStreamVariant> _uninitializedStreams;
+      std::vector<DataStreamVariant> _activeStreams;
+    };
+  }
+
   namespace sqlite
   {
+
     class SqliteBackend
     {
     public:
@@ -60,6 +114,7 @@ namespace persistence
       void executeOperation(op::OperationResults& results, op::DeleteReservation& op);
 
       void initializeStream(DataStream<hotel::Hotel>& dataStream);
+      void initializeStream(DataStream<hotel::Reservation>& dataStream);
 
       SqliteStorage _storage;
 
@@ -77,8 +132,7 @@ namespace persistence
       boost::signals2::signal<void(int)> _taskCompletedSignal;
       boost::signals2::signal<void()> _streamsUpdatedSignal;
 
-      std::vector<std::shared_ptr<DataStream<hotel::Hotel>>> _newHotelStreams;
-      std::vector<std::shared_ptr<DataStream<hotel::Hotel>>> _activeHotelStreams;
+      detail::DataStreamManager _dataStreams;
     };
 
   } // namespace sqlite

@@ -4,6 +4,43 @@
 
 namespace persistence
 {
+  namespace detail
+  {
+    template<class T>
+    void DataStreamManager::addNewStream(const std::shared_ptr<DataStream<T>> &stream)
+    {
+      _newStreams.push_back(stream);
+    }
+
+    bool DataStreamManager::collectNewStreams()
+    {
+      assert(_uninitializedStreams.size() == 0);
+      std::swap(_uninitializedStreams, _newStreams);
+      return !_uninitializedStreams.empty();
+    }
+
+    template<class Func>
+    void DataStreamManager::initialize(Func initializerFunction)
+    {
+      for (auto& uninitializedStream : _uninitializedStreams)
+      {
+        boost::apply_visitor([&](auto& stream) { initializerFunction(*stream); }, uninitializedStream);
+        _activeStreams.push_back(std::move(uninitializedStream));
+      }
+      _uninitializedStreams.clear();
+    }
+
+    template<class T, class Func>
+    void DataStreamManager::foreachActiveStream(Func func)
+    {
+      for (auto& activeStream : _activeStreams)
+      {
+        if (activeStream.type() == typeid(typename StreamPtrType<T>::Type))
+          func(*boost::get<std::shared_ptr<DataStream<T>>>(activeStream));
+      }
+    }
+  } // namespace detail
+
   namespace sqlite
   {
     SqliteBackend::SqliteBackend(const std::string& databasePath)
@@ -46,7 +83,7 @@ namespace persistence
     {
       std::unique_lock<std::mutex> lock(_queueMutex);
       auto sharedState = std::make_shared<DataStream<hotel::Hotel>>(_nextStreamId++, observer);
-      _newHotelStreams.push_back(sharedState);
+      _dataStreams.addNewStream(sharedState);
       lock.unlock();
 
       _workAvailableCondition.notify_one();
@@ -61,22 +98,15 @@ namespace persistence
         // Get the tasks we are going to process (This is the only part which is guarded by the mutex)
         std::unique_lock<std::mutex> lock(_queueMutex);
         std::vector<QueuedOperation> newTasks;
-        std::vector<std::shared_ptr<DataStream<hotel::Hotel>>> newStreams;
         std::swap(newTasks, _operationsQueue);
-        std::swap(newStreams, _newHotelStreams);
+        const bool hasUninitializedStreams = _dataStreams.collectNewStreams();
         // Sleep until there is work to do
-        if (newStreams.empty() && newTasks.empty())
+        if (newTasks.empty() && !hasUninitializedStreams)
           _workAvailableCondition.wait(lock);
         lock.unlock();
 
         // Initialize new data streams
-        if (!newStreams.empty())
-        {
-          for (auto& stream : newStreams)
-            initializeStream(*stream);
-
-          std::copy(newStreams.begin(), newStreams.end(), std::back_inserter(_activeHotelStreams));
-        }
+        _dataStreams.initialize([this](auto& stream) { initializeStream(stream); });
 
         // Process tasks
         for (auto& operationsMessage : newTasks)
@@ -115,8 +145,9 @@ namespace persistence
       if (op.newHotel == nullptr)
         return;
 
-      for (auto& stream : _activeHotelStreams)
-        stream->addItems({*op.newHotel});
+      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream<hotel::Hotel>& stream) {
+        stream.addItems({*op.newHotel});
+      });
 
       _storage.storeNewHotel(*op.newHotel);
       results.push_back(op::StoreNewHotelResult{std::move(op.newHotel)});
@@ -149,7 +180,7 @@ namespace persistence
       results.push_back(op::DeleteReservationResult{op.reservationId});
     }
 
-    void SqliteBackend::initializeStream(DataStream<hotel::Hotel> &dataStream)
+    void SqliteBackend::initializeStream(DataStream<hotel::Hotel>& dataStream)
     {
       // TODO: loadHotels() should already return the correct type!
       auto hotelsCollection = _storage.loadHotels();
@@ -159,6 +190,12 @@ namespace persistence
         hotels.push_back(*hotel);
       std::cout << "Initialized stream with " << hotels.size() << " items" << std::endl;
       dataStream.addItems(std::move(hotels));
+    }
+
+    void SqliteBackend::initializeStream(DataStream<hotel::Reservation>& dataStream)
+    {
+      // TODO: Implement this
+      std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
     }
 
   } // namespace sqlite

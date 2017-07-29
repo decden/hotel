@@ -3,7 +3,6 @@
 
 namespace hotel
 {
-
   class PersistentObject
   {
   public:
