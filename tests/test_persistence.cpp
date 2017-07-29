@@ -62,20 +62,18 @@ public:
     return reservation;
   }
 
-  const hotel::Hotel& storeHotel(persistence::DataSource& dataSource, const hotel::Hotel& hotel)
+  void storeHotel(persistence::DataSource& dataSource, const hotel::Hotel& hotel)
   {
     // TODO: Right now this test function only works for storing one instance
     auto task = dataSource.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
     waitForTask(dataSource, task);
-    return *dataSource.hotels().hotels()[0];
   }
 
-  const hotel::Reservation& storeReservation(persistence::DataSource& dataSource, const hotel::Reservation& reservation)
+  void storeReservation(persistence::DataSource& dataSource, const hotel::Reservation& reservation)
   {
     // TODO: Right now this test function only works for storing one instance
     auto task = dataSource.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
     waitForTask(dataSource, task);
-    return *dataSource.planning().reservations()[0];
   }
 };
 
@@ -86,20 +84,27 @@ TEST_F(Persistence, HotelPersistence)
   // Store hotel
   {
     persistence::DataSource dataSource("test.db");
-    auto& storedHotel = storeHotel(dataSource, hotel);
+    persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+    auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+    storeHotel(dataSource, hotel);
 
-    ASSERT_EQ(hotel, storedHotel);
-    hotelId = storedHotel.id();
+    ASSERT_EQ(1u, hotels.items().size());
+    ASSERT_EQ(hotel, hotels.items()[0]);
+    hotelId = hotels.items()[0].id();
     ASSERT_NE(0, hotelId);
   }
 
   // Check data after reopening the database
   {
     persistence::DataSource dataSource("test.db");
+    persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+    auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+    auto fence = dataSource.queueOperation(persistence::op::FenceOperation());
     waitForAllOperations(dataSource);
-    ASSERT_EQ(1u, dataSource.hotels().hotels().size());
-    ASSERT_EQ(hotel, *dataSource.hotels().hotels()[0]);
-    ASSERT_EQ(hotelId, dataSource.hotels().hotels()[0]->id());
+
+    ASSERT_EQ(1u, hotels.items().size());
+    ASSERT_EQ(hotel, hotels.items()[0]);
+    ASSERT_EQ(hotelId, hotels.items()[0].id());
   }
 }
 
@@ -111,23 +116,33 @@ TEST_F(Persistence, ReservationPersistence)
   // Store reservation
   {
     persistence::DataSource dataSource("test.db");
-    auto& storedHotel = storeHotel(dataSource, hotel);
-    auto roomId = storedHotel.rooms()[0]->id();
+    persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+    auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+    storeHotel(dataSource, hotel);
 
+    auto roomId = hotels.items()[0].rooms()[0]->id();
+
+    persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
+    auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
     reservation = makeNewReservation("", roomId);
-    auto& storedReservation = storeReservation(dataSource, reservation);
-    reservationId = storedReservation.id();
+    storeReservation(dataSource, reservation);
 
-    ASSERT_EQ(reservation, storedReservation);
+    reservationId = reservations.items()[0].id();
+
+    ASSERT_EQ(reservation, reservations.items()[0]);
     ASSERT_NE(0, reservationId);
   }
 
   // Check data after reopening the database
   {
     persistence::DataSource dataSource("test.db");
+    persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
+    auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
+    auto fence = dataSource.queueOperation(persistence::op::FenceOperation());
     waitForAllOperations(dataSource);
-    ASSERT_EQ(1u, dataSource.planning().reservations().size());
-    ASSERT_EQ(reservation, *dataSource.planning().reservations()[0]);
+
+    ASSERT_EQ(1u, reservations.items().size());
+    ASSERT_EQ(reservation, reservations.items()[0]);
   }
 }
 

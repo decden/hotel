@@ -27,11 +27,6 @@ namespace persistence
     ResultIntegrator() = default;
     ~ResultIntegrator() = default;
 
-    hotel::HotelCollection& hotels();
-    const hotel::HotelCollection& hotels() const;
-    hotel::PlanningBoard& planning();
-    const hotel::PlanningBoard& planning() const;
-
     void processIntegrationQueue();
     void addPendingOperation(op::Task<op::OperationResults> task);
     size_t pendingOperationsCount() const;

@@ -28,11 +28,6 @@ namespace persistence
     DataSource(const std::string& databaseFile);
     ~DataSource();
 
-    hotel::HotelCollection& hotels();
-    const hotel::HotelCollection& hotels() const;
-    hotel::PlanningBoard& planning();
-    const hotel::PlanningBoard& planning() const;
-
     /**
      * @brief queueOperation queues a given operation to perform on the data
      * @param operation The operation to perform

@@ -19,7 +19,7 @@ namespace gui
       _dateColumnWidth = 26;
     }
 
-    void PlanningBoardLayout::initializeLayout(hotel::HotelCollection& hotels, LayoutType layoutType)
+    void PlanningBoardLayout::initializeLayout(const std::vector<std::unique_ptr<hotel::Hotel>>& hotels, LayoutType layoutType)
     {
       const int hotelSeparatorHeight = 20;
       const int categorySeparatorHeight = 10;
@@ -28,7 +28,7 @@ namespace gui
       if (layoutType == GroupedByHotel)
       {
         appendSeparatorRow(hotelSeparatorHeight);
-        for (auto& hotel : hotels.hotels())
+        for (auto& hotel : hotels)
         {
           bool isEven = true;
           for (auto& room : hotel->rooms())
@@ -42,12 +42,18 @@ namespace gui
       else if (layoutType == GroupedByRoomCategory)
       {
         appendSeparatorRow(hotelSeparatorHeight);
-        for (auto& hotel : hotels.hotels())
+        for (auto& hotel : hotels)
         {
           for (auto& category : hotel->categories())
           {
             bool isEven = true;
-            auto roomsInCategory = hotels.allRoomsByCategory(category->id());
+
+            std::vector<hotel::HotelRoom*> roomsInCategory;
+            for (auto& hotel : hotels)
+              for (auto& room : hotel->rooms())
+                if (room->category()->id() == category->id())
+                  roomsInCategory.push_back(room.get());
+
             for (auto& room : roomsInCategory)
             {
               appendRoomRow(isEven, room->id());

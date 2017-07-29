@@ -38,7 +38,7 @@ namespace gui
     }
 
     PlanningBoardReservationItem::PlanningBoardReservationItem(Context *context,
-                                                               const hotel::Reservation* reservation,
+                                                               const hotel::Reservation *reservation,
                                                                QGraphicsItem* parent)
         : QGraphicsItem(parent), _context(context), _reservation(reservation), _isSelected(false),
           _isUpdatingSelection(false)

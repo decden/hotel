@@ -36,11 +36,6 @@ typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
     PlanningBoard& operator=(PlanningBoard&& that);
 
     /**
-     * @brief addRoomId Adds a room on the planning board
-     * @param roomId the id of the room to add
-     */
-    void addRoomId(int roomId);
-    /**
      * @brief addReservation tries to add the given reservation to the planning board
      * @param reservation the reservation to add
      * @return a pointer to the added reservation on success, otherwise nullptr.
@@ -51,6 +46,11 @@ typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
      * @param reservation the reservation to delete
      */
     void removeReservation(const Reservation* reservation);
+    /**
+     * @brief removeReservation deletes the given reservation from the planning board
+     * @param reservationId the id of the reservation to delete
+     */
+    void removeReservation(int reservationId);
 
     /**
      * @brief clear deletes all reservations and rooms from the current planning board.
@@ -64,7 +64,6 @@ typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
     bool canAddReservation(const Reservation& reservation) const;
 
     bool isFree(int roomId, boost::gregorian::date_period period) const;
-    bool hasRoom(int roomId) const;
 
     /**
      * @brief getAvailableDaysFrom computes the number of days in which the given room is available from the given date

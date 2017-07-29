@@ -108,6 +108,11 @@ namespace persistence
       }
     }
 
+    void SqliteBackend::executeOperation(op::OperationResults &results, op::FenceOperation &)
+    {
+      // Noop
+    }
+
     void SqliteBackend::executeOperation(op::OperationResults& results, op::EraseAllData&)
     {
       _storage.deleteAll();
@@ -121,7 +126,7 @@ namespace persistence
     {
       // TODO: Remove this! This makes no sense in a stream world!
       auto hotels = _storage.loadHotels();
-      auto planning = _storage.loadPlanning(hotels->allRoomIDs());
+      auto planning = _storage.loadPlanning();
       results.push_back(op::LoadInitialDataResult{std::move(hotels), std::move(planning)});
     }
 

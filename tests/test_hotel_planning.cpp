@@ -41,21 +41,10 @@ TEST_F(HotelPlanning, Planning)
   ASSERT_EQ(0u, board.getReservationsInPeriod(date_period(date(2016, 1, 1), date(2018, 1, 1))).size());
   ASSERT_TRUE(board.getPlanningExtent().is_null());
 
-  // No rooms
-  ASSERT_FALSE(board.hasRoom(1));
-  ASSERT_FALSE(board.isFree(1, reservation1.dateRange()));
-  ASSERT_FALSE(board.canAddReservation(reservation1));
-  ASSERT_EQ(0, board.getAvailableDaysFrom(1, date(2016, 1, 1)));
-
-  // Adding rooms
-  board.addRoomId(1);
-  board.addRoomId(2);
-  ASSERT_TRUE(board.hasRoom(1));
-  ASSERT_TRUE(board.hasRoom(2));
-  ASSERT_FALSE(board.hasRoom(3));
+  // No reserations
   ASSERT_TRUE(board.isFree(1, reservation1.dateRange()));
   ASSERT_TRUE(board.canAddReservation(reservation1));
-  ASSERT_EQ(std::numeric_limits<int>::max(), board.getAvailableDaysFrom(1, makeDate(-100)));
+  ASSERT_EQ(std::numeric_limits<int>::max(), board.getAvailableDaysFrom(1, date(2016, 1, 1)));
 
   // Adding reservations
   board.addReservation(std::make_unique<hotel::Reservation>(reservation1));
@@ -63,19 +52,20 @@ TEST_F(HotelPlanning, Planning)
   ASSERT_ANY_THROW(board.addReservation(nullptr));
   ASSERT_ANY_THROW(board.addReservation(std::make_unique<hotel::Reservation>(reservation2)));
   ASSERT_ANY_THROW(board.addReservation(std::make_unique<hotel::Reservation>(reservation3)));
-  ASSERT_ANY_THROW(board.addReservation(std::make_unique<hotel::Reservation>(reservation4)));
+  ASSERT_NO_THROW(board.addReservation(std::make_unique<hotel::Reservation>(reservation4)));
   ASSERT_ANY_THROW(board.addReservation(std::make_unique<hotel::Reservation>(reservation5)));
-  ASSERT_EQ(2u, board.reservations().size());
-  ASSERT_EQ(date_period(makeDate(1), makeDate(5)), board.getPlanningExtent());
+  ASSERT_EQ(3u, board.reservations().size());
+  ASSERT_EQ(date_period(makeDate(1), makeDate(9)), board.getPlanningExtent());
 
   board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 2, 4)));
-  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 6, 8)));
-  ASSERT_EQ(4u, board.reservations().size());
-  ASSERT_EQ(date_period(makeDate(1), makeDate(8)), board.getPlanningExtent());
+  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 6, 12)));
+  ASSERT_EQ(5u, board.reservations().size());
+  ASSERT_EQ(date_period(makeDate(1), makeDate(12)), board.getPlanningExtent());
   // After the above insertions we have the following situation:
-  // Room   1 2 3 4 5 6 7 8 9
+  // Room   1 2 3 4 5 6 7 8 9 A B C
   //    1   [###|###]
-  //    2     [###]   [###]
+  //    2     [###]   [###########]
+  //    3         [#########]
   ASSERT_EQ(11, board.getAvailableDaysFrom(1, makeDate(-10)));
   ASSERT_EQ(1, board.getAvailableDaysFrom(1, makeDate(0)));
   ASSERT_EQ(0, board.getAvailableDaysFrom(1, makeDate(1)));
@@ -89,7 +79,7 @@ TEST_F(HotelPlanning, Planning)
   ASSERT_EQ(2, board.getAvailableDaysFrom(2, makeDate(4)));
   ASSERT_EQ(0, board.getAvailableDaysFrom(2, makeDate(6)));
   ASSERT_EQ(0, board.getAvailableDaysFrom(2, makeDate(7)));
-  ASSERT_EQ(std::numeric_limits<int>::max(), board.getAvailableDaysFrom(2, makeDate(8)));
+  ASSERT_EQ(std::numeric_limits<int>::max(), board.getAvailableDaysFrom(2, makeDate(12)));
   ASSERT_TRUE(board.canAddReservation(makeReservation(1, 0, 1)));
   ASSERT_FALSE(board.canAddReservation(makeReservation(1, 0, 2)));
   ASSERT_TRUE(board.canAddReservation(makeReservation(1, 5, 7)));
@@ -102,27 +92,26 @@ TEST_F(HotelPlanning, Planning)
   ASSERT_EQ(1u, board.getReservationsInPeriod(date_period(makeDate(1), makeDate(2))).size());
   ASSERT_EQ(2u, board.getReservationsInPeriod(date_period(makeDate(1), makeDate(3))).size());
   ASSERT_EQ(3u, board.getReservationsInPeriod(date_period(makeDate(1), makeDate(4))).size());
-  ASSERT_EQ(4u, board.getReservationsInPeriod(date_period(makeDate(1), makeDate(7))).size());
-  ASSERT_EQ(1u, board.getReservationsInPeriod(date_period(makeDate(5), makeDate(7))).size());
+  ASSERT_EQ(5u, board.getReservationsInPeriod(date_period(makeDate(1), makeDate(7))).size());
+  ASSERT_EQ(2u, board.getReservationsInPeriod(date_period(makeDate(5), makeDate(7))).size());
 
   // Test removal of reservations
   auto allReservations = board.getReservationsInPeriod(board.getPlanningExtent());
-  ASSERT_EQ(4u, allReservations.size());
+  ASSERT_EQ(5u, allReservations.size());
   board.removeReservation(allReservations[0]);
-  ASSERT_EQ(3u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
+  ASSERT_EQ(4u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   board.removeReservation(allReservations[1]);
-  ASSERT_EQ(2u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
+  ASSERT_EQ(3u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   board.removeReservation(allReservations[2]);
-  ASSERT_EQ(1u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
+  ASSERT_EQ(2u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   board.removeReservation(allReservations[3]);
-  ASSERT_EQ(0u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
+  ASSERT_EQ(1u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   ASSERT_ANY_THROW(board.removeReservation(nullptr));
 }
 
 TEST_F(HotelPlanning, PlanningBoardObserver)
 {
   hotel::PlanningBoard board;
-  board.addRoomId(2);
   MockPlanningBoardObserver observer;
 
   EXPECT_CALL(observer, itemsAdded(testing::_)).Times(1);

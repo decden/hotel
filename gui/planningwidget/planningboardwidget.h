@@ -34,7 +34,9 @@ namespace gui
     {
     public:
       PlanningBoardWidget(Context* context);
+      void addReservation(const hotel::Reservation* reservation);
       void addReservations(const std::vector<const hotel::Reservation*>& reservations);
+      void removeReservation(int reservationId);
       void removeReservations(const std::vector<const hotel::Reservation*>& reservations);
       void removeAllReservations();
 

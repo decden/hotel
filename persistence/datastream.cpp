@@ -17,11 +17,6 @@ namespace persistence
     _backend.stopAndJoin();
   }
 
-  hotel::HotelCollection& DataSource::hotels() { return _resultIntegrator.hotels(); }
-  const hotel::HotelCollection& DataSource::hotels() const { return _resultIntegrator.hotels(); }
-  hotel::PlanningBoard& DataSource::planning() { return _resultIntegrator.planning(); }
-  const hotel::PlanningBoard& DataSource::planning() const { return _resultIntegrator.planning(); }
-
   op::Task<op::OperationResults> DataSource::queueOperation(op::Operation operation)
   {
     op::Operations item;

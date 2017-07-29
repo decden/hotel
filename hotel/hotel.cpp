@@ -36,6 +36,8 @@ namespace hotel
 
   Hotel &Hotel::operator=(const Hotel &that)
   {
+    PersistentObject::operator=(that);
+
     _name = that._name;
 
     // Clone categories

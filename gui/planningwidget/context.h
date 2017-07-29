@@ -42,14 +42,16 @@ namespace gui
 
       // Modifying data calls
       void addHotel(const hotel::Hotel& hotel);
+      const hotel::Reservation* addReservation(const hotel::Reservation& reservation);
       void removeHotel(int hotelId);
+      void removeReservation(int reservationId);
 
       // Reading data calls
       const std::vector<std::unique_ptr<hotel::Hotel>>& hotels() const;
+      const hotel::PlanningBoard& planning() const;
 
       // Getters
       persistence::DataSource& dataSource();
-      const hotel::PlanningBoard& planning() const;
       PlanningBoardLayout& layout();
       const PlanningBoardLayout& layout() const;
       PlanningBoardAppearance& appearance();
@@ -74,6 +76,7 @@ namespace gui
 
       // Data from streams
       std::vector<std::unique_ptr<hotel::Hotel>> _hotels;
+      hotel::PlanningBoard _reservations;
 
       std::unordered_set<const hotel::Reservation*> _selectedReservations;
 

@@ -13,7 +13,7 @@ namespace cli
 {
 
   std::vector<std::unique_ptr<hotel::Hotel>> createTestHotels(std::mt19937& rng);
-  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng, hotel::HotelCollection& hotels);
+  std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng, const std::vector<hotel::Hotel> &hotels);
 
 } // namespaec cli
 

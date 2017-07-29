@@ -44,7 +44,7 @@ namespace cli
     return result;
   }
 
-  void addRandomReservations(std::mt19937& rng, hotel::Hotel& hotel, hotel::PlanningBoard& planning, int count,
+  void addRandomReservations(std::mt19937& rng, const hotel::Hotel& hotel, hotel::PlanningBoard& planning, int count,
                              boost::gregorian::date_period period)
   {
     // std::uniform_int_distribution<> dayDist(0, period.length().days());
@@ -123,7 +123,7 @@ namespace cli
   }
 
   std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng,
-                                                           hotel::HotelCollection& hotels)
+                                                           const std::vector<hotel::Hotel>& hotels)
   {
     using namespace boost::gregorian;
     auto today = day_clock::local_day();
@@ -134,11 +134,8 @@ namespace cli
 
     auto planning = std::make_unique<hotel::PlanningBoard>();
 
-    for (auto id : hotels.allRoomIDs())
-      planning->addRoomId(id);
-
-    for (auto& hotel : hotels.hotels())
-      addRandomReservations(rng, *hotel, *planning, 200 * hotel->rooms().size(), period);
+    for (auto& hotel : hotels)
+      addRandomReservations(rng, hotel, *planning, 200 * hotel.rooms().size(), period);
 
     return planning;
   }

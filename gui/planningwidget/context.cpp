@@ -22,11 +22,21 @@ namespace gui
       _hotels.push_back(std::make_unique<hotel::Hotel>(hotel));
     }
 
+    const hotel::Reservation *Context::addReservation(const hotel::Reservation &reservation)
+    {
+      return _reservations.addReservation(std::make_unique<hotel::Reservation>(reservation));
+    }
+
     void Context::removeHotel(int hotelId)
     {
       _hotels.erase(std::remove_if(_hotels.begin(), _hotels.end(),
                                    [=](auto& hotel) { return hotel->id() == hotelId; }),
                     _hotels.end());
+    }
+
+    void Context::removeReservation(int reservationId)
+    {
+      _reservations.removeReservation(reservationId);
     }
 
     const std::vector<std::unique_ptr<hotel::Hotel>> &Context::hotels() const
@@ -41,10 +51,10 @@ namespace gui
     {
       assert(_dataSource != nullptr);
       if (_dataSource)
-        _layout.initializeLayout(_dataSource->hotels(), layoutType);
+        _layout.initializeLayout(hotels(), layoutType);
     }
 
-    const hotel::PlanningBoard& Context::planning() const { return _dataSource->planning(); }
+    const hotel::PlanningBoard& Context::planning() const { return _reservations; }
     PlanningBoardLayout& Context::layout() { return _layout; }
     const PlanningBoardLayout& Context::layout() const { return _layout; }
     PlanningBoardAppearance& Context::appearance() { return _appearance; }

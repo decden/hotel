@@ -90,13 +90,9 @@ namespace gui
     DataStreamObserverAdapter<hotel::Hotel> _hotelsStream;
     DataStreamObserverAdapter<hotel::Reservation> _reservationsStream;
 
-    virtual void reservationsAdded(const std::vector<const hotel::Reservation*>& reservations);
-    virtual void reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations);
-    virtual void allReservationsRemoved();
-
     void reservationAdded(const hotel::Reservation& reservation);
     void reservationRemoved(int id);
-    // virtual void allReservationsRemoved();
+    void allReservationsRemoved();
     void hotelAdded(const hotel::Hotel& hotel);
     void hotelRemoved(int id);
     void allHotelsRemoved();
@@ -110,8 +106,6 @@ namespace gui
 
     // Shared widget state
     planningwidget::Context _context;
-
-    CollectionObserverAdapter<const hotel::Reservation*> _planningObserver;
 
     void updateDateRange();
 

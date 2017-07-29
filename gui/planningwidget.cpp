@@ -35,10 +35,6 @@ namespace gui
 
     // Wire up events
     connect(_dateBar, SIGNAL(dateClicked(boost::gregorian::date)), this, SLOT(setPivotDate(boost::gregorian::date)));
-    _planningObserver.itemsAddedSignal.connect(boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
-    _planningObserver.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
-    _planningObserver.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
-
     _reservationsStream.itemAddedSignal.connect(boost::bind(&PlanningWidget::reservationAdded, this, boost::placeholders::_1));
     _reservationsStream.itemRemovedSignal.connect(boost::bind(&PlanningWidget::reservationRemoved, this, boost::placeholders::_1));
     _reservationsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
@@ -56,8 +52,6 @@ namespace gui
     grid->addWidget(_verticalScrollbar, 1, 2);
     grid->addWidget(_horizontalScrollbar, 2, 1);
     setLayout(grid);
-
-    dataSource.planning().addObserver(&_planningObserver);
   }
 
   void PlanningWidget::registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
@@ -98,25 +92,18 @@ namespace gui
       tool->keyPressEvent(event);
   }
 
-  void PlanningWidget::reservationsAdded(const std::vector<const hotel::Reservation*>& reservations)
-  {
-    _planningBoard->addReservations(reservations);
-    updateDateRange();
-  }
-
-  void PlanningWidget::reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations)
-  {
-    _planningBoard->removeReservations(reservations);
-  }
-
   void PlanningWidget::reservationAdded(const hotel::Reservation &reservation)
   {
-
+    auto reservationPtr = _context.addReservation(reservation);
+    _planningBoard->addReservation(reservationPtr);
+    updateDateRange();
   }
 
   void PlanningWidget::reservationRemoved(int id)
   {
-
+    _planningBoard->removeReservation(id);
+    _context.removeReservation(id);
+    updateDateRange();
   }
 
   void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }

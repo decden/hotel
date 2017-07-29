@@ -207,12 +207,9 @@ namespace persistence
       return result;
     }
 
-    std::unique_ptr<hotel::PlanningBoard> SqliteStorage::loadPlanning(const std::vector<int>& roomIds)
+    std::unique_ptr<hotel::PlanningBoard> SqliteStorage::loadPlanning()
     {
       auto result = std::make_unique<hotel::PlanningBoard>();
-
-      for (auto id : roomIds)
-        result->addRoomId(id);
 
       auto& reservationsQuery = query("reservation_and_atoms.all");
       reservationsQuery.execute();

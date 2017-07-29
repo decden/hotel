@@ -26,6 +26,13 @@ namespace gui
       setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
 
+    void PlanningBoardWidget::addReservation(const hotel::Reservation *reservation)
+    {
+      assert(_context != nullptr);
+      auto item = new PlanningBoardReservationItem(_context, reservation);
+      _scene->addItem(item);
+    }
+
     void PlanningBoardWidget::drawBackground(QPainter* painter, const QRectF& rect)
     {
       auto& appearance = _context->appearance();
@@ -125,6 +132,25 @@ namespace gui
         auto item = new PlanningBoardReservationItem(_context, reservation);
         _scene->addItem(item);
       }
+    }
+
+    void PlanningBoardWidget::removeReservation(int reservationId)
+    {
+      // Find the given reservation
+      for (auto item : _scene->items())
+      {
+        auto reservationItem = dynamic_cast<PlanningBoardReservationItem*>(item);
+        if (reservationItem != nullptr)
+        {
+          if (reservationItem->reservation()->id() == reservationId)
+          {
+            // Deletgate to the existing function
+            removeReservations({reservationItem->reservation()});
+            return;
+          }
+        }
+      }
+
     }
 
     void PlanningBoardWidget::removeReservations(const std::vector<const hotel::Reservation*>& reservations)

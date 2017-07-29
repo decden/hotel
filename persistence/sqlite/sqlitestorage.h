@@ -31,7 +31,7 @@ namespace persistence
 
       std::unique_ptr<hotel::HotelCollection> loadHotels();
       std::unique_ptr<std::vector<hotel::Reservation>> loadReservations();
-      std::unique_ptr<hotel::PlanningBoard> loadPlanning(const std::vector<int>& roomIds);
+      std::unique_ptr<hotel::PlanningBoard> loadPlanning();
 
       void storeNewHotel(hotel::Hotel& hotel);
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);

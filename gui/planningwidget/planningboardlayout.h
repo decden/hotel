@@ -135,7 +135,7 @@ namespace gui
        * @param hotels the list of hotels to include in the layout
        * @param layoutType indicates how to position the rows
        */
-      void initializeLayout(hotel::HotelCollection& hotels, LayoutType layoutType);
+      void initializeLayout(const std::vector<std::unique_ptr<hotel::Hotel>> &hotels, LayoutType layoutType);
 
       void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
       QRectF sceneRect() const { return _sceneRect; }

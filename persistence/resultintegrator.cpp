@@ -4,11 +4,6 @@
 
 namespace persistence
 {
-  hotel::HotelCollection& ResultIntegrator::hotels() { return _hotels; }
-  const hotel::HotelCollection& ResultIntegrator::hotels() const { return _hotels; }
-  hotel::PlanningBoard& ResultIntegrator::planning() { return _planning; }
-  const hotel::PlanningBoard& ResultIntegrator::planning() const { return _planning; }
-
   void ResultIntegrator::processIntegrationQueue()
   {
     std::unique_lock<std::mutex> lock(_queueMutex);
@@ -80,8 +75,6 @@ namespace persistence
 
   void ResultIntegrator::integrateResult(op::StoreNewHotelResult& res)
   {
-    for (auto& room : res.storedHotel->rooms())
-      _planning.addRoomId(room->id());
     _hotels.addHotel(std::move(res.storedHotel));
   }
 
