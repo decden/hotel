@@ -29,8 +29,15 @@ namespace hotel
 
   Hotel::Hotel(const std::string& name) : _name(name) {}
 
-  Hotel::Hotel(const Hotel& that) : _name(that._name)
+  Hotel::Hotel(const Hotel& that) : _name()
   {
+    *this = that;
+  }
+
+  Hotel &Hotel::operator=(const Hotel &that)
+  {
+    _name = that._name;
+
     // Clone categories
     for (auto& category : that._categories)
       _categories.push_back(std::make_unique<hotel::RoomCategory>(*category));
@@ -38,6 +45,8 @@ namespace hotel
     // Clone rooms
     for (auto& room : that._rooms)
       addRoom(std::make_unique<hotel::HotelRoom>(*room), room->category()->shortCode());
+
+    return *this;
   }
 
   bool Hotel::operator==(const Hotel &that) const

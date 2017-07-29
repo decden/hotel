@@ -55,6 +55,7 @@ namespace hotel
     Hotel(const std::string& name);
     //! The copy constructor performs a deep copy of the object
     Hotel(const Hotel& that);
+    Hotel& operator=(const Hotel& that);
 
     bool operator==(const Hotel& that) const;
     bool operator!=(const Hotel& that) const;

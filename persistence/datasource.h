@@ -1,6 +1,7 @@
 #ifndef PERSISTENCE_DATASOURCE_H
 #define PERSISTENCE_DATASOURCE_H
 
+#include "persistence/datastream.h"
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
 #include "persistence/resultintegrator.h"
@@ -47,6 +48,8 @@ namespace persistence
      */
     op::Task<op::OperationResults> queueOperations(op::Operations operations);
 
+    UniqueDataStreamHandle<hotel::Hotel> connectStream(DataStreamObserver<hotel::Hotel>* observer);
+
     void processIntegrationQueue();
 
     /**
@@ -62,6 +65,11 @@ namespace persistence
      * @note The signal is not called on the main thread, but on the backend worker thread
      */
     boost::signals2::signal<void(int)>& taskCompletedSignal() { return _backend.taskCompletedSignal(); }
+    /**
+     * @brief streamsUpdatedSignal returns the signal which is triggered when new data has been made available to a stream
+     * @note The signal is not called on the main thread, but on the backend worker thread
+     */
+    boost::signals2::signal<void()>& streamsUpdatedSignal() { return _backend.streamsUpdatedSignal(); }
 
   private:
     // Backing store and result integrator
@@ -69,8 +77,6 @@ namespace persistence
     persistence::ResultIntegrator _resultIntegrator;
 
     std::vector<op::Task<op::OperationResults>> _pendingTasks;
-
-    int _nextOperationId;
   };
 
 } // namespace persistence

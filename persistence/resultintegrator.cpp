@@ -13,19 +13,33 @@ namespace persistence
   {
     std::unique_lock<std::mutex> lock(_queueMutex);
 
-    // Move all of the completed tasks to the end of the list
-    auto readyBegin = std::stable_partition(begin(_integrationQueue), end(_integrationQueue),
-                                            [](auto& task) { return !task.completed(); });
-
-    // For each of the completed tasks: integrate it!
-    for (auto it = readyBegin; it != end(_integrationQueue); ++it)
+    // First, integrate all of the changes in the data streams...
     {
-      for (auto& result : it->results())
-        boost::apply_visitor([this](auto& result) { return this->integrateResult(result); }, result);
+      // Remove invalid streams (streams which no longer have a listener)
+      _hotelDataStreams.erase(std::remove_if(_hotelDataStreams.begin(), _hotelDataStreams.end(),
+                                             [](auto& stream) { return !stream->isValid(); }),
+                              _hotelDataStreams.end());
+
+      for (auto& stream : _hotelDataStreams)
+        stream->integrateChanges();
     }
 
-    // Erase all completed tasks
-    _integrationQueue.erase(readyBegin, end(_integrationQueue));
+    // Second, integrate all of the results for tasks...
+    {
+      // Move all of the completed tasks to the end of the list
+      auto readyBegin = std::stable_partition(begin(_integrationQueue), end(_integrationQueue),
+                                              [](auto& task) { return !task.completed(); });
+
+      // For each of the completed tasks: integrate it!
+      for (auto it = readyBegin; it != end(_integrationQueue); ++it)
+      {
+        for (auto& result : it->results())
+          boost::apply_visitor([this](auto& result) { return this->integrateResult(result); }, result);
+      }
+
+      // Erase all completed tasks
+      _integrationQueue.erase(readyBegin, end(_integrationQueue));
+    }
   }
 
   void ResultIntegrator::addPendingOperation(op::Task<op::OperationResults> task)
@@ -37,6 +51,11 @@ namespace persistence
   size_t ResultIntegrator::pendingOperationsCount() const
   {
     return _integrationQueue.size();
+  }
+
+  void ResultIntegrator::addStream(std::shared_ptr<DataStream<hotel::Hotel>> dataStream)
+  {
+    _hotelDataStreams.push_back(std::move(dataStream));
   }
 
   void ResultIntegrator::integrateResult(op::NoResult&) {}

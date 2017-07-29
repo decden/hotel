@@ -1,6 +1,8 @@
 #ifndef PERSISTENCE_RESULTINTEGRATOR_H
 #define PERSISTENCE_RESULTINTEGRATOR_H
 
+#include "persistence/datastream.h"
+
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
 #include "persistence/op/task.h"
@@ -10,6 +12,7 @@
 
 #include "boost/signals2.hpp"
 
+#include <vector>
 #include <mutex>
 #include <queue>
 
@@ -33,6 +36,8 @@ namespace persistence
     void addPendingOperation(op::Task<op::OperationResults> task);
     size_t pendingOperationsCount() const;
 
+    void addStream(std::shared_ptr<DataStream<hotel::Hotel>> dataStream);
+
   private:
     void integrateResult(op::NoResult& res);
     void integrateResult(op::EraseAllDataResult& res);
@@ -47,6 +52,7 @@ namespace persistence
 
     std::mutex _queueMutex;
     std::vector<op::Task<op::OperationResults>> _integrationQueue;
+    std::vector<std::shared_ptr<DataStream<hotel::Hotel>>> _hotelDataStreams;
   };
 
 } // namespace persistence

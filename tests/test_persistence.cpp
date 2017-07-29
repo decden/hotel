@@ -131,3 +131,15 @@ TEST_F(Persistence, ReservationPersistence)
   }
 }
 
+TEST_F(Persistence, DataStreams)
+{
+  persistence::DataSource dataSource("test.db");
+
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+  auto streamHandle = dataSource.connectStream(&hotels);
+
+  auto hotel = makeNewHotel("Hotel 1", "Category 1", 10);
+  storeHotel(dataSource, hotel);
+
+  ASSERT_EQ(1u, hotels.items().size());
+}

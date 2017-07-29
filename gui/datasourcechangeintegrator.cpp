@@ -7,6 +7,7 @@ namespace gui
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
     _ds->taskCompletedSignal().connect([this](int) { this->emitResultsAvailable(); });
+    _ds->streamsUpdatedSignal().connect([this]() { this->emitResultsAvailable(); });
     // Initial update...
     handleAvailableResults();
   }
