@@ -121,6 +121,9 @@ namespace persistence
   class UniqueDataStreamHandle
   {
   public:
+    UniqueDataStreamHandle()
+        : _dataStream(nullptr)
+    {}
     UniqueDataStreamHandle(std::shared_ptr<DataStream<T>> dataStream)
         : _dataStream(dataStream)
     {}
@@ -130,7 +133,7 @@ namespace persistence
 
     UniqueDataStreamHandle(UniqueDataStreamHandle<T>&& that) = default;
     UniqueDataStreamHandle<T>& operator=(UniqueDataStreamHandle<T>&& that) = default;
-    ~UniqueDataStreamHandle() { _dataStream->disconnect(); }
+    ~UniqueDataStreamHandle() { if (_dataStream) _dataStream->disconnect(); }
 
   private:
     std::shared_ptr<DataStream<T>> _dataStream;

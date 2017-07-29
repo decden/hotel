@@ -23,7 +23,7 @@ int main(int argc, char** argv)
   gui::PlanningWidget widget(dataSource);
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
   widget.activateTool("new-reservation");
-  widget.show();
+  widget.showMaximized();
 
   // TODO: We are basically polling for changes here. This should be replaced with a more robust notification mechanism
   gui::ChangeIntegrator integrator(&dataSource);

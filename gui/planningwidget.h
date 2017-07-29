@@ -42,6 +42,24 @@ namespace gui
     boost::signals2::signal<void(const std::vector<T>&)> itemsRemovedSignal;
     boost::signals2::signal<void()> allItemsRemovedSignal;
   };
+  template <class T>
+  class DataStreamObserverAdapter : public persistence::DataStreamObserver<T>
+  {
+  public:
+    void connect(persistence::DataSource& dataSource) { _streamHandle = dataSource.connectToStream(this); }
+
+    // DataStreamObserver<T> interface
+    virtual void addItem(const T& item) override { itemAddedSignal(item); }
+    virtual void removeItem(int id) { itemRemovedSignal(id); }
+    virtual void clear() { allItemsRemovedSignal(); }
+
+    // Public signals
+    boost::signals2::signal<void(const T&)> itemAddedSignal;
+    boost::signals2::signal<void(int)> itemRemovedSignal;
+    boost::signals2::signal<void()> allItemsRemovedSignal;
+
+    persistence::UniqueDataStreamHandle<T> _streamHandle;
+  };
 
   /**
    * @brief The PlanningWidget class displays a list of reservations
@@ -68,12 +86,20 @@ namespace gui
     virtual void keyPressEvent(QKeyEvent* event) override;
 
   private:
+    // Event dispatching classes
+    DataStreamObserverAdapter<hotel::Hotel> _hotelsStream;
+    DataStreamObserverAdapter<hotel::Reservation> _reservationsStream;
+
     virtual void reservationsAdded(const std::vector<const hotel::Reservation*>& reservations);
     virtual void reservationsRemoved(const std::vector<const hotel::Reservation*>& reservations);
     virtual void allReservationsRemoved();
-    virtual void hotelsAdded(const std::vector<const hotel::Hotel*>& hotels);
-    virtual void hotelsRemoved(const std::vector<const hotel::Hotel*>& hotels);
-    virtual void allHotelsRemoved();
+
+    void reservationAdded(const hotel::Reservation& reservation);
+    void reservationRemoved(int id);
+    // virtual void allReservationsRemoved();
+    void hotelAdded(const hotel::Hotel& hotel);
+    void hotelRemoved(int id);
+    void allHotelsRemoved();
 
     // Widgets
     QScrollBar* _verticalScrollbar;
@@ -86,7 +112,6 @@ namespace gui
     planningwidget::Context _context;
 
     CollectionObserverAdapter<const hotel::Reservation*> _planningObserver;
-    CollectionObserverAdapter<const hotel::Hotel*> _hotelObserver;
 
     void updateDateRange();
 

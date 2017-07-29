@@ -6,7 +6,6 @@ namespace gui
 {
   namespace planningwidget
   {
-
     Context::Context() {}
 
     void Context::setDataSource(persistence::DataSource *dataSource) { _dataSource = dataSource; }
@@ -18,6 +17,23 @@ namespace gui
     void Context::addSelectedReservation(const hotel::Reservation *reservation) { _selectedReservations.insert(reservation); }
     void Context::removeSelectedReservation(const hotel::Reservation *reservation) { _selectedReservations.erase(reservation); }
 
+    void Context::addHotel(const hotel::Hotel &hotel)
+    {
+      _hotels.push_back(std::make_unique<hotel::Hotel>(hotel));
+    }
+
+    void Context::removeHotel(int hotelId)
+    {
+      _hotels.erase(std::remove_if(_hotels.begin(), _hotels.end(),
+                                   [=](auto& hotel) { return hotel->id() == hotelId; }),
+                    _hotels.end());
+    }
+
+    const std::vector<std::unique_ptr<hotel::Hotel>> &Context::hotels() const
+    {
+      return _hotels;
+    }
+
     persistence::DataSource& Context::dataSource() { return *_dataSource; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 
@@ -28,8 +44,6 @@ namespace gui
         _layout.initializeLayout(_dataSource->hotels(), layoutType);
     }
 
-    hotel::HotelCollection& Context::hotelCollection() { return _dataSource->hotels(); }
-    const hotel::HotelCollection& Context::hotelCollection() const { return _dataSource->hotels(); }
     const hotel::PlanningBoard& Context::planning() const { return _dataSource->planning(); }
     PlanningBoardLayout& Context::layout() { return _layout; }
     const PlanningBoardLayout& Context::layout() const { return _layout; }

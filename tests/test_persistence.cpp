@@ -137,8 +137,8 @@ TEST_F(Persistence, DataStreams)
 
   persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
   persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
-  auto hotelsStreamHandle = dataSource.connectStream(&hotels);
-  auto reservationsStreamHandle = dataSource.connectStream(&reservations);
+  auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+  auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
 
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, reservations.items().size());

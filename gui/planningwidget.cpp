@@ -38,9 +38,17 @@ namespace gui
     _planningObserver.itemsAddedSignal.connect(boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
     _planningObserver.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
     _planningObserver.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
-    _hotelObserver.itemsAddedSignal.connect(boost::bind(&PlanningWidget::hotelsAdded, this, boost::placeholders::_1));
-    _hotelObserver.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
-    _hotelObserver.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
+
+    _reservationsStream.itemAddedSignal.connect(boost::bind(&PlanningWidget::reservationAdded, this, boost::placeholders::_1));
+    _reservationsStream.itemRemovedSignal.connect(boost::bind(&PlanningWidget::reservationRemoved, this, boost::placeholders::_1));
+    _reservationsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
+    _hotelsStream.itemAddedSignal.connect(boost::bind(&PlanningWidget::hotelAdded, this, boost::placeholders::_1));
+    _hotelsStream.itemRemovedSignal.connect(boost::bind(&PlanningWidget::hotelRemoved, this, boost::placeholders::_1));
+    _hotelsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
+
+    // Connect to streams
+    _hotelsStream.connect(dataSource);
+    _reservationsStream.connect(dataSource);
 
     grid->addWidget(_dateBar, 0, 1);
     grid->addWidget(_roomList, 1, 0);
@@ -50,7 +58,6 @@ namespace gui
     setLayout(grid);
 
     dataSource.planning().addObserver(&_planningObserver);
-    dataSource.hotels().addObserver(&_hotelObserver);
   }
 
   void PlanningWidget::registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool)
@@ -102,23 +109,36 @@ namespace gui
     _planningBoard->removeReservations(reservations);
   }
 
+  void PlanningWidget::reservationAdded(const hotel::Reservation &reservation)
+  {
+
+  }
+
+  void PlanningWidget::reservationRemoved(int id)
+  {
+
+  }
+
   void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }
 
-  void PlanningWidget::hotelsAdded(const std::vector<const hotel::Hotel*>& hotels)
+  void PlanningWidget::hotelAdded(const hotel::Hotel &hotel)
   {
     _roomList->clear();
-    for (auto room : _context.hotelCollection().allRooms())
-      _roomList->addRoomItem(room);
+    _context.addHotel(hotel);
+    for (auto& hotel : _context.hotels())
+      for (auto& room : hotel->rooms())
+        _roomList->addRoomItem(room.get());
     _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
     updateLayout();
   }
 
-  void PlanningWidget::hotelsRemoved(const std::vector<const hotel::Hotel*>& hotels)
+  void PlanningWidget::hotelRemoved(int id)
   {
-
     _roomList->clear();
-    for (auto room : _context.hotelCollection().allRooms())
-      _roomList->addRoomItem(room);
+    _context.removeHotel(id);
+    for (auto& hotel : _context.hotels())
+      for (auto& room : hotel->rooms())
+        _roomList->addRoomItem(room.get());
     _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
     updateLayout();
   }

@@ -49,7 +49,7 @@ namespace persistence
     op::Task<op::OperationResults> queueOperations(op::Operations operations);
 
     template <class T>
-    UniqueDataStreamHandle<T> connectStream(DataStreamObserver<T>* observer)
+    UniqueDataStreamHandle<T> connectToStream(DataStreamObserver<T>* observer)
     {
       auto stream = _backend.createStream(observer);
       _resultIntegrator.addStream(stream);
