@@ -22,6 +22,7 @@ namespace persistence
     virtual void addItems(const std::vector<T>& items) = 0;
     virtual void removeItems(const std::vector<int>& ids) = 0;
     virtual void clear() = 0;
+    virtual void initialized() = 0;
   };
 
   template <class T>
@@ -41,6 +42,7 @@ namespace persistence
       }), _dataItems.end());
     }
     virtual void clear() override { _dataItems.clear(); }
+    virtual void initialized() override {}
 
   private:
     std::vector<T> _dataItems;
@@ -90,27 +92,37 @@ namespace persistence
       std::lock_guard<std::mutex> lock(_pendingOperationsMutex);
       _pendingOperations.push_back(Cleared());
     }
+    void setInitialized()
+    {
+      std::lock_guard<std::mutex> lock(_pendingOperationsMutex);
+      _pendingOperations.push_back(Initialized());
+    }
 
     //! Returns the unique ID of this stream
     int streamId() const { return _streamId; }
     //! Returns true if there is still an observer listening on this stream
     bool isValid() const { return _observer != nullptr; }
+    //! Returns true if the initial data for the observer has already been set
+    bool isInitialized() const { return _isInitialized; }
     //! Dissociates the stream from the observer.
     void disconnect() { _observer = nullptr; }
 
   private:
     struct ItemsAdded { std::vector<T> newItems; };
     struct ItemsRemoved { std::vector<int> removedItems; };
+    struct Initialized { };
     struct Cleared {};
-    typedef boost::variant<ItemsAdded, ItemsRemoved, Cleared> StreamOperation;
+    typedef boost::variant<ItemsAdded, ItemsRemoved, Initialized, Cleared> StreamOperation;
 
     // Private help methods called by the integrateChanges() method. _observer is guaranteed to be not null when these
     // functions are called
     void integrate(const ItemsAdded& op) { _observer->addItems(op.newItems); }
     void integrate(const ItemsRemoved &op) { _observer->removeItems(op.removedItems); }
+    void integrate(const Initialized&) { _observer->initialized(); }
     void integrate(const Cleared&) { _observer->clear(); }
 
     int _streamId;
+    bool _isInitialized;
     DataStreamObserver<T>* _observer;
 
     std::mutex _pendingOperationsMutex;

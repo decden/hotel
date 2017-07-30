@@ -19,11 +19,13 @@ namespace gui
 
     void Context::addHotel(const hotel::Hotel &hotel)
     {
+      assert(hotel.id() != 0);
       _hotels.push_back(std::make_unique<hotel::Hotel>(hotel));
     }
 
     const hotel::Reservation *Context::addReservation(const hotel::Reservation &reservation)
     {
+      assert(reservation.id() != 0);
       return _reservations.addReservation(std::make_unique<hotel::Reservation>(reservation));
     }
 

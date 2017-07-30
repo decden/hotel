@@ -9,7 +9,6 @@ namespace persistence
       : _backend(databaseFile), _resultIntegrator()
   {
     _backend.start(_resultIntegrator);
-    queueOperation(op::LoadInitialData());
   }
 
   DataSource::~DataSource()

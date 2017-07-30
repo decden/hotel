@@ -38,11 +38,13 @@ namespace gui
     virtual void addItems(const std::vector<T>& items) override { itemsAddedSignal(items); }
     virtual void removeItems(const std::vector<int>& ids) override { itemsRemovedSignal(ids); }
     virtual void clear() override { allItemsRemovedSignal(); }
+    virtual void initialized() override { initializedSignal(); }
 
     // Public signals
     boost::signals2::signal<void(const std::vector<T>&)> itemsAddedSignal;
     boost::signals2::signal<void(const std::vector<int>&)> itemsRemovedSignal;
     boost::signals2::signal<void()> allItemsRemovedSignal;
+    boost::signals2::signal<void()> initializedSignal;
 
     persistence::UniqueDataStreamHandle<T> _streamHandle;
   };
