@@ -4,6 +4,7 @@
 
 #include "persistence/op/operations.h"
 
+#include <QInputDialog>
 #include <QGraphicsScene>
 #include <QPainter>
 
@@ -151,26 +152,35 @@ namespace gui
       }
       else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)
       {
-        // Gather reservations
-        std::vector<std::unique_ptr<hotel::Reservation>> reservations;
-        hotel::Reservation* currentReservation = nullptr;
-        for(auto ghost : _ghosts)
+        if (!_ghosts.empty())
         {
-          if (!currentReservation || currentReservation->lastAtom()->dateRange().end() != ghost->atom.dateRange().begin())
-          {
-            auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
-            currentReservation = reservation.get();
-            reservations.push_back(std::move(reservation));
-            currentReservation->setStatus(hotel::Reservation::New);
-          }
-          currentReservation->addAtom(ghost->atom);
-          delete ghost;
-        }
-        _ghosts.clear();
+          // Ask the user about the title
+          auto reservationName = QInputDialog::getText(nullptr, "Reservation Description", "");
+          if (reservationName.isEmpty())
+            return;
 
-        namespace op = persistence::op;
-        for (auto& reservation : reservations)
-          _context->dataSource().queueOperation(op::StoreNewReservation{std::move(reservation)});
+          // Gather reservations
+          std::vector<std::unique_ptr<hotel::Reservation>> reservations;
+          hotel::Reservation* currentReservation = nullptr;
+          for (auto ghost : _ghosts)
+          {
+            if (!currentReservation || currentReservation->lastAtom()->dateRange().end() != ghost->atom.dateRange().begin())
+            {
+              auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
+              currentReservation = reservation.get();
+              reservations.push_back(std::move(reservation));
+              currentReservation->setStatus(hotel::Reservation::New);
+              currentReservation->setDescription(reservationName.toStdString());
+            }
+            currentReservation->addAtom(ghost->atom);
+            delete ghost;
+          }
+          _ghosts.clear();
+
+          namespace op = persistence::op;
+          for (auto& reservation : reservations)
+            _context->dataSource().queueOperation(op::StoreNewReservation{std::move(reservation)});
+        }
       }
     }
 
