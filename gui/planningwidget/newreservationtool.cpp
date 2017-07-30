@@ -153,12 +153,17 @@ namespace gui
       {
         // Gather reservations
         std::vector<std::unique_ptr<hotel::Reservation>> reservations;
+        hotel::Reservation* currentReservation = nullptr;
         for(auto ghost : _ghosts)
         {
-          auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
-          reservation->setStatus(hotel::Reservation::New);
-          reservation->addAtom(ghost->atom);
-          reservations.push_back(std::move(reservation));
+          if (!currentReservation || currentReservation->lastAtom()->dateRange().end() != ghost->atom.dateRange().begin())
+          {
+            auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
+            currentReservation = reservation.get();
+            reservations.push_back(std::move(reservation));
+            currentReservation->setStatus(hotel::Reservation::New);
+          }
+          currentReservation->addAtom(ghost->atom);
           delete ghost;
         }
         _ghosts.clear();

@@ -25,7 +25,6 @@ int main(int argc, char** argv)
   widget.activateTool("new-reservation");
   widget.showMaximized();
 
-  // TODO: We are basically polling for changes here. This should be replaced with a more robust notification mechanism
   gui::ChangeIntegrator integrator(&dataSource);
 
   return app.exec();
