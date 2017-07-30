@@ -26,7 +26,7 @@ namespace persistence
   op::Task<op::OperationResults> DataSource::queueOperations(op::Operations operations)
   {
     auto task = _backend.queueOperation(std::move(operations));
-    _resultIntegrator.addPendingOperation(task);
+    _resultIntegrator.addPendingTask(task);
     _pendingTasks.push_back(task);
     return task;
   }

@@ -27,34 +27,26 @@ namespace persistence
     ResultIntegrator() = default;
     ~ResultIntegrator() = default;
 
-    void processIntegrationQueue();
-    void addPendingOperation(op::Task<op::OperationResults> task);
-    size_t pendingOperationsCount() const;
+
+    void addPendingTask(op::Task<op::OperationResults> task);
+    size_t pendingTasksCount() const;
+
 
     template <class T>
     void addStream(std::shared_ptr<DataStream<T>> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
-
     /**
      * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
      * @return true if at least one stream has not yet received its initial data.
      */
     bool hasUninitializedStreams() const;
 
+
+    void processIntegrationQueue();
+
   private:
-    void integrateResult(op::NoResult& res);
-    void integrateResult(op::EraseAllDataResult& res);
-    void integrateResult(op::LoadInitialDataResult& res);
-    void integrateResult(op::StoreNewReservationResult& res);
-    void integrateResult(op::StoreNewHotelResult& res);
-    void integrateResult(op::StoreNewPersonResult& res);
-    void integrateResult(op::DeleteReservationResult& res);
-
-    hotel::PlanningBoard _planning;
-    hotel::HotelCollection _hotels;
-
     std::mutex _queueMutex;
-    std::vector<op::Task<op::OperationResults>> _integrationQueue;
     std::vector<DataStreamVariant> _dataStreams;
+    std::vector<op::Task<op::OperationResults>> _tasks;
   };
 
 } // namespace persistence

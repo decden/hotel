@@ -99,7 +99,10 @@ namespace persistence
           op::OperationResults results;
           _storage.beginTransaction();
           for (auto& operation : operationsMessage.first)
-            boost::apply_visitor([this, &results](auto& op) { return this->executeOperation(results, op); }, operation);
+          {
+            auto result = boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation);
+            results.push_back(result);
+          }
           _storage.commitTransaction();
           operationsMessage.second->setCompleted(std::move(results));
           _taskCompletedSignal(operationsMessage.second->uniqueId());
@@ -111,31 +114,30 @@ namespace persistence
       }
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::EraseAllData&)
+    op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)
     {
       _storage.deleteAll();
-      results.push_back(op::EraseAllDataResult());
-
       _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream<hotel::Reservation>& stream) { stream.clear(); });
       _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream<hotel::Hotel>& stream) { stream.clear(); });
+      return op::OperationResult{op::Successful, ""};
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::StoreNewHotel& op)
+    op::OperationResult SqliteBackend::executeOperation(op::StoreNewHotel& op)
     {
       assert(op.newHotel != nullptr);
       if (op.newHotel == nullptr)
-        return;
+        return op::OperationResult{op::Error, "Trying to store empty hotel"};
 
       _storage.storeNewHotel(*op.newHotel);
 
       _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream<hotel::Hotel>& stream) { stream.addItems({*op.newHotel}); });
-      results.push_back(op::StoreNewHotelResult{std::move(op.newHotel)});
+      return op::OperationResult{op::Successful, std::to_string(op.newHotel->id())};
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::StoreNewReservation& op)
+    op::OperationResult SqliteBackend::executeOperation(op::StoreNewReservation& op)
     {
       if (op.newReservation == nullptr)
-        results.push_back(op::NoResult());
+        return op::OperationResult{op::Error, "Trying to store empty reservation"};
 
       // "Unknown" is not a valid reservation status for serialization
       if (op.newReservation->status() == hotel::Reservation::Unknown)
@@ -143,23 +145,25 @@ namespace persistence
       _storage.storeNewReservationAndAtoms(*op.newReservation);
 
       _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.addItems({*op.newReservation}); });
-      results.push_back(op::StoreNewReservationResult{std::move(op.newReservation)});
+      return op::OperationResult{op::Successful, std::to_string(op.newReservation->id())};
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::StoreNewPerson& op)
+    op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson& op)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
 
-      results.push_back(op::NoResult());
+      return op::OperationResult{op::Error, "Not implemented yet!"};
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::DeleteReservation& op)
+    op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
       _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.removeItems({op.reservationId}); });
-      results.push_back(op::DeleteReservationResult{op.reservationId});
+
+      return op::OperationResult{op::Successful, std::to_string(op.reservationId)};
     }
+
 
     void SqliteBackend::initializeStream(DataStream<hotel::Hotel>& dataStream)
     {
