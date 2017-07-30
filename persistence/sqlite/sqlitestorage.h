@@ -29,9 +29,8 @@ namespace persistence
       void deleteAll();
       void deleteReservationById(int id);
 
-      std::unique_ptr<hotel::HotelCollection> loadHotels();
+      std::unique_ptr<std::vector<hotel::Hotel>> loadHotels();
       std::unique_ptr<std::vector<hotel::Reservation>> loadReservations();
-      std::unique_ptr<hotel::PlanningBoard> loadPlanning();
 
       void storeNewHotel(hotel::Hotel& hotel);
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);

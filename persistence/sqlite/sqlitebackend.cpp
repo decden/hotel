@@ -167,13 +167,8 @@ namespace persistence
 
     void SqliteBackend::initializeStream(DataStream<hotel::Hotel>& dataStream)
     {
-      // TODO: loadHotels() should already return the correct type!
-      auto hotelsCollection = _storage.loadHotels();
-      // Create a vector of hotels
-      std::vector<hotel::Hotel> hotels;
-      for (auto& hotel : hotelsCollection->hotels())
-        hotels.push_back(*hotel);
-      dataStream.addItems(std::move(hotels));
+      auto hotels = _storage.loadHotels();
+      dataStream.addItems(std::move(*hotels));
     }
 
     void SqliteBackend::initializeStream(DataStream<hotel::Reservation>& dataStream)
