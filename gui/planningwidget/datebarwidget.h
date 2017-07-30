@@ -34,7 +34,7 @@ namespace gui
       bool _isToday;
 
     protected:
-      void mousePressEvent(QGraphicsSceneMouseEvent *event);
+      virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     };
 
     class DateBarMonthItem : public QGraphicsRectItem

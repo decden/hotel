@@ -19,8 +19,8 @@ namespace persistence
   public:
     virtual ~DataStreamObserver() {}
 
-    virtual void addItem(const T& item) = 0;
-    virtual void removeItem(int id) = 0;
+    virtual void addItems(const std::vector<T>& items) = 0;
+    virtual void removeItems(const std::vector<int>& ids) = 0;
     virtual void clear() = 0;
   };
 
@@ -30,11 +30,15 @@ namespace persistence
   public:
     const std::vector<T>& items() const { return _dataItems; }
 
-    virtual void addItem(const T& item) override { _dataItems.push_back(item); }
-    virtual void removeItem(int id) override
+    virtual void addItems(const std::vector<T>& items) override
     {
-      _dataItems.erase(std::remove_if(_dataItems.begin(), _dataItems.end(),
-                                      [id](const T& item) { return item.id() == id; }), _dataItems.end());
+      std::copy(items.begin(), items.end(), std::back_inserter(_dataItems));
+    }
+    virtual void removeItems(const std::vector<int>& ids) override
+    {
+      _dataItems.erase(std::remove_if(_dataItems.begin(), _dataItems.end(),[&ids](const T& item) {
+        return std::find(ids.begin(), ids.end(), item.id()) != ids.end();
+      }), _dataItems.end());
     }
     virtual void clear() override { _dataItems.clear(); }
 
@@ -102,8 +106,8 @@ namespace persistence
 
     // Private help methods called by the integrateChanges() method. _observer is guaranteed to be not null when these
     // functions are called
-    void integrate(const ItemsAdded& op) { for (auto& added : op.newItems) _observer->addItem(added); }
-    void integrate(const ItemsRemoved &op) { for (auto removed : op.removedItems) _observer->removeItem(removed); }
+    void integrate(const ItemsAdded& op) { _observer->addItems(op.newItems); }
+    void integrate(const ItemsRemoved &op) { _observer->removeItems(op.removedItems); }
     void integrate(const Cleared&) { _observer->clear(); }
 
     int _streamId;

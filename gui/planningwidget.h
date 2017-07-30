@@ -29,33 +29,19 @@ namespace gui
   class PlanningWidget;
 
   template <class T>
-  class CollectionObserverAdapter : public hotel::CollectionObserver<T>
-  {
-  public:
-    // CollectionObserver<T> interface
-    virtual void itemsAdded(const std::vector<T>& reservations) override { itemsAddedSignal(reservations); }
-    virtual void itemsRemoved(const std::vector<T>& reservations) override { itemsRemovedSignal(reservations); }
-    virtual void allItemsRemoved() override { allItemsRemovedSignal(); }
-
-    // Public signals
-    boost::signals2::signal<void(const std::vector<T>&)> itemsAddedSignal;
-    boost::signals2::signal<void(const std::vector<T>&)> itemsRemovedSignal;
-    boost::signals2::signal<void()> allItemsRemovedSignal;
-  };
-  template <class T>
   class DataStreamObserverAdapter : public persistence::DataStreamObserver<T>
   {
   public:
     void connect(persistence::DataSource& dataSource) { _streamHandle = dataSource.connectToStream(this); }
 
     // DataStreamObserver<T> interface
-    virtual void addItem(const T& item) override { itemAddedSignal(item); }
-    virtual void removeItem(int id) { itemRemovedSignal(id); }
-    virtual void clear() { allItemsRemovedSignal(); }
+    virtual void addItems(const std::vector<T>& items) override { itemsAddedSignal(items); }
+    virtual void removeItems(const std::vector<int>& ids) override { itemsRemovedSignal(ids); }
+    virtual void clear() override { allItemsRemovedSignal(); }
 
     // Public signals
-    boost::signals2::signal<void(const T&)> itemAddedSignal;
-    boost::signals2::signal<void(int)> itemRemovedSignal;
+    boost::signals2::signal<void(const std::vector<T>&)> itemsAddedSignal;
+    boost::signals2::signal<void(const std::vector<int>&)> itemsRemovedSignal;
     boost::signals2::signal<void()> allItemsRemovedSignal;
 
     persistence::UniqueDataStreamHandle<T> _streamHandle;
@@ -90,11 +76,11 @@ namespace gui
     DataStreamObserverAdapter<hotel::Hotel> _hotelsStream;
     DataStreamObserverAdapter<hotel::Reservation> _reservationsStream;
 
-    void reservationAdded(const hotel::Reservation& reservation);
-    void reservationRemoved(int id);
+    void reservationsAdded(const std::vector<hotel::Reservation>& reservations);
+    void reservationsRemoved(const std::vector<int>& ids);
     void allReservationsRemoved();
-    void hotelAdded(const hotel::Hotel& hotel);
-    void hotelRemoved(int id);
+    void hotelsAdded(const std::vector<hotel::Hotel>& hotels);
+    void hotelsRemoved(const std::vector<int>& ids);
     void allHotelsRemoved();
 
     // Widgets
