@@ -1,3 +1,5 @@
+#include "guiapp/testdata.h"
+
 #include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
@@ -19,6 +21,9 @@ int main(int argc, char** argv)
   QApplication app(argc, argv);
 
   persistence::DataSource dataSource("test.db");
+
+  if (app.arguments().contains("--createTestData"))
+    guiapp::createTestData(dataSource);
 
   gui::PlanningWidget widget(dataSource);
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());

@@ -1,8 +1,10 @@
 set(SRC
     gui.cpp
+    testdata.cpp
 )
 
 set(SRC_INCLUDES
+	testdata.h
 )
 
 set(CMAKE_AUTOMOC ON)
