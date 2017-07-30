@@ -56,7 +56,7 @@ namespace persistence
   {
   public:
     DataStream(int streamId, DataStreamObserver<T> *observer)
-        : _streamId(streamId), _observer(observer)
+        : _streamId(streamId), _isInitialized(false), _observer(observer)
     {}
 
     /**
@@ -118,7 +118,7 @@ namespace persistence
     // functions are called
     void integrate(const ItemsAdded& op) { _observer->addItems(op.newItems); }
     void integrate(const ItemsRemoved &op) { _observer->removeItems(op.removedItems); }
-    void integrate(const Initialized&) { _observer->initialized(); }
+    void integrate(const Initialized&) { _isInitialized = true; _observer->initialized(); }
     void integrate(const Cleared&) { _observer->clear(); }
 
     int _streamId;

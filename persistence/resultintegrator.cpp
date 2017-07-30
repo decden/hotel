@@ -48,6 +48,13 @@ namespace persistence
     return _integrationQueue.size();
   }
 
+  bool ResultIntegrator::hasUninitializedStreams() const
+  {
+    return std::any_of(_dataStreams.begin(), _dataStreams.end(), [](const DataStreamVariant& stream) {
+      return boost::apply_visitor([](auto& stream) { return !stream->isInitialized(); }, stream);
+    });
+  }
+
   void ResultIntegrator::integrateResult(op::NoResult&) {}
 
   void ResultIntegrator::integrateResult(op::EraseAllDataResult&)

@@ -62,6 +62,12 @@ namespace persistence
     bool hasPendingTasks() const;
 
     /**
+     * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
+     * @return true if at least one stream has not yet received its initial data.
+     */
+    bool hasUninitializedStreams() const;
+
+    /**
      * @brief taskCompletedSignal returns the signal which is triggered when new results are waiting to be integrated
      * @note The signal is not called on the main thread, but on the backend worker thread
      */

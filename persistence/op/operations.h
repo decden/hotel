@@ -15,15 +15,8 @@ namespace persistence
 {
   namespace op
   {
-    //! Operation with the sole purpose to make sure that streams connected before this task have been initialized
-    //! This is currently used for tests and should be removed when a better system is available.
-    struct FenceOperation { };
-
     //! Operations which deletes everyghing present in the database
     struct EraseAllData { };
-
-    //! Loads inital hotel, rooms, and planning data
-    struct LoadInitialData { };
 
     struct StoreNewHotel { std::unique_ptr<hotel::Hotel> newHotel; };
     struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
@@ -32,9 +25,7 @@ namespace persistence
     struct DeleteReservation { int reservationId; };
 
     // Define a union type of all known operations
-    typedef boost::variant<op::FenceOperation,
-                           op::EraseAllData,
-                           op::LoadInitialData,
+    typedef boost::variant<op::EraseAllData,
                            op::StoreNewHotel,
                            op::StoreNewReservation,
                            op::StoreNewPerson,

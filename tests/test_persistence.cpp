@@ -15,8 +15,9 @@ void waitForAllOperations(persistence::DataSource& ds)
   std::condition_variable condition;
 
   ds.taskCompletedSignal().connect([&](int) { condition.notify_one(); });
+  ds.streamsUpdatedSignal().connect([&]() { condition.notify_one(); });
 
-  while(ds.hasPendingTasks())
+  while(ds.hasPendingTasks() || ds.hasUninitializedStreams())
   {
     ds.processIntegrationQueue();
     condition.wait_for(lock, std::chrono::milliseconds(10));
@@ -99,7 +100,6 @@ TEST_F(Persistence, HotelPersistence)
     persistence::DataSource dataSource("test.db");
     persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
     auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
-    auto fence = dataSource.queueOperation(persistence::op::FenceOperation());
     waitForAllOperations(dataSource);
 
     ASSERT_EQ(1u, hotels.items().size());
@@ -138,7 +138,6 @@ TEST_F(Persistence, ReservationPersistence)
     persistence::DataSource dataSource("test.db");
     persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
     auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
-    auto fence = dataSource.queueOperation(persistence::op::FenceOperation());
     waitForAllOperations(dataSource);
 
     ASSERT_EQ(1u, reservations.items().size());

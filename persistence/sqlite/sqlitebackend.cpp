@@ -111,11 +111,6 @@ namespace persistence
       }
     }
 
-    void SqliteBackend::executeOperation(op::OperationResults &results, op::FenceOperation &)
-    {
-      // Noop
-    }
-
     void SqliteBackend::executeOperation(op::OperationResults& results, op::EraseAllData&)
     {
       _storage.deleteAll();
@@ -123,14 +118,6 @@ namespace persistence
 
       _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream<hotel::Reservation>& stream) { stream.clear(); });
       _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream<hotel::Hotel>& stream) { stream.clear(); });
-    }
-
-    void SqliteBackend::executeOperation(op::OperationResults& results, op::LoadInitialData&)
-    {
-      // TODO: Remove this! This makes no sense in a stream world!
-      auto hotels = _storage.loadHotels();
-      auto planning = _storage.loadPlanning();
-      results.push_back(op::LoadInitialDataResult{std::move(hotels), std::move(planning)});
     }
 
     void SqliteBackend::executeOperation(op::OperationResults& results, op::StoreNewHotel& op)

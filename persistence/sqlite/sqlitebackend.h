@@ -111,9 +111,7 @@ namespace persistence
     private:
       void threadMain(persistence::ResultIntegrator& dataSource);
 
-      void executeOperation(op::OperationResults& results, op::FenceOperation&);
       void executeOperation(op::OperationResults& results, op::EraseAllData&);
-      void executeOperation(op::OperationResults& results, op::LoadInitialData&);
       void executeOperation(op::OperationResults& results, op::StoreNewHotel& op);
       void executeOperation(op::OperationResults& results, op::StoreNewReservation& op);
       void executeOperation(op::OperationResults& results, op::StoreNewPerson& op);

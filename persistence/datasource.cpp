@@ -47,4 +47,9 @@ namespace persistence
     return !_pendingTasks.empty();
   }
 
+  bool DataSource::hasUninitializedStreams() const
+  {
+    return _resultIntegrator.hasUninitializedStreams();
+  }
+
 } // namespace persistence

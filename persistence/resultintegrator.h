@@ -34,6 +34,12 @@ namespace persistence
     template <class T>
     void addStream(std::shared_ptr<DataStream<T>> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
 
+    /**
+     * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
+     * @return true if at least one stream has not yet received its initial data.
+     */
+    bool hasUninitializedStreams() const;
+
   private:
     void integrateResult(op::NoResult& res);
     void integrateResult(op::EraseAllDataResult& res);
