@@ -14,9 +14,6 @@ void waitForAllOperations(persistence::DataSource& ds)
   std::unique_lock<std::mutex> lock(mutex);
   std::condition_variable condition;
 
-  ds.taskCompletedSignal().connect([&](int) { condition.notify_one(); });
-  ds.streamsUpdatedSignal().connect([&]() { condition.notify_one(); });
-
   while(ds.hasPendingTasks() || ds.hasUninitializedStreams())
   {
     ds.processIntegrationQueue();
@@ -174,4 +171,34 @@ TEST_F(Persistence, DataStreams)
 
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, reservations.items().size());
+}
+
+TEST_F(Persistence, DataStreamsServices)
+{
+  persistence::DataSource dataSource("test.db");
+
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+  auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+
+  ASSERT_EQ(0u, hotels.items().size());
+
+  storeHotel(dataSource, makeNewHotel("Hotel 1", "Category 1", 10));
+  storeHotel(dataSource, makeNewHotel("Hotel 2", "Category 2", 11));
+
+  ASSERT_EQ(2u, hotels.items().size());
+
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotel;
+  nlohmann::json streamOptions;
+  streamOptions["id"] = hotels.items()[1].id();
+  auto hotelStreamHandle = dataSource.connectToStream(&hotel, "hotel.by_id", streamOptions);
+  waitForAllOperations(dataSource);
+
+  ASSERT_EQ(1u, hotel.items().size());
+  ASSERT_EQ(hotels.items()[1], hotel.items()[0]);
+
+  auto task = dataSource.queueOperation(persistence::op::EraseAllData());
+  waitForTask(dataSource, task);
+
+  ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, hotel.items().size());
 }

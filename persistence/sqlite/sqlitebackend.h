@@ -9,6 +9,8 @@
 #include "persistence/op/results.h"
 #include "persistence/op/task.h"
 
+#include "extern/nlohmann_json/json.hpp"
+
 #include <boost/signals2.hpp>
 
 #include <atomic>
@@ -18,7 +20,7 @@
 #include <thread>
 #include <string>
 #include <queue>
-#include <typeindex>
+#include <functional>
 
 namespace persistence
 {
@@ -67,6 +69,23 @@ namespace persistence
       std::vector<std::shared_ptr<DataStream>> _uninitializedStreams;
       std::vector<std::shared_ptr<DataStream>> _activeStreams;
     };
+
+    /**
+     * @brief The DataStreamRegistry class is a factory for creating data streams
+     * This class is able to create specialized data streams for different service endpoints and different configurations
+     */
+    class DataStreamRegistry
+    {
+    public:
+      typedef std::function<std::shared_ptr<DataStream>(StreamableType type, const std::string&, const nlohmann::json&)> FactoryFunction;
+
+      void registerStreamFactory(StreamableType type, const std::string& service, FactoryFunction function);
+      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& options);
+
+    private:
+      typedef std::pair<StreamableType, std::string> TypeServicePair;
+      std::map<TypeServicePair, FactoryFunction> _factoryFunctions;
+    };
   }
 
   namespace sqlite
@@ -95,10 +114,19 @@ namespace persistence
       boost::signals2::signal<void()>& streamsUpdatedSignal() { return _streamsUpdatedSignal; }
 
       template <class T>
-      std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer)
+      std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer, const std::string& service,
+                                               const nlohmann::json& options)
       {
         std::unique_lock<std::mutex> lock(_queueMutex);
-        auto sharedState = std::make_shared<DataStream>(_nextStreamId++, DataStream::GetStreamTypeFor<T>(), observer);
+
+        auto sharedState = _streamRegistry.makeStream(DataStream::GetStreamTypeFor<T>(), service, options);
+        if (sharedState == nullptr)
+        {
+          sharedState = std::make_shared<DataStream>(StreamableType::NullStream);
+          std::cerr << "Unknown data stream for type \"" << typeid(T).name() << "\" and service \"" << service << "\"" << std::endl;
+        }
+
+        sharedState->connect(_nextStreamId++, observer);
         _dataStreams.addNewStream(sharedState);
         lock.unlock();
 
@@ -136,6 +164,7 @@ namespace persistence
       boost::signals2::signal<void(int)> _taskCompletedSignal;
       boost::signals2::signal<void()> _streamsUpdatedSignal;
 
+      detail::DataStreamRegistry _streamRegistry;
       detail::DataStreamManager _dataStreams;
     };
 

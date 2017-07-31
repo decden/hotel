@@ -9,6 +9,8 @@
 
 #include "hotel/planning.h"
 
+#include "extern/nlohmann_json/json.hpp"
+
 #include "boost/signals2.hpp"
 
 #include <memory>
@@ -46,7 +48,14 @@ namespace persistence
     template <class T>
     UniqueDataStreamHandle connectToStream(DataStreamObserverTyped<T>* observer)
     {
-      auto stream = _backend.createStream(observer);
+      // Connect to default service with default options
+      return connectToStream(observer, "", {});
+    }
+
+    template <class T>
+    UniqueDataStreamHandle connectToStream(DataStreamObserverTyped<T> *observer, const std::string& service, const nlohmann::json& options)
+    {
+      auto stream = _backend.createStream(observer, service, options);
       _resultIntegrator.addStream(stream);
       return UniqueDataStreamHandle(stream);
     }

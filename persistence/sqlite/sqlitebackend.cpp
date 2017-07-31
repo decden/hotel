@@ -33,17 +33,43 @@ namespace persistence
           func(*activeStream);
       }
     }
+
+    std::shared_ptr<DataStream> DataStreamRegistry::makeStream(StreamableType type, const std::string &service, const nlohmann::json &options)
+    {
+      auto factoryIt = _factoryFunctions.find(std::make_pair(type, service));
+      if (factoryIt != _factoryFunctions.end())
+        return factoryIt->second(type, service, options);
+
+      return nullptr;
+    }
+
+    void DataStreamRegistry::registerStreamFactory(StreamableType type, const std::string &service, DataStreamRegistry::FactoryFunction function)
+    {
+      _factoryFunctions[std::make_pair(type, service)] = function;
+    }
+
   } // namespace detail
 
   namespace sqlite
   {
-    SqliteBackend::SqliteBackend(const std::string& databasePath)
-        : _storage(databasePath), _nextOperationId(1), _backendThread(), _quitBackendThread(false),
-          _workAvailableCondition(), _queueMutex(), _operationsQueue()
-    {
-    }
+  SqliteBackend::SqliteBackend(const std::string& databasePath)
+    : _storage(databasePath), _nextOperationId(1), _backendThread(), _quitBackendThread(false),
+      _workAvailableCondition(), _queueMutex(), _operationsQueue()
+  {
+    auto defaultStreamFactory = [](StreamableType type, const std::string &service, const nlohmann::json &options) {
+      return std::make_shared<DataStream>(type);
+    };
+    auto singleIdStreamFactory = [](StreamableType type, const std::string &service, const nlohmann::json &options) {
+      return std::make_shared<SingleIdDataStream>(type, options["id"]);
+    };
 
-    op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
+    _streamRegistry.registerStreamFactory(StreamableType::Hotel, "", defaultStreamFactory);
+    _streamRegistry.registerStreamFactory(StreamableType::Hotel, "hotel.by_id", singleIdStreamFactory);
+    _streamRegistry.registerStreamFactory(StreamableType::Reservation, "", defaultStreamFactory);
+    _streamRegistry.registerStreamFactory(StreamableType::Reservation, "reservation.by_id", singleIdStreamFactory);
+  }
+
+  op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
     {
       // Create a task
       auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
@@ -182,6 +208,7 @@ namespace persistence
     {
       switch(dataStream.streamType())
       {
+      case StreamableType::NullStream: return;
       case StreamableType::Hotel: return initializeStreamTyped<hotel::Hotel>(dataStream);
       case StreamableType::Reservation: return initializeStreamTyped<hotel::Reservation>(dataStream);
       }

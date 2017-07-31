@@ -15,7 +15,7 @@ namespace persistence
 {
   typedef boost::variant<std::vector<hotel::Hotel>,
                          std::vector<hotel::Reservation>> StreamableItems;
-  enum class StreamableType { Hotel, Reservation };
+  enum class StreamableType { NullStream, Hotel, Reservation };
 
   class DataStreamObserver
   {
@@ -67,9 +67,18 @@ namespace persistence
   class DataStream
   {
   public:
-    DataStream(int streamId, StreamableType streamType, DataStreamObserver* observer)
-        : _streamId(streamId), _streamType(streamType), _isInitialized(false), _observer(observer)
+    DataStream(StreamableType streamType)
+        : _streamId(0), _streamType(streamType), _isInitialized(false), _observer(nullptr)
     {}
+    virtual ~DataStream() {}
+
+    void connect(int streamId, DataStreamObserver* observer)
+    {
+      assert(_streamId == 0);
+      assert(_observer == nullptr);
+      _streamId = streamId;
+      _observer = observer;
+    }
 
     /**
      * @brief integrateChanges integrates all outstanding changes
@@ -89,12 +98,12 @@ namespace persistence
     }
 
     // Interface for backend
-    void addItems(StreamableItems newItems)
+    virtual void addItems(StreamableItems newItems)
     {
       std::lock_guard<std::mutex> lock(_pendingOperationsMutex);
       _pendingOperations.push_back(ItemsAdded{std::move(newItems)});
     }
-    void removeItems(std::vector<int> itemsToRemove)
+    virtual void removeItems(std::vector<int> itemsToRemove)
     {
       std::lock_guard<std::mutex> lock(_pendingOperationsMutex);
       _pendingOperations.push_back(ItemsRemoved{std::move(itemsToRemove)});
@@ -145,6 +154,39 @@ namespace persistence
 
     std::mutex _pendingOperationsMutex;
     std::vector<StreamOperation> _pendingOperations;
+  };
+
+  /**
+   * @brief The SingleIdDataStream class is a datastream which contains only an object with a given id.
+   * The fact that only one ID can be provided means that the stream will always "hold" at most 1 element.
+   */
+  class SingleIdDataStream : public DataStream
+  {
+  public:
+    SingleIdDataStream(StreamableType streamType, int idFilter)
+        : DataStream(streamType), _idFilter(idFilter)
+    {}
+
+    virtual void addItems(StreamableItems newItems) override
+    {
+      auto filteredList = boost::apply_visitor([id=_idFilter](auto& list) -> StreamableItems {
+        typename std::remove_reference<decltype(list)>::type result;
+        for (auto& elem : list)
+          if (elem.id() == id)
+            result.push_back(elem);
+        return StreamableItems{result};
+      }, newItems);
+
+      DataStream::addItems(filteredList);
+    }
+    virtual void removeItems(std::vector<int> itemsToRemove) override
+    {
+      if (std::any_of(itemsToRemove.begin(), itemsToRemove.end(), [id=_idFilter](int x) { return x == id; }))
+        DataStream::removeItems({_idFilter});
+    }
+
+  private:
+    int _idFilter;
   };
 
   class UniqueDataStreamHandle
