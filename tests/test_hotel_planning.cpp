@@ -19,14 +19,6 @@ public:
   }
 };
 
-class MockPlanningBoardObserver : public hotel::PlanningBoardObserver
-{
-public:
-  MOCK_METHOD1(itemsAdded, void(const std::vector<const hotel::Reservation*>& reservations));
-  MOCK_METHOD1(itemsRemoved, void(const std::vector<const hotel::Reservation*>& reservations));
-  MOCK_METHOD0(allItemsRemoved, void());
-};
-
 TEST_F(HotelPlanning, Planning)
 {
   using namespace boost::gregorian;
@@ -107,38 +99,4 @@ TEST_F(HotelPlanning, Planning)
   board.removeReservation(allReservations[3]);
   ASSERT_EQ(1u, board.getReservationsInPeriod(board.getPlanningExtent()).size());
   ASSERT_ANY_THROW(board.removeReservation(nullptr));
-}
-
-TEST_F(HotelPlanning, PlanningBoardObserver)
-{
-  hotel::PlanningBoard board;
-  MockPlanningBoardObserver observer;
-
-  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(1);
-  board.addObserver(&observer);
-  testing::Mock::VerifyAndClear(&observer);
-
-  // Add reservations
-  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(2);
-  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 2, 4)));
-  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 6, 8)));
-  testing::Mock::VerifyAndClear(&observer);
-
-  // Remove reservations
-  EXPECT_CALL(observer, itemsRemoved(testing::_)).Times(1);
-  auto allReservations = board.getReservationsInPeriod(board.getPlanningExtent());
-  board.removeReservation(allReservations[0]);
-  testing::Mock::VerifyAndClear(&observer);
-
-  // Reset observed board to nullptr
-  EXPECT_CALL(observer, allItemsRemoved()).Times(1);
-  board.removeObserver(&observer);
-  testing::Mock::VerifyAndClear(&observer);
-
-  // Add reservations while no observer attached
-  EXPECT_CALL(observer, itemsAdded(testing::_)).Times(1);
-  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 10, 11)));
-  board.addReservation(std::make_unique<hotel::Reservation>(makeReservation(2, 11, 12)));
-  board.addObserver(&observer);
-  testing::Mock::VerifyAndClear(&observer);
 }

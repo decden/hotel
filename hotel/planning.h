@@ -3,8 +3,6 @@
 
 #include "hotel/reservation.h"
 
-#include "hotel/observablecollection.h"
-
 #include <boost/date_time.hpp>
 
 #include <map>
@@ -15,9 +13,6 @@
 
 namespace hotel
 {
-typedef ObservableCollection<const Reservation*> ObservablePlanningBoard;
-typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
-
   /**
    * @brief The PlanningBoard class holds planning information for a given set of rooms.
    *
@@ -86,9 +81,6 @@ typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
      */
     boost::gregorian::date_period getPlanningExtent() const;
 
-    void addObserver(PlanningBoardObserver* observer);
-    void removeObserver(PlanningBoardObserver* observer);
-
   private:
     /**
      * @brief insertAtom Inserts a given reservation atom to the PlanningBoard.
@@ -98,9 +90,6 @@ typedef CollectionObserver<const Reservation*> PlanningBoardObserver;
 
     std::vector<std::unique_ptr<Reservation>> _reservations;
     std::map<int, std::vector<const ReservationAtom*>> _rooms;
-
-    //! Used to notify observers about changes to the collection
-    ObservablePlanningBoard _observableCollection;
   };
 
 } // namespace hotel

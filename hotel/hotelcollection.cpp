@@ -24,47 +24,23 @@ namespace hotel
     for (auto& hotel : that._hotels)
       _hotels.push_back(std::make_unique<Hotel>(*hotel));
 
-    std::vector<const Hotel*> hotels;
-    for (auto& hotel : _hotels)
-      hotels.push_back(hotel.get());
-    _observableCollection.foreachObserver([=](auto& observer){
-      observer.itemsAdded(hotels);
-    });
-
     return *this;
   }
 
   HotelCollection& HotelCollection::operator=(HotelCollection&& that)
   {
-    assert(!that._observableCollection.hasObservers());
     _hotels = std::move(that._hotels);
-
-    std::vector<const Hotel*> hotels;
-    for (auto& hotel : _hotels)
-      hotels.push_back(hotel.get());
-    _observableCollection.foreachObserver([=](auto& observer) {
-      observer.itemsAdded(hotels);
-    });
-
     return *this;
   }
 
   void HotelCollection::addHotel(std::unique_ptr<Hotel> hotel)
   {
-    auto hotelPtr = hotel.get();
     _hotels.push_back(std::move(hotel));
-
-    _observableCollection.foreachObserver([=](auto& observer) {
-      observer.itemsAdded({ hotelPtr });
-    });
   }
 
   void HotelCollection::clear()
   {
     _hotels.clear();
-    _observableCollection.foreachObserver([](auto& observer) {
-      observer.allItemsRemoved();
-    });
   }
 
   const std::vector<std::unique_ptr<Hotel>>& HotelCollection::hotels() const { return _hotels; }
@@ -113,20 +89,6 @@ namespace hotel
         if (room->category()->id() == categoryId)
           rooms.push_back(room.get());
     return rooms;
-  }
-
-  void HotelCollection::addObserver(HotelCollectionObserver *observer)
-  {
-    _observableCollection.addObserver(observer);
-    std::vector<const Hotel*> hotels;
-    for (auto& hotel : _hotels)
-      hotels.push_back(hotel.get());
-    observer->itemsAdded(hotels);
-  }
-
-  void HotelCollection::removeObserver(HotelCollectionObserver *observer)
-  {
-    _observableCollection.removeObserver(observer);
   }
 
 } // namespace hotel

@@ -19,25 +19,11 @@ namespace hotel
   PlanningBoard& PlanningBoard::operator=(PlanningBoard&& that)
   {
     assert(this != &that);
-    assert(!that._observableCollection.hasObservers());
 
     clear();
     _rooms = std::move(that._rooms);
     _reservations = std::move(that._reservations);
     that.clear();
-
-    if (_observableCollection.hasObservers())
-    {
-      std::vector<const Reservation*> newReservations;
-      for (auto& r : _reservations)
-        newReservations.push_back(r.get());
-
-      // Notify the observers
-      _observableCollection.foreachObserver([&](auto& observer) {
-        observer.allItemsRemoved();
-        observer.itemsAdded(newReservations);
-      });
-    }
 
     return *this;
   }
@@ -56,10 +42,6 @@ namespace hotel
     auto reservationPtr = reservation.get();
     _reservations.push_back(std::move(reservation));
 
-    // Notify the observers and return
-    _observableCollection.foreachObserver([&](auto& observer) {
-      observer.itemsAdded({reservationPtr});
-    });
     return reservationPtr;
   }
 
@@ -81,12 +63,7 @@ namespace hotel
     auto reservationIt =
         std::find_if(_reservations.begin(), _reservations.end(), [=](auto& x) { return x.get() == reservation; });
     if (reservationIt != _reservations.end())
-    {
       _reservations.erase(reservationIt);
-      _observableCollection.foreachObserver([&](auto& observer) {
-        observer.itemsRemoved({reservation});
-      });
-    }
   }
 
   void PlanningBoard::removeReservation(int reservationId)
@@ -113,9 +90,6 @@ namespace hotel
   {
     _reservations.clear();
     _rooms.clear();
-    _observableCollection.foreachObserver([&](auto& observer) {
-      observer.allItemsRemoved();
-    });
   }
 
   bool PlanningBoard::canAddReservation(const Reservation& reservation) const
@@ -228,22 +202,6 @@ namespace hotel
       return date_period(from, to);
     }
   }
-
-  void PlanningBoard::addObserver(PlanningBoardObserver* observer)
-  {
-    _observableCollection.addObserver(observer);
-
-    std::vector<const Reservation*> newReservations;
-    for (auto& r : _reservations)
-      newReservations.push_back(r.get());
-
-    // Notify the observers
-    _observableCollection.foreachObserver([&](auto& observer) {
-      observer.itemsAdded(newReservations);
-    });
-  }
-
-  void PlanningBoard::removeObserver(PlanningBoardObserver* observer) { _observableCollection.removeObserver(observer); }
 
   void PlanningBoard::insertAtom(const ReservationAtom* atom)
   {

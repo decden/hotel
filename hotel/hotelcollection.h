@@ -2,15 +2,11 @@
 #define HOTEL_HOTELCOLLECTION_H
 
 #include "hotel/hotel.h"
-#include "hotel/observablecollection.h"
 
 #include <vector>
 
 namespace hotel
 {
-  typedef ObservableCollection<const hotel::Hotel*> ObservableHotelCollection;
-  typedef CollectionObserver<const hotel::Hotel*> HotelCollectionObserver;
-
   /**
    * @brief The HotelCollection class holds a list of hotels.
    *
@@ -38,13 +34,8 @@ namespace hotel
     std::vector<hotel::HotelRoom*> allRooms();
     std::vector<hotel::HotelRoom*> allRoomsByCategory(int categoryId);
 
-    void addObserver(HotelCollectionObserver* observer);
-    void removeObserver(HotelCollectionObserver* observer);
-
   private:
     std::vector<std::unique_ptr<hotel::Hotel>> _hotels;
-
-    ObservableHotelCollection _observableCollection;
   };
 
 } // namespace hotel
