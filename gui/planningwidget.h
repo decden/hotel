@@ -29,7 +29,7 @@ namespace gui
   class PlanningWidget;
 
   template <class T>
-  class DataStreamObserverAdapter : public persistence::DataStreamObserver<T>
+  class DataStreamObserverAdapter : public persistence::DataStreamObserverTyped<T>
   {
   public:
     void connect(persistence::DataSource& dataSource) { _streamHandle = dataSource.connectToStream(this); }
@@ -46,7 +46,7 @@ namespace gui
     boost::signals2::signal<void()> allItemsRemovedSignal;
     boost::signals2::signal<void()> initializedSignal;
 
-    persistence::UniqueDataStreamHandle<T> _streamHandle;
+    persistence::UniqueDataStreamHandle _streamHandle;
   };
 
   /**

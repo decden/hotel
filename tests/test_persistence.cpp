@@ -120,6 +120,7 @@ TEST_F(Persistence, ReservationPersistence)
     auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
     storeHotel(dataSource, hotel);
 
+    ASSERT_EQ(1u, hotels.items().size());
     auto roomId = hotels.items()[0].rooms()[0]->id();
 
     persistence::VectorDataStreamObserver<hotel::Reservation> reservations;

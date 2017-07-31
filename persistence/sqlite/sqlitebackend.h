@@ -32,8 +32,7 @@ namespace persistence
        * @note addNewStream must be synchronized!
        * @see collectNewStreams
        */
-      template<class T>
-      void addNewStream(const std::shared_ptr<DataStream<T>>& stream) { _newStreams.push_back(stream); }
+      void addNewStream(const std::shared_ptr<DataStream>& stream) { _newStreams.push_back(stream); }
 
       /**
        * @brief The purpose of this method is to move all new streams into the uninitializedStreams list
@@ -63,10 +62,10 @@ namespace persistence
 
     private:
       // Access to this list has to be synchronized by the backend
-      std::vector<DataStreamVariant> _newStreams;
+      std::vector<std::shared_ptr<DataStream>> _newStreams;
       // The following two lists can be operated on by the worker thread without lock!
-      std::vector<DataStreamVariant> _uninitializedStreams;
-      std::vector<DataStreamVariant> _activeStreams;
+      std::vector<std::shared_ptr<DataStream>> _uninitializedStreams;
+      std::vector<std::shared_ptr<DataStream>> _activeStreams;
     };
   }
 
@@ -96,10 +95,10 @@ namespace persistence
       boost::signals2::signal<void()>& streamsUpdatedSignal() { return _streamsUpdatedSignal; }
 
       template <class T>
-      std::shared_ptr<DataStream<T>> createStream(DataStreamObserver<T> *observer)
+      std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer)
       {
         std::unique_lock<std::mutex> lock(_queueMutex);
-        auto sharedState = std::make_shared<DataStream<T>>(_nextStreamId++, observer);
+        auto sharedState = std::make_shared<DataStream>(_nextStreamId++, DataStream::GetStreamTypeFor<T>(), observer);
         _dataStreams.addNewStream(sharedState);
         lock.unlock();
 
@@ -117,8 +116,9 @@ namespace persistence
       op::OperationResult executeOperation(op::StoreNewPerson& op);
       op::OperationResult executeOperation(op::DeleteReservation& op);
 
-      void initializeStream(DataStream<hotel::Hotel>& dataStream);
-      void initializeStream(DataStream<hotel::Reservation>& dataStream);
+      template <class T>
+      void initializeStreamTyped(DataStream& dataStream);
+      void initializeStream(DataStream& dataStream);
 
       SqliteStorage _storage;
 

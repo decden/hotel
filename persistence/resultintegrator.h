@@ -32,8 +32,7 @@ namespace persistence
     size_t pendingTasksCount() const;
 
 
-    template <class T>
-    void addStream(std::shared_ptr<DataStream<T>> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
+    void addStream(std::shared_ptr<DataStream> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
     /**
      * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
      * @return true if at least one stream has not yet received its initial data.
@@ -45,7 +44,7 @@ namespace persistence
 
   private:
     std::mutex _queueMutex;
-    std::vector<DataStreamVariant> _dataStreams;
+    std::vector<std::shared_ptr<DataStream>> _dataStreams;
     std::vector<op::Task<op::OperationResults>> _tasks;
   };
 

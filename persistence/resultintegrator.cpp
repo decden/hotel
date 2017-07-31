@@ -10,11 +10,11 @@ namespace persistence
 
     // Remove invalid streams (streams which no longer have a listener)
     _dataStreams.erase(std::remove_if(_dataStreams.begin(), _dataStreams.end(), [](auto& stream) {
-      return boost::apply_visitor([](auto& stream) { return !stream->isValid(); }, stream);
+      return !stream->isValid();
     }), _dataStreams.end());
     // Apply changes to streams
     for (auto& stream : _dataStreams)
-      boost::apply_visitor([](auto& stream) { stream->integrateChanges(); }, stream);
+      stream->integrateChanges();
 
     // Move all of the completed tasks to the end of the list
     auto readyBegin = std::stable_partition(begin(_tasks), end(_tasks),
@@ -36,8 +36,8 @@ namespace persistence
 
   bool ResultIntegrator::hasUninitializedStreams() const
   {
-    return std::any_of(_dataStreams.begin(), _dataStreams.end(), [](const DataStreamVariant& stream) {
-      return boost::apply_visitor([](auto& stream) { return !stream->isInitialized(); }, stream);
+    return std::any_of(_dataStreams.begin(), _dataStreams.end(), [](const std::shared_ptr<DataStream>& stream) {
+      return !stream->isInitialized();
     });
   }
 

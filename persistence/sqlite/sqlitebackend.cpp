@@ -18,7 +18,7 @@ namespace persistence
     {
       for (auto& uninitializedStream : _uninitializedStreams)
       {
-        boost::apply_visitor([&](auto& stream) { initializerFunction(*stream); }, uninitializedStream);
+        initializerFunction(*uninitializedStream);
         _activeStreams.push_back(std::move(uninitializedStream));
       }
       _uninitializedStreams.clear();
@@ -29,8 +29,8 @@ namespace persistence
     {
       for (auto& activeStream : _activeStreams)
       {
-        if (activeStream.type() == typeid(std::shared_ptr<DataStream<T>>))
-          func(*boost::get<std::shared_ptr<DataStream<T>>>(activeStream));
+        if (activeStream->streamType() == DataStream::GetStreamTypeFor<T>())
+          func(*activeStream);
       }
     }
   } // namespace detail
@@ -88,8 +88,8 @@ namespace persistence
         lock.unlock();
 
         // Initialize new data streams
-        _dataStreams.initialize([this](auto& stream) {
-          this->initializeStream(stream);
+        _dataStreams.initialize([this](DataStream& stream) {
+          initializeStream(stream);
           stream.setInitialized();
         });
 
@@ -117,8 +117,8 @@ namespace persistence
     op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)
     {
       _storage.deleteAll();
-      _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream<hotel::Reservation>& stream) { stream.clear(); });
-      _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream<hotel::Hotel>& stream) { stream.clear(); });
+      _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream& stream) { stream.clear(); });
+      _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream& stream) { stream.clear(); });
       return op::OperationResult{op::Successful, ""};
     }
 
@@ -130,7 +130,7 @@ namespace persistence
 
       _storage.storeNewHotel(*op.newHotel);
 
-      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream<hotel::Hotel>& stream) { stream.addItems({*op.newHotel}); });
+      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream& stream) { stream.addItems(std::vector<hotel::Hotel>{*op.newHotel}); });
       return op::OperationResult{op::Successful, std::to_string(op.newHotel->id())};
     }
 
@@ -144,7 +144,7 @@ namespace persistence
         op.newReservation->setStatus(hotel::Reservation::New);
       _storage.storeNewReservationAndAtoms(*op.newReservation);
 
-      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.addItems({*op.newReservation}); });
+      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream& stream) { stream.addItems(std::vector<hotel::Reservation>{*op.newReservation}); });
       return op::OperationResult{op::Successful, std::to_string(op.newReservation->id())};
     }
 
@@ -159,22 +159,32 @@ namespace persistence
     op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
-      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream<hotel::Reservation>& stream) { stream.removeItems({op.reservationId}); });
+      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream& stream) { stream.removeItems({op.reservationId}); });
 
       return op::OperationResult{op::Successful, std::to_string(op.reservationId)};
     }
 
-
-    void SqliteBackend::initializeStream(DataStream<hotel::Hotel>& dataStream)
+    template<>
+    void SqliteBackend::initializeStreamTyped<hotel::Hotel>(DataStream& dataStream)
     {
       auto hotels = _storage.loadHotels();
       dataStream.addItems(std::move(*hotels));
     }
 
-    void SqliteBackend::initializeStream(DataStream<hotel::Reservation>& dataStream)
+    template<>
+    void SqliteBackend::initializeStreamTyped<hotel::Reservation>(DataStream& dataStream)
     {
       auto reservations = _storage.loadReservations();
       dataStream.addItems(std::move(*reservations));
+    }
+
+    void SqliteBackend::initializeStream(DataStream &dataStream)
+    {
+      switch(dataStream.streamType())
+      {
+      case StreamableType::Hotel: return initializeStreamTyped<hotel::Hotel>(dataStream);
+      case StreamableType::Reservation: return initializeStreamTyped<hotel::Reservation>(dataStream);
+      }
     }
 
   } // namespace sqlite

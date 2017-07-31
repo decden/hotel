@@ -13,20 +13,33 @@
 
 namespace persistence
 {
-  template <class T>
+  typedef boost::variant<std::vector<hotel::Hotel>,
+                         std::vector<hotel::Reservation>> StreamableItems;
+  enum class StreamableType { Hotel, Reservation };
+
   class DataStreamObserver
   {
   public:
     virtual ~DataStreamObserver() {}
 
-    virtual void addItems(const std::vector<T>& items) = 0;
+    virtual void addItems(const StreamableItems& items) = 0;
     virtual void removeItems(const std::vector<int>& ids) = 0;
     virtual void clear() = 0;
     virtual void initialized() = 0;
   };
 
   template <class T>
-  class VectorDataStreamObserver : public DataStreamObserver<T>
+  class DataStreamObserverTyped : public DataStreamObserver
+  {
+  public:
+    virtual ~DataStreamObserverTyped() {}
+
+    virtual void addItems(const StreamableItems& items) final override { addItems(boost::get<std::vector<T>>(items)); }
+    virtual void addItems(const std::vector<T>& items) = 0;
+  };
+
+  template <class T>
+  class VectorDataStreamObserver : public DataStreamObserverTyped<T>
   {
   public:
     const std::vector<T>& items() const { return _dataItems; }
@@ -51,12 +64,11 @@ namespace persistence
   /**
    * @brief Writable backend for data stream
    */
-  template <class T>
   class DataStream
   {
   public:
-    DataStream(int streamId, DataStreamObserver<T> *observer)
-        : _streamId(streamId), _isInitialized(false), _observer(observer)
+    DataStream(int streamId, StreamableType streamType, DataStreamObserver* observer)
+        : _streamId(streamId), _streamType(streamType), _isInitialized(false), _observer(observer)
     {}
 
     /**
@@ -77,7 +89,7 @@ namespace persistence
     }
 
     // Interface for backend
-    void addItems(std::vector<T> newItems)
+    void addItems(StreamableItems newItems)
     {
       std::lock_guard<std::mutex> lock(_pendingOperationsMutex);
       _pendingOperations.push_back(ItemsAdded{std::move(newItems)});
@@ -100,6 +112,8 @@ namespace persistence
 
     //! Returns the unique ID of this stream
     int streamId() const { return _streamId; }
+    //! Returns the datatype of this stream
+    StreamableType streamType() const { return _streamType; }
     //! Returns true if there is still an observer listening on this stream
     bool isValid() const { return _observer != nullptr; }
     //! Returns true if the initial data for the observer has already been set
@@ -107,8 +121,11 @@ namespace persistence
     //! Dissociates the stream from the observer.
     void disconnect() { _observer = nullptr; }
 
+    template <class T>
+    static StreamableType GetStreamTypeFor();
   private:
-    struct ItemsAdded { std::vector<T> newItems; };
+
+    struct ItemsAdded { StreamableItems newItems; };
     struct ItemsRemoved { std::vector<int> removedItems; };
     struct Initialized { };
     struct Cleared {};
@@ -122,37 +139,33 @@ namespace persistence
     void integrate(const Cleared&) { _observer->clear(); }
 
     int _streamId;
+    StreamableType _streamType;
     bool _isInitialized;
-    DataStreamObserver<T>* _observer;
+    DataStreamObserver* _observer;
 
     std::mutex _pendingOperationsMutex;
     std::vector<StreamOperation> _pendingOperations;
   };
 
-  typedef boost::variant<std::shared_ptr<DataStream<hotel::Hotel>>,
-                         std::shared_ptr<DataStream<hotel::Reservation>>>
-          DataStreamVariant;
-
-  template <class T>
   class UniqueDataStreamHandle
   {
   public:
     UniqueDataStreamHandle()
         : _dataStream(nullptr)
     {}
-    UniqueDataStreamHandle(std::shared_ptr<DataStream<T>> dataStream)
+    UniqueDataStreamHandle(std::shared_ptr<DataStream> dataStream)
         : _dataStream(dataStream)
     {}
 
-    UniqueDataStreamHandle(const UniqueDataStreamHandle<T>& that) = delete;
-    UniqueDataStreamHandle<T>& operator=(const UniqueDataStreamHandle<T>& that) = delete;
+    UniqueDataStreamHandle(const UniqueDataStreamHandle& that) = delete;
+    UniqueDataStreamHandle& operator=(const UniqueDataStreamHandle& that) = delete;
 
-    UniqueDataStreamHandle(UniqueDataStreamHandle<T>&& that) = default;
-    UniqueDataStreamHandle<T>& operator=(UniqueDataStreamHandle<T>&& that) = default;
+    UniqueDataStreamHandle(UniqueDataStreamHandle&& that) = default;
+    UniqueDataStreamHandle& operator=(UniqueDataStreamHandle&& that) = default;
     ~UniqueDataStreamHandle() { if (_dataStream) _dataStream->disconnect(); }
 
   private:
-    std::shared_ptr<DataStream<T>> _dataStream;
+    std::shared_ptr<DataStream> _dataStream;
   };
 
 }
