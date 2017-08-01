@@ -1,10 +1,7 @@
 #ifndef PERSISTENCE_DATASTREAM_H
 #define PERSISTENCE_DATASTREAM_H
 
-#include "hotel/hotel.h"
-#include "hotel/reservation.h"
-
-#include <boost/variant.hpp>
+#include "persistence/datastreamobserver.h"
 
 #include <algorithm>
 #include <memory>
@@ -13,53 +10,10 @@
 
 namespace persistence
 {
-  typedef boost::variant<std::vector<hotel::Hotel>,
-                         std::vector<hotel::Reservation>> StreamableItems;
+  /**
+   * @brief The StreamableType enum holds all possible native data types a steam can have
+   */
   enum class StreamableType { NullStream, Hotel, Reservation };
-
-  class DataStreamObserver
-  {
-  public:
-    virtual ~DataStreamObserver() {}
-
-    virtual void addItems(const StreamableItems& items) = 0;
-    virtual void removeItems(const std::vector<int>& ids) = 0;
-    virtual void clear() = 0;
-    virtual void initialized() = 0;
-  };
-
-  template <class T>
-  class DataStreamObserverTyped : public DataStreamObserver
-  {
-  public:
-    virtual ~DataStreamObserverTyped() {}
-
-    virtual void addItems(const StreamableItems& items) final override { addItems(boost::get<std::vector<T>>(items)); }
-    virtual void addItems(const std::vector<T>& items) = 0;
-  };
-
-  template <class T>
-  class VectorDataStreamObserver : public DataStreamObserverTyped<T>
-  {
-  public:
-    const std::vector<T>& items() const { return _dataItems; }
-
-    virtual void addItems(const std::vector<T>& items) override
-    {
-      std::copy(items.begin(), items.end(), std::back_inserter(_dataItems));
-    }
-    virtual void removeItems(const std::vector<int>& ids) override
-    {
-      _dataItems.erase(std::remove_if(_dataItems.begin(), _dataItems.end(),[&ids](const T& item) {
-        return std::find(ids.begin(), ids.end(), item.id()) != ids.end();
-      }), _dataItems.end());
-    }
-    virtual void clear() override { _dataItems.clear(); }
-    virtual void initialized() override {}
-
-  private:
-    std::vector<T> _dataItems;
-  };
 
   /**
    * @brief Writable backend for data stream
