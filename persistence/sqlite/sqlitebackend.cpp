@@ -84,10 +84,10 @@ namespace persistence
       return task;
     }
 
-    void SqliteBackend::start(persistence::ResultIntegrator& resultIntegrator)
+    void SqliteBackend::start()
     {
       assert(!_backendThread.joinable());
-      _backendThread = std::thread([this, &resultIntegrator]() { this->threadMain(resultIntegrator); });
+      _backendThread = std::thread([this]() { this->threadMain(); });
     }
 
     void SqliteBackend::stopAndJoin()
@@ -99,7 +99,7 @@ namespace persistence
       _backendThread.join();
     }
 
-    void SqliteBackend::threadMain(persistence::ResultIntegrator& resultIntegrator)
+    void SqliteBackend::threadMain()
     {
       while (!_quitBackendThread)
       {

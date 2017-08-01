@@ -90,7 +90,11 @@ namespace persistence
 
   namespace sqlite
   {
-
+    /**
+     * @brief The SqliteBackend class is the sqlite data backend for the application
+     *
+     * This particular backend will create its own worker thread, on which all data operations will be executed.
+     */
     class SqliteBackend
     {
     public:
@@ -98,8 +102,7 @@ namespace persistence
 
       op::Task<op::OperationResults> queueOperation(op::Operations operations);
 
-      // TODO: Remove back-pointer to data source here!
-      void start(persistence::ResultIntegrator& resultIntegrator);
+      void start();
       void stopAndJoin();
 
       /**
@@ -113,6 +116,13 @@ namespace persistence
        */
       boost::signals2::signal<void()>& streamsUpdatedSignal() { return _streamsUpdatedSignal; }
 
+      /**
+       * @brief Creates a new stream which connects the given observer to the given service endpoint
+       * @param observer The observer which will listen to the stream
+       * @param service The name of the backend service to connect to
+       * @param options Additional parameters for the service endpoint
+       * @return The shared state for the data stream
+       */
       template <class T>
       std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer, const std::string& service,
                                                const nlohmann::json& options)
@@ -136,7 +146,7 @@ namespace persistence
       }
 
     private:
-      void threadMain(persistence::ResultIntegrator& dataSource);
+      void threadMain();
 
       op::OperationResult executeOperation(op::EraseAllData&);
       op::OperationResult executeOperation(op::StoreNewHotel& op);
