@@ -221,7 +221,6 @@ namespace persistence
     void SqliteBackend::initializeStreamTyped<hotel::Reservation>(const DataStream& dataStream, ResultIntegrator& integrator)
     {
       auto reservations = _storage.loadReservations();
-
       _dataStreams.addItems(integrator, StreamableType::Reservation, "", std::move(*reservations));
     }
 

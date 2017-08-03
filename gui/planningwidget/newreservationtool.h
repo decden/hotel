@@ -24,6 +24,7 @@ namespace gui
       ReservationGhostItem(const Context& context)
           : QGraphicsRectItem(), reservation("new"), atom(-1, date_period(date(), date())), _context(context)
       {
+        setZValue(2);
         reservation.setStatus(hotel::Reservation::Temporary);
       }
 
@@ -59,6 +60,8 @@ namespace gui
       virtual void load() override;
       virtual void unload() override;
       virtual void updateLayout() override;
+
+      virtual void reservationAdded(const hotel::Reservation& item) override;
 
       virtual void mousePressEvent(QMouseEvent *event, const QPointF &position) override;
       virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &position) override;

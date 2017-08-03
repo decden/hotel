@@ -43,15 +43,15 @@ namespace gui
             // Calculate the two points
             auto x1 = previousBox.right();
             auto y1 = previousBox.top() + previousBox.height() / 2;
-            auto x2 = nextBox.left();
+            auto x2 = nextBox.left() + 1;
             auto y2 = nextBox.top() + nextBox.height() / 2;
 
             // Draw the two rectangular handles
             const int handleSize = appearance.atomConnectionHandleSize;
             const int linkOverhang = appearance.atomConnectionOverhang;
             const QColor& handleColor = appearance.selectionColor;
-            painter->fillRect(QRect(x1 - handleSize, y1 - handleSize, handleSize * 2, handleSize * 2), handleColor);
-            painter->fillRect(QRect(x2 - handleSize, y2 - handleSize, handleSize * 2, handleSize * 2), handleColor);
+            painter->fillRect(QRect(x1, y1 - handleSize, handleSize, handleSize * 2), handleColor);
+            painter->fillRect(QRect(x2 - handleSize, y2 - handleSize, handleSize, handleSize * 2), handleColor);
 
             // Draw the zig-yag line between handles
             QPointF points[] = {QPoint(x1, y1), QPoint(x1 + linkOverhang, y1), QPoint(x2 - linkOverhang, y2),
@@ -115,29 +115,29 @@ namespace gui
       if (status == ReservationStatus::Temporary)
         return appearance.atomTemporaryColor;
 
+      auto color = appearance.atomDefaultColor;
+
       if (isSelected)
       {
         if (status == ReservationStatus::CheckedOut || status == ReservationStatus::Archived)
-          return appearance.atomArchivedSelectedColor;
+          color = appearance.atomArchivedSelectedColor;
         else
-          return appearance.atomSelectedColor;
+          color = appearance.atomSelectedColor;
       }
       else
       {
         if (status == ReservationStatus::Archived)
-          return appearance.atomArchivedColor;
-
-        if (status == ReservationStatus::CheckedOut)
-          return appearance.atomCheckedOutColor;
-
-        if (status == ReservationStatus::CheckedIn)
-          return appearance.atomCheckedInColor;
-
-        if (status == ReservationStatus::New)
-          return appearance.atomUnconfirmedColor;
-
-        return appearance.atomDefaultColor;
+          color = appearance.atomArchivedColor;
+        else if (status == ReservationStatus::CheckedOut)
+          color = appearance.atomCheckedOutColor;
+        else if (status == ReservationStatus::CheckedIn)
+          color = appearance.atomCheckedInColor;
+        else if (status == ReservationStatus::New)
+          color = appearance.atomUnconfirmedColor;
       }
+
+      color.setAlpha(220);
+      return color;
     }
 
     QColor ReservationRenderer::getAtomTextColor(const Context& context, const hotel::Reservation& reservation,

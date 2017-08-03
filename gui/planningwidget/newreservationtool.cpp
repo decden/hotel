@@ -20,6 +20,10 @@ namespace gui
       if (atom.dateRange().is_null())
         return;
 
+      // Make sure that the reservation reflects the current date range
+      reservation.removeAllAtoms();
+      reservation.addAtom(atom);
+
       auto renderer = _context.appearance().reservationRenderer();
       renderer->paintAtom(painter, _context, reservation, atom, rect(), false);
     }
@@ -50,6 +54,25 @@ namespace gui
         ghost->updateLayout();
       if (_currentGhost)
         _currentGhost->updateLayout();
+    }
+
+    void NewReservationTool::reservationAdded(const hotel::Reservation &item)
+    {
+      // A reservation was just added. Make sure it does not overlap with any ghost
+      for (auto& ghost : _ghosts)
+      {
+        for (auto& atom : item.atoms())
+        {
+          if (ghost->atom.roomId() == atom.roomId() && ghost->atom.dateRange().intersects(atom.dateRange()))
+          {
+            delete ghost;
+            ghost = nullptr;
+            break;
+          }
+        }
+      }
+
+      _ghosts.erase(std::remove_if(_ghosts.begin(), _ghosts.end(), [](auto ghost){return ghost == nullptr;}), _ghosts.end());
     }
 
     void NewReservationTool::mousePressEvent(QMouseEvent* event, const QPointF& position)
@@ -168,6 +191,7 @@ namespace gui
             {
               auto reservation = std::make_unique<hotel::Reservation>(std::move(ghost->reservation));
               currentReservation = reservation.get();
+              currentReservation->removeAllAtoms();
               reservations.push_back(std::move(reservation));
               currentReservation->setStatus(hotel::Reservation::New);
               currentReservation->setDescription(reservationName.toStdString());

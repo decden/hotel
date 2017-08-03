@@ -60,6 +60,7 @@ namespace hotel
     const ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
     const ReservationAtom* addAtom(const ReservationAtom& atom);
     const ReservationAtom* addContinuation(int room, boost::gregorian::date date);
+    void removeAllAtoms();
 
     ReservationStatus status() const;
     const std::string& description() const;
@@ -79,8 +80,6 @@ namespace hotel
     const int length() const;
 
   private:
-    void clear();
-
     ReservationStatus _status;
     std::string _description;
 

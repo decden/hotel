@@ -26,6 +26,9 @@ namespace gui
     const hotel::Reservation *Context::addReservation(const hotel::Reservation &reservation)
     {
       assert(reservation.id() != 0);
+      if (_activeTool)
+        _activeTool->reservationAdded(reservation);
+
       return _reservations.addReservation(std::make_unique<hotel::Reservation>(reservation));
     }
 
@@ -38,6 +41,8 @@ namespace gui
 
     void Context::removeReservation(int reservationId)
     {
+      if (_activeTool)
+        _activeTool->reservationRemoved(reservationId);
       _reservations.removeReservation(reservationId);
     }
 

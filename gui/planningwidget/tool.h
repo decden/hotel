@@ -1,6 +1,9 @@
 #ifndef GUI_PLANNINGWIDGET_TOOL_H
 #define GUI_PLANNINGWIDGET_TOOL_H
 
+#include "hotel/hotel.h"
+#include "hotel/reservation.h"
+
 class QContextMenuEvent;
 class QGraphicsScene;
 class QKeyEvent;
@@ -47,6 +50,11 @@ namespace gui
        * A layout change might be triggered e.g. by a reordering or filtering of the rows.
        */
       virtual void updateLayout() = 0;
+
+      // Data modification callbacks
+
+      virtual void reservationAdded(const hotel::Reservation& item) {}
+      virtual void reservationRemoved(const int id) {}
 
       // Event handling routines
 

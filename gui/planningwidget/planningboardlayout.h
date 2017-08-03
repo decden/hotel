@@ -72,7 +72,7 @@ namespace gui
       int atomConnectionOverhang = 10;
       // Atom colors
       QColor atomDefaultColor = QColor(0xE0D5B3);
-      QColor atomTemporaryColor = QColor(0x268BD2);
+      QColor atomTemporaryColor = QColor(0x26, 0x8B, 0xD2, 200);
       QColor atomCheckedInColor = QColor(0x9EC2A9);
       QColor atomCheckedOutColor = QColor(0xC0BFBB);
       QColor atomUnconfirmedColor = QColor(0xD4885C);

@@ -53,6 +53,11 @@ namespace hotel
     return lastAtom();
   }
 
+  void Reservation::removeAllAtoms()
+  {
+    _atoms.clear();
+  }
+
   Reservation::ReservationStatus Reservation::status() const { return _status; }
   const std::string& Reservation::description() const { return _description; }
   int Reservation::numberOfAdults() const { return _adults; }
