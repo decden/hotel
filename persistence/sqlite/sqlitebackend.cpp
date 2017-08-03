@@ -1,5 +1,7 @@
 #include "persistence/sqlite/sqlitebackend.h"
 
+#include "persistence/resultintegrator.h"
+
 #include <cassert>
 
 namespace persistence
@@ -18,34 +20,49 @@ namespace persistence
     {
       for (auto& uninitializedStream : _uninitializedStreams)
       {
-        initializerFunction(*uninitializedStream);
+        auto streamPtr = uninitializedStream.get();
         _activeStreams.push_back(std::move(uninitializedStream));
+        initializerFunction(*streamPtr);
       }
       _uninitializedStreams.clear();
     }
 
     template<class T, class Func>
-    void DataStreamManager::foreachActiveStream(Func func)
+    void DataStreamManager::foreachStream(Func func)
+    {
+      foreachStream(DataStream::GetStreamTypeFor<T>(), func);
+    }
+
+    template<class Func>
+    void DataStreamManager::foreachStream(StreamableType type, Func func)
     {
       for (auto& activeStream : _activeStreams)
       {
-        if (activeStream->streamType() == DataStream::GetStreamTypeFor<T>())
+        if (activeStream->streamType() == type)
           func(*activeStream);
       }
     }
 
-    std::shared_ptr<DataStream> DataStreamRegistry::makeStream(StreamableType type, const std::string &service, const nlohmann::json &options)
+    void DataStreamManager::addItems(ResultIntegrator &integrator, StreamableType type, const std::string &subtype, const StreamableItems items)
     {
-      auto factoryIt = _factoryFunctions.find(std::make_pair(type, service));
-      if (factoryIt != _factoryFunctions.end())
-        return factoryIt->second(type, service, options);
+      foreachStream(type, [&integrator, &items](DataStream& stream) {
+        integrator.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
+      });
 
-      return nullptr;
     }
 
-    void DataStreamRegistry::registerStreamFactory(StreamableType type, const std::string &service, DataStreamRegistry::FactoryFunction function)
+    void DataStreamManager::removeItems(ResultIntegrator &integrator, StreamableType type, const std::string &subtype, std::vector<int> ids)
     {
-      _factoryFunctions[std::make_pair(type, service)] = function;
+      foreachStream(type, [&integrator, &ids](DataStream& stream) {
+        integrator.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
+      });
+    }
+
+    void DataStreamManager::clear(ResultIntegrator &integrator, StreamableType type, const std::string &subtype)
+    {
+      foreachStream(type, [&integrator](DataStream& stream) {
+        integrator.addStreamChange(stream.streamId(), DataStreamCleared{});
+      });
     }
 
   } // namespace detail
@@ -56,17 +73,6 @@ namespace persistence
     : _storage(databasePath), _nextOperationId(1), _backendThread(), _quitBackendThread(false),
       _workAvailableCondition(), _queueMutex(), _operationsQueue()
   {
-    auto defaultStreamFactory = [](StreamableType type, const std::string &service, const nlohmann::json &options) {
-      return std::make_shared<DataStream>(type);
-    };
-    auto singleIdStreamFactory = [](StreamableType type, const std::string &service, const nlohmann::json &options) {
-      return std::make_shared<SingleIdDataStream>(type, options["id"]);
-    };
-
-    _streamRegistry.registerStreamFactory(StreamableType::Hotel, "", defaultStreamFactory);
-    _streamRegistry.registerStreamFactory(StreamableType::Hotel, "hotel.by_id", singleIdStreamFactory);
-    _streamRegistry.registerStreamFactory(StreamableType::Reservation, "", defaultStreamFactory);
-    _streamRegistry.registerStreamFactory(StreamableType::Reservation, "reservation.by_id", singleIdStreamFactory);
   }
 
   op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
@@ -84,10 +90,10 @@ namespace persistence
       return task;
     }
 
-    void SqliteBackend::start()
+    void SqliteBackend::start(ResultIntegrator& integrator)
     {
       assert(!_backendThread.joinable());
-      _backendThread = std::thread([this]() { this->threadMain(); });
+      _backendThread = std::thread([this, &integrator]() { this->threadMain(integrator); });
     }
 
     void SqliteBackend::stopAndJoin()
@@ -99,7 +105,7 @@ namespace persistence
       _backendThread.join();
     }
 
-    void SqliteBackend::threadMain()
+    void SqliteBackend::threadMain(ResultIntegrator& integrator)
     {
       while (!_quitBackendThread)
       {
@@ -114,10 +120,13 @@ namespace persistence
         lock.unlock();
 
         // Initialize new data streams
-        _dataStreams.initialize([this](DataStream& stream) {
-          initializeStream(stream);
-          stream.setInitialized();
-        });
+        {
+          _dataStreams.initialize([this, &integrator](DataStream& stream) {
+            initializeStream(stream, integrator);
+            integrator.addStreamChange(stream.streamId(), DataStreamInitialized{});
+          });
+          _streamsUpdatedSignal();
+        }
 
         // Process tasks
         for (auto& operationsMessage : newTasks)
@@ -126,7 +135,7 @@ namespace persistence
           _storage.beginTransaction();
           for (auto& operation : operationsMessage.first)
           {
-            auto result = boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation);
+            auto result = boost::apply_visitor([this, &integrator](auto& op) { return this->executeOperation(integrator, op); }, operation);
             results.push_back(result);
           }
           _storage.commitTransaction();
@@ -140,15 +149,22 @@ namespace persistence
       }
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)
+    std::shared_ptr<DataStream> SqliteBackend::makeStream(StreamableType type, const std::string &service, const nlohmann::json &json)
+    {
+      return std::make_shared<DataStream>(type);
+    }
+
+    op::OperationResult SqliteBackend::executeOperation(ResultIntegrator& integrator, op::EraseAllData&)
     {
       _storage.deleteAll();
-      _dataStreams.foreachActiveStream<hotel::Reservation>([](DataStream& stream) { stream.clear(); });
-      _dataStreams.foreachActiveStream<hotel::Hotel>([](DataStream& stream) { stream.clear(); });
+
+      _dataStreams.clear(integrator, StreamableType::Reservation, "");
+      _dataStreams.clear(integrator, StreamableType::Hotel, "");
+
       return op::OperationResult{op::Successful, ""};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewHotel& op)
+    op::OperationResult SqliteBackend::executeOperation(ResultIntegrator& integrator, op::StoreNewHotel& op)
     {
       assert(op.newHotel != nullptr);
       if (op.newHotel == nullptr)
@@ -156,11 +172,12 @@ namespace persistence
 
       _storage.storeNewHotel(*op.newHotel);
 
-      _dataStreams.foreachActiveStream<hotel::Hotel>([&op](DataStream& stream) { stream.addItems(std::vector<hotel::Hotel>{*op.newHotel}); });
+      _dataStreams.addItems(integrator, StreamableType::Hotel, "", std::vector<hotel::Hotel>{{*op.newHotel}});
+
       return op::OperationResult{op::Successful, std::to_string(op.newHotel->id())};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewReservation& op)
+    op::OperationResult SqliteBackend::executeOperation(ResultIntegrator& integrator, op::StoreNewReservation& op)
     {
       if (op.newReservation == nullptr)
         return op::OperationResult{op::Error, "Trying to store empty reservation"};
@@ -170,11 +187,12 @@ namespace persistence
         op.newReservation->setStatus(hotel::Reservation::New);
       _storage.storeNewReservationAndAtoms(*op.newReservation);
 
-      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream& stream) { stream.addItems(std::vector<hotel::Reservation>{*op.newReservation}); });
+      _dataStreams.addItems(integrator, StreamableType::Reservation, "", std::vector<hotel::Reservation>{{*op.newReservation}});
+
       return op::OperationResult{op::Successful, std::to_string(op.newReservation->id())};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson& op)
+    op::OperationResult SqliteBackend::executeOperation(ResultIntegrator& integrator, op::StoreNewPerson& op)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
@@ -182,35 +200,38 @@ namespace persistence
       return op::OperationResult{op::Error, "Not implemented yet!"};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
+    op::OperationResult SqliteBackend::executeOperation(ResultIntegrator &integrator, op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
-      _dataStreams.foreachActiveStream<hotel::Reservation>([&op](DataStream& stream) { stream.removeItems({op.reservationId}); });
+
+      _dataStreams.removeItems(integrator, StreamableType::Reservation, "", {op.reservationId});
 
       return op::OperationResult{op::Successful, std::to_string(op.reservationId)};
     }
 
     template<>
-    void SqliteBackend::initializeStreamTyped<hotel::Hotel>(DataStream& dataStream)
+    void SqliteBackend::initializeStreamTyped<hotel::Hotel>(const DataStream& dataStream, ResultIntegrator& integrator)
     {
       auto hotels = _storage.loadHotels();
-      dataStream.addItems(std::move(*hotels));
+
+      _dataStreams.addItems(integrator, StreamableType::Hotel, "", std::move(*hotels));
     }
 
     template<>
-    void SqliteBackend::initializeStreamTyped<hotel::Reservation>(DataStream& dataStream)
+    void SqliteBackend::initializeStreamTyped<hotel::Reservation>(const DataStream& dataStream, ResultIntegrator& integrator)
     {
       auto reservations = _storage.loadReservations();
-      dataStream.addItems(std::move(*reservations));
+
+      _dataStreams.addItems(integrator, StreamableType::Reservation, "", std::move(*reservations));
     }
 
-    void SqliteBackend::initializeStream(DataStream &dataStream)
+    void SqliteBackend::initializeStream(const DataStream &dataStream, ResultIntegrator &integrator)
     {
       switch(dataStream.streamType())
       {
       case StreamableType::NullStream: return;
-      case StreamableType::Hotel: return initializeStreamTyped<hotel::Hotel>(dataStream);
-      case StreamableType::Reservation: return initializeStreamTyped<hotel::Reservation>(dataStream);
+      case StreamableType::Hotel: return initializeStreamTyped<hotel::Hotel>(dataStream, integrator);
+      case StreamableType::Reservation: return initializeStreamTyped<hotel::Reservation>(dataStream, integrator);
       }
     }
 

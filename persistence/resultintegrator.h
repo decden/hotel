@@ -27,10 +27,10 @@ namespace persistence
     ResultIntegrator() = default;
     ~ResultIntegrator() = default;
 
+    // Methods used by data source:
 
     void addPendingTask(op::Task<op::OperationResults> task);
     size_t pendingTasksCount() const;
-
 
     void addStream(std::shared_ptr<DataStream> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
     /**
@@ -39,13 +39,28 @@ namespace persistence
      */
     bool hasUninitializedStreams() const;
 
-
+    /**
+     * @brief processIntegrationQueue processes all pending changes
+     */
     void processIntegrationQueue();
 
+    // Methods used by backend
+
+    void addStreamChange(int streamId, DataStreamChange change);
+
   private:
-    std::mutex _queueMutex;
+    struct DataStreamDifferential
+    {
+      int streamId;
+      DataStreamChange change;
+    };
+
     std::vector<std::shared_ptr<DataStream>> _dataStreams;
     std::vector<op::Task<op::OperationResults>> _tasks;
+
+    std::mutex _changesMutex;
+    std::vector<DataStreamDifferential> _streamChanges;
+
   };
 
 } // namespace persistence

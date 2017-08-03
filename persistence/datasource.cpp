@@ -8,7 +8,7 @@ namespace persistence
   DataSource::DataSource(const std::string& databaseFile)
       : _backend(databaseFile), _resultIntegrator()
   {
-    _backend.start();
+    _backend.start(_resultIntegrator);
   }
 
   DataSource::~DataSource()

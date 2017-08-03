@@ -60,7 +60,14 @@ namespace persistence
        * @brief Calls func for each data stream in the active queue
        */
       template <class T, class Func>
-      void foreachActiveStream(Func func);
+      void foreachStream(Func func);
+
+      template <class Func>
+      void foreachStream(StreamableType type, Func func);
+
+      virtual void addItems(ResultIntegrator& integrator, StreamableType type, const std::string& subtype, const StreamableItems items);
+      virtual void removeItems(ResultIntegrator& integrator, StreamableType type, const std::string& subtype, std::vector<int> ids);
+      virtual void clear(ResultIntegrator& integrator, StreamableType type, const std::string& subtype);
 
     private:
       // Access to this list has to be synchronized by the backend
@@ -68,23 +75,6 @@ namespace persistence
       // The following two lists can be operated on by the worker thread without lock!
       std::vector<std::shared_ptr<DataStream>> _uninitializedStreams;
       std::vector<std::shared_ptr<DataStream>> _activeStreams;
-    };
-
-    /**
-     * @brief The DataStreamRegistry class is a factory for creating data streams
-     * This class is able to create specialized data streams for different service endpoints and different configurations
-     */
-    class DataStreamRegistry
-    {
-    public:
-      typedef std::function<std::shared_ptr<DataStream>(StreamableType type, const std::string&, const nlohmann::json&)> FactoryFunction;
-
-      void registerStreamFactory(StreamableType type, const std::string& service, FactoryFunction function);
-      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& options);
-
-    private:
-      typedef std::pair<StreamableType, std::string> TypeServicePair;
-      std::map<TypeServicePair, FactoryFunction> _factoryFunctions;
     };
   }
 
@@ -102,7 +92,7 @@ namespace persistence
 
       op::Task<op::OperationResults> queueOperation(op::Operations operations);
 
-      void start();
+      void start(ResultIntegrator& integrator);
       void stopAndJoin();
 
       /**
@@ -129,7 +119,7 @@ namespace persistence
       {
         std::unique_lock<std::mutex> lock(_queueMutex);
 
-        auto sharedState = _streamRegistry.makeStream(DataStream::GetStreamTypeFor<T>(), service, options);
+        auto sharedState = makeStream(DataStream::GetStreamTypeFor<T>(), service, options);
         if (sharedState == nullptr)
         {
           sharedState = std::make_shared<DataStream>(StreamableType::NullStream);
@@ -146,17 +136,19 @@ namespace persistence
       }
 
     private:
-      void threadMain();
+      void threadMain(ResultIntegrator& integrator);
 
-      op::OperationResult executeOperation(op::EraseAllData&);
-      op::OperationResult executeOperation(op::StoreNewHotel& op);
-      op::OperationResult executeOperation(op::StoreNewReservation& op);
-      op::OperationResult executeOperation(op::StoreNewPerson& op);
-      op::OperationResult executeOperation(op::DeleteReservation& op);
+      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& json);
+
+      op::OperationResult executeOperation(ResultIntegrator& integrator, op::EraseAllData&);
+      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewHotel& op);
+      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewReservation& op);
+      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewPerson& op);
+      op::OperationResult executeOperation(ResultIntegrator& integrator, op::DeleteReservation& op);
 
       template <class T>
-      void initializeStreamTyped(DataStream& dataStream);
-      void initializeStream(DataStream& dataStream);
+      void initializeStreamTyped(const DataStream& dataStream, ResultIntegrator& integrator);
+      void initializeStream(const DataStream& dataStream, ResultIntegrator& integrator);
 
       SqliteStorage _storage;
 
@@ -174,7 +166,6 @@ namespace persistence
       boost::signals2::signal<void(int)> _taskCompletedSignal;
       boost::signals2::signal<void()> _streamsUpdatedSignal;
 
-      detail::DataStreamRegistry _streamRegistry;
       detail::DataStreamManager _dataStreams;
     };
 
