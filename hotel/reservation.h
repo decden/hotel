@@ -57,9 +57,10 @@ namespace hotel
     void setNumberOfChildren(int adults);
     void setReservationOwnerPerson(boost::optional<int> personId);
 
-    const ReservationAtom* addAtom(int room, boost::gregorian::date_period dateRange);
-    const ReservationAtom* addAtom(const ReservationAtom& atom);
-    const ReservationAtom* addContinuation(int room, boost::gregorian::date date);
+    void addAtom(int room, boost::gregorian::date_period dateRange);
+    void addAtom(const ReservationAtom& atom);
+    void addContinuation(int room, boost::gregorian::date date);
+    void removeLastAtom();
     void removeAllAtoms();
 
     ReservationStatus status() const;
@@ -70,10 +71,12 @@ namespace hotel
 
     const std::vector<ReservationAtom>& atoms() const;
     std::vector<ReservationAtom>& atoms();
+    const ReservationAtom* atomAtIndex(int i) const;
     const ReservationAtom* firstAtom() const;
     const ReservationAtom* lastAtom() const;
 
     boost::gregorian::date_period dateRange() const;
+    bool intersectsWith(const Reservation& other) const;
 
     //! @brief Returns true if the reservation contains at least one atom, and all of the periods are continuous
     const bool isValid() const;
@@ -108,6 +111,8 @@ namespace hotel
     void setDateRange(boost::gregorian::date_period dateRange) { _dateRange = dateRange; }
     void setRoomId(int id) { _roomId = id; }
 
+    //! Returns true if two items overlap
+    bool intersectsWith(const ReservationAtom& other) const;
   private:
     int _roomId;
     boost::gregorian::date_period _dateRange;

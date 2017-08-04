@@ -20,7 +20,7 @@ namespace hotel
   void Reservation::setNumberOfAdults(int adults) { _adults = adults; }
   void Reservation::setNumberOfChildren(int children) { _children = children; }
   void Reservation::setReservationOwnerPerson(boost::optional<int> personId) { _reservationOwnerPersonId = personId; }
-  const ReservationAtom* Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
+  void Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
   {
     if (dateRange.is_null())
       throw std::logic_error("Cannot add atom because its date range is invalid");
@@ -28,18 +28,17 @@ namespace hotel
     if (_atoms.empty() || lastAtom()->dateRange().end() == dateRange.begin())
     {
       _atoms.push_back(ReservationAtom(room, dateRange));
-      return lastAtom();
     }
     else
       throw std::logic_error("Cannot add atom because the date range is not contiguous to the previous atom");
   }
 
-  const ReservationAtom* Reservation::addAtom(const ReservationAtom& atom)
+  void Reservation::addAtom(const ReservationAtom& atom)
   {
-    return addAtom(atom.roomId(), atom.dateRange());
+    addAtom(atom.roomId(), atom.dateRange());
   }
 
-  const ReservationAtom* Reservation::addContinuation(int room, boost::gregorian::date date)
+  void Reservation::addContinuation(int room, boost::gregorian::date date)
   {
     if (_atoms.empty())
       throw std::logic_error("Cannot add continuation, because reservation has no atom yet");
@@ -50,7 +49,12 @@ namespace hotel
 
     auto atom = ReservationAtom(room, boost::gregorian::date_period(lastAtom()->dateRange().end(), date));
     _atoms.push_back(atom);
-    return lastAtom();
+  }
+
+  void Reservation::removeLastAtom()
+  {
+    if (!_atoms.empty())
+      _atoms.pop_back();
   }
 
   void Reservation::removeAllAtoms()
@@ -66,6 +70,13 @@ namespace hotel
 
   const std::vector<ReservationAtom>& Reservation::atoms() const { return _atoms; }
   std::vector<ReservationAtom>& Reservation::atoms() { return _atoms; }
+
+  const ReservationAtom *Reservation::atomAtIndex(int i) const
+  {
+    if (i >= 0 && i < _atoms.size())
+      return &_atoms[i];
+    return nullptr;
+  }
   const ReservationAtom* Reservation::firstAtom() const { return _atoms.empty() ? nullptr : &_atoms[0]; }
   const ReservationAtom* Reservation::lastAtom() const { return _atoms.empty() ? nullptr : &_atoms[_atoms.size() - 1]; }
 
@@ -75,6 +86,16 @@ namespace hotel
     if (!isValid())
       return date_period(date(), date());
     return date_period(_atoms.front().dateRange().begin(), _atoms.back().dateRange().end());
+  }
+
+  bool Reservation::intersectsWith(const Reservation &other) const
+  {
+    for (auto& thisAtom : _atoms)
+      for (auto& otherAtom : other._atoms)
+        if (thisAtom.intersectsWith(otherAtom))
+          return true;
+
+    return false;
   }
 
   const bool Reservation::isValid() const
@@ -117,6 +138,11 @@ namespace hotel
   ReservationAtom::ReservationAtom(const int room, boost::gregorian::date_period dateRange)
       : _roomId(room), _dateRange(dateRange)
   {
+  }
+
+  bool ReservationAtom::intersectsWith(const ReservationAtom &other) const
+  {
+    return roomId() == other.roomId() && dateRange().intersects(other.dateRange());
   }
 
   bool operator==(const ReservationAtom& a, const ReservationAtom& b)

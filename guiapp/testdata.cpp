@@ -135,7 +135,7 @@ namespace guiapp
     auto planning = std::make_unique<hotel::PlanningBoard>();
 
     for (auto& hotel : hotels)
-      addRandomReservations(rng, hotel, *planning, 200 * hotel.rooms().size(), period);
+      addRandomReservations(rng, hotel, *planning, 20 * hotel.rooms().size(), period);
 
     return planning;
   }

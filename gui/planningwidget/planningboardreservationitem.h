@@ -25,8 +25,8 @@ namespace gui
     class PlanningBoardAtomItem : public QGraphicsRectItem
     {
     public:
-      PlanningBoardAtomItem(const Context* context, const hotel::Reservation* reservation,
-                            const hotel::ReservationAtom* atom, QGraphicsItem* parent = nullptr);
+      PlanningBoardAtomItem(const Context* context, const hotel::Reservation* reservation, int atomIndex,
+                            QGraphicsItem* parent = nullptr);
 
       // QGraphicsRectItem interface
       virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
@@ -40,7 +40,7 @@ namespace gui
     private:
       const Context* _context;
       const hotel::Reservation* _reservation;
-      const hotel::ReservationAtom* _atom;
+      int _atomIndex;
     };
 
     /**
