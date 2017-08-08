@@ -1,10 +1,10 @@
 #ifndef PERSISTENCE_DATASOURCE_H
 #define PERSISTENCE_DATASOURCE_H
 
+#include "persistence/changequeue.h"
 #include "persistence/datastream.h"
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
-#include "persistence/resultintegrator.h"
 #include "persistence/sqlite/sqlitebackend.h"
 
 #include "hotel/planning.h"
@@ -55,44 +55,17 @@ namespace persistence
     template <class T>
     UniqueDataStreamHandle connectToStream(DataStreamObserverTyped<T> *observer, const std::string& service, const nlohmann::json& options)
     {
-      auto stream = _backend.createStream(observer, service, options);
-      _resultIntegrator.addStream(stream);
-      return UniqueDataStreamHandle(stream);
+      return UniqueDataStreamHandle(_backend.createStream(observer, service, options));
     }
 
-    void processIntegrationQueue();
-
     /**
-     * @brief hasPendingTasks returns whether there any queued operations are still being processed.
-     * Note that his method does only consider the tasks which have been queued with the queueOperation() or
-     * queueOperations() method.
-     * @return false if some tasks are still being processed, true otherwise.
+     * @brief getChangeQueue returns the queue of changes which are produced by this data source.
+     * @return reference to the backend's change queue
      */
-    bool hasPendingTasks() const;
-
-    /**
-     * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
-     * @return true if at least one stream has not yet received its initial data.
-     */
-    bool hasUninitializedStreams() const;
-
-    /**
-     * @brief taskCompletedSignal returns the signal which is triggered when new results are waiting to be integrated
-     * @note The signal is not called on the main thread, but on the backend worker thread
-     */
-    boost::signals2::signal<void(int)>& taskCompletedSignal() { return _backend.taskCompletedSignal(); }
-    /**
-     * @brief streamsUpdatedSignal returns the signal which is triggered when new data has been made available to a stream
-     * @note The signal is not called on the main thread, but on the backend worker thread
-     */
-    boost::signals2::signal<void()>& streamsUpdatedSignal() { return _backend.streamsUpdatedSignal(); }
+    ChangeQueue &changeQueue();
 
   private:
-    // Backing store and result integrator
     persistence::sqlite::SqliteBackend _backend;
-    persistence::ResultIntegrator _resultIntegrator;
-
-    std::vector<op::Task<op::OperationResults>> _pendingTasks;
   };
 
 } // namespace persistence

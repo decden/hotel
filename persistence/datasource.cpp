@@ -5,10 +5,9 @@
 
 namespace persistence
 {
-  DataSource::DataSource(const std::string& databaseFile)
-      : _backend(databaseFile), _resultIntegrator()
+  DataSource::DataSource(const std::string& databaseFile) : _backend(databaseFile)
   {
-    _backend.start(_resultIntegrator);
+    _backend.start();
   }
 
   DataSource::~DataSource()
@@ -25,31 +24,12 @@ namespace persistence
 
   op::Task<op::OperationResults> DataSource::queueOperations(op::Operations operations)
   {
-    auto task = _backend.queueOperation(std::move(operations));
-    _resultIntegrator.addPendingTask(task);
-    _pendingTasks.push_back(task);
-    return task;
+    return _backend.queueOperation(std::move(operations));
   }
 
-  void DataSource::processIntegrationQueue()
+  ChangeQueue &DataSource::changeQueue()
   {
-    _resultIntegrator.processIntegrationQueue();
-
-    // Remove completed tasks
-    _pendingTasks.erase(std::remove_if(_pendingTasks.begin(), _pendingTasks.end(),
-      [](const op::Task<op::OperationResults>& task) {
-        return task.completed();
-    }), _pendingTasks.end());
-  }
-
-  bool DataSource::hasPendingTasks() const
-  {
-    return !_pendingTasks.empty();
-  }
-
-  bool DataSource::hasUninitializedStreams() const
-  {
-    return _resultIntegrator.hasUninitializedStreams();
+    return _backend.getChangeQueue();
   }
 
 } // namespace persistence

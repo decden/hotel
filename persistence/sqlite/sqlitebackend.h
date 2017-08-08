@@ -5,6 +5,7 @@
 
 #include "persistence/sqlite/sqlitestorage.h"
 
+#include "persistence/changequeue.h"
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
 #include "persistence/op/task.h"
@@ -24,7 +25,7 @@
 
 namespace persistence
 {
-  class ResultIntegrator;
+  class ChangeQueue;
 
   namespace detail {
     class DataStreamManager
@@ -65,9 +66,9 @@ namespace persistence
       template <class Func>
       void foreachStream(StreamableType type, Func func);
 
-      virtual void addItems(ResultIntegrator& integrator, StreamableType type, const std::string& subtype, const StreamableItems items);
-      virtual void removeItems(ResultIntegrator& integrator, StreamableType type, const std::string& subtype, std::vector<int> ids);
-      virtual void clear(ResultIntegrator& integrator, StreamableType type, const std::string& subtype);
+      virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype, const StreamableItems items);
+      virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype, std::vector<int> ids);
+      virtual void clear(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype);
 
     private:
       // Access to this list has to be synchronized by the backend
@@ -92,19 +93,10 @@ namespace persistence
 
       op::Task<op::OperationResults> queueOperation(op::Operations operations);
 
-      void start(ResultIntegrator& integrator);
+      void start();
       void stopAndJoin();
 
-      /**
-       * @brief taskCompletedSignal returns the signal which is triggered when operations have been completed and results are available
-       * @note The signal is not called on the main thread, but on the backend worker thread
-       */
-      boost::signals2::signal<void(int)>& taskCompletedSignal() { return _taskCompletedSignal; }
-      /**
-       * @brief streamsUpdatedSignal returns the signal which is triggered when new data has been made available to a stream
-       * @note The signal is not called on the main thread, but on the backend worker thread
-       */
-      boost::signals2::signal<void()>& streamsUpdatedSignal() { return _streamsUpdatedSignal; }
+      ChangeQueue& getChangeQueue() { return _changeQueue; }
 
       /**
        * @brief Creates a new stream which connects the given observer to the given service endpoint
@@ -127,6 +119,7 @@ namespace persistence
         }
 
         sharedState->connect(_nextStreamId++, observer);
+        _changeQueue.addStream(sharedState);
         _dataStreams.addNewStream(sharedState);
         lock.unlock();
 
@@ -136,21 +129,22 @@ namespace persistence
       }
 
     private:
-      void threadMain(ResultIntegrator& integrator);
+      void threadMain();
 
       std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& json);
 
-      op::OperationResult executeOperation(ResultIntegrator& integrator, op::EraseAllData&);
-      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewHotel& op);
-      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewReservation& op);
-      op::OperationResult executeOperation(ResultIntegrator& integrator, op::StoreNewPerson& op);
-      op::OperationResult executeOperation(ResultIntegrator& integrator, op::DeleteReservation& op);
+      op::OperationResult executeOperation(op::EraseAllData&);
+      op::OperationResult executeOperation(op::StoreNewHotel& op);
+      op::OperationResult executeOperation(op::StoreNewReservation& op);
+      op::OperationResult executeOperation(op::StoreNewPerson& op);
+      op::OperationResult executeOperation(op::DeleteReservation& op);
 
       template <class T>
-      void initializeStreamTyped(const DataStream& dataStream, ResultIntegrator& integrator);
-      void initializeStream(const DataStream& dataStream, ResultIntegrator& integrator);
+      void initializeStreamTyped(const DataStream& dataStream);
+      void initializeStream(const DataStream& dataStream);
 
       SqliteStorage _storage;
+      ChangeQueue _changeQueue;
 
       int _nextOperationId;
       int _nextStreamId;
@@ -163,8 +157,6 @@ namespace persistence
       typedef std::shared_ptr<op::TaskSharedState<op::OperationResults>> SharedState;
       typedef std::pair<op::Operations, SharedState> QueuedOperation;
       std::vector<QueuedOperation> _operationsQueue;
-      boost::signals2::signal<void(int)> _taskCompletedSignal;
-      boost::signals2::signal<void()> _streamsUpdatedSignal;
 
       detail::DataStreamManager _dataStreams;
     };

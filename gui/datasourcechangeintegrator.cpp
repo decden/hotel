@@ -6,16 +6,25 @@ namespace gui
   ChangeIntegrator::ChangeIntegrator(persistence::DataSource* dataSource) : _ds(dataSource)
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
-    _ds->taskCompletedSignal().connect([this](int) { this->emitResultsAvailable(); });
-    _ds->streamsUpdatedSignal().connect([this]() { this->emitResultsAvailable(); });
+
+    _connections = {
+      _ds->changeQueue().connectToTaskCompletedSignal([this](int) { this->emitResultsAvailable(); }),
+      _ds->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); })
+    };
+
     // Initial update...
     handleAvailableResults();
   }
 
-  ChangeIntegrator::~ChangeIntegrator() { _ds->taskCompletedSignal().disconnect_all_slots(); }
+  void ChangeIntegrator::handleAvailableResults() {
+    _eventScheduled = false;
+    _ds->changeQueue().applyStreamChanges();
+  }
 
-  void ChangeIntegrator::handleAvailableResults() { _ds->processIntegrationQueue(); }
-
-  void ChangeIntegrator::emitResultsAvailable() { emit resultsAvailable(); }
+  void ChangeIntegrator::emitResultsAvailable() {
+    bool eventAlreadyScheduled = _eventScheduled.exchange(true);
+    if (!eventAlreadyScheduled)
+      emit resultsAvailable();
+  }
 
 } // namespace gui

@@ -5,6 +5,8 @@
 
 #include <QObject>
 
+#include <atomic>
+
 namespace gui
 {
   /**
@@ -18,7 +20,6 @@ namespace gui
     Q_OBJECT
   public:
     ChangeIntegrator(persistence::DataSource* dataSource);
-    ~ChangeIntegrator();
 
   signals:
     void resultsAvailable();
@@ -27,6 +28,9 @@ namespace gui
 
   private:
     void emitResultsAvailable();
+
+    std::atomic<bool> _eventScheduled;
+    std::array<boost::signals2::connection, 2> _connections;
     persistence::DataSource* _ds;
   };
 

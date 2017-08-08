@@ -8,28 +8,21 @@
 #include <condition_variable>
 
 
-void waitForAllOperations(persistence::DataSource& ds)
+void waitForStreamInitialization(persistence::DataSource& ds)
 {
-  std::mutex mutex;
-  std::unique_lock<std::mutex> lock(mutex);
-  std::condition_variable condition;
-
-  while(ds.hasPendingTasks() || ds.hasUninitializedStreams())
+  while(ds.changeQueue().hasUninitializedStreams())
   {
-    ds.processIntegrationQueue();
-    condition.wait_for(lock, std::chrono::milliseconds(10));
+    ds.changeQueue().applyStreamChanges();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
-
-  ds.taskCompletedSignal().disconnect_all_slots();
 }
 
 void waitForTask(persistence::DataSource& ds, persistence::op::Task<persistence::op::OperationResults>& task)
 {
   // Waits for one task to complete and to be integrated
   task.waitForCompletion();
-  ds.processIntegrationQueue();
+  ds.changeQueue().applyStreamChanges();
 }
-
 
 class Persistence : public testing::Test
 {
@@ -97,7 +90,7 @@ TEST_F(Persistence, HotelPersistence)
     persistence::DataSource dataSource("test.db");
     persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
     auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
-    waitForAllOperations(dataSource);
+    waitForStreamInitialization(dataSource);
 
     ASSERT_EQ(1u, hotels.items().size());
     ASSERT_EQ(hotel, hotels.items()[0]);
@@ -136,7 +129,7 @@ TEST_F(Persistence, ReservationPersistence)
     persistence::DataSource dataSource("test.db");
     persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
     auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
-    waitForAllOperations(dataSource);
+    waitForStreamInitialization(dataSource);
 
     ASSERT_EQ(1u, reservations.items().size());
     ASSERT_EQ(reservation, reservations.items()[0]);
