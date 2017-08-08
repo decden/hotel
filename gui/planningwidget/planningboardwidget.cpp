@@ -53,22 +53,23 @@ namespace gui
       auto posX = leftDatePos.second;
       auto dayOfWeek = leftDatePos.first.day_of_week();
       painter->setPen(appearance.boardWeekdayColumnColor);
+      int linesHeight = std::min<int>(layout.getHeight(), rect.height());
       while (posX < rect.right() + layout.dateColumnWidth())
       {
         if (dayOfWeek == boost::gregorian::Sunday)
         {
           int w = appearance.boardSundayColumnWidth;
-          painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()),
+          painter->fillRect(QRectF(posX - w / 2, rect.top(), w, linesHeight),
                             QColor(appearance.boardSundayColumnColor));
         }
         else if (dayOfWeek == boost::gregorian::Saturday)
         {
           int w = appearance.boardSaturdayColumnWidth;
-          painter->fillRect(QRectF(posX - w / 2, rect.top(), w, rect.height()),
+          painter->fillRect(QRectF(posX - w / 2, rect.top(), w, linesHeight),
                             QColor(appearance.boardSaturdayColumnColor));
         }
         else
-          painter->drawLine(posX - 1, rect.top(), posX - 1, rect.bottom());
+          painter->drawLine(posX - 1, rect.top(), posX - 1, linesHeight - 1);
         posX += layout.dateColumnWidth();
         dayOfWeek = (dayOfWeek + 1) % 7;
       }
@@ -88,7 +89,8 @@ namespace gui
       // Draw the bar indicating the pivot day
       auto pivotDay = layout.pivotDate();
       auto x = layout.getDatePositionX(pivotDay);
-      auto todayRect = QRect(x - 2, rect.top(), 3, rect.height());
+      int linesHeight = std::min<int>(layout.getHeight(), rect.height());
+      auto todayRect = QRect(x - 2, rect.top(), 3, linesHeight);
       auto lineColor = appearance.boardPivotTodayColor;
       lineColor.setAlpha(0xA0);
       painter->fillRect(todayRect, lineColor);

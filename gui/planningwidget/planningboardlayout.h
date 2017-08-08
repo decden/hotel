@@ -57,7 +57,7 @@ namespace gui
     struct PlanningBoardAppearance
     {
       // General colors
-      QColor widgetBackground = QColor(0xCCCCCC);
+      QColor widgetBackground = QColor(0x353F41);
       QColor selectionColor = QColor(0xD33682);
       QFont headerFont = QFont("Arial", 10);
       QFont boldHeaderFont = QFont("Arial", 10, QFont::Bold);
