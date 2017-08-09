@@ -110,6 +110,7 @@ namespace persistence
       _streamHandlers[HandlerKey{StreamableType::Hotel, ""}] = std::make_unique<DefaultDataStreamHandler>();
       _streamHandlers[HandlerKey{StreamableType::Hotel, "hotel.by_id"}] = std::make_unique<SingleIdDataStreamHandler>();
       _streamHandlers[HandlerKey{StreamableType::Reservation, ""}] = std::make_unique<DefaultDataStreamHandler>();
+      _streamHandlers[HandlerKey{StreamableType::Reservation, "reservation.by_id"}] = std::make_unique<SingleIdDataStreamHandler>();
     }
 
     bool DataStreamManager::collectNewStreams()

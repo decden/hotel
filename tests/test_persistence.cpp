@@ -171,14 +171,21 @@ TEST_F(Persistence, DataStreamsServices)
   persistence::DataSource dataSource("test.db");
 
   persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+  persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
   auto hotelsStreamHandle = dataSource.connectToStream(&hotels);
+  auto reservationsStreamHandle = dataSource.connectToStream(&reservations);
 
   ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
 
   storeHotel(dataSource, makeNewHotel("Hotel 1", "Category 1", 10));
   storeHotel(dataSource, makeNewHotel("Hotel 2", "Category 2", 11));
+  storeReservation(dataSource, makeNewReservation("Test", hotels.items()[0].rooms()[0]->id()));
+  storeReservation(dataSource, makeNewReservation("Test", hotels.items()[1].rooms()[0]->id()));
 
   ASSERT_EQ(2u, hotels.items().size());
+  ASSERT_EQ(2u, reservations.items().size());
+
 
   persistence::VectorDataStreamObserver<hotel::Hotel> hotel;
   nlohmann::json streamOptions;
@@ -189,9 +196,22 @@ TEST_F(Persistence, DataStreamsServices)
   ASSERT_EQ(1u, hotel.items().size());
   ASSERT_EQ(hotels.items()[1], hotel.items()[0]);
 
+
+  persistence::VectorDataStreamObserver<hotel::Reservation> reservation;
+  streamOptions["id"] = reservations.items()[1].id();
+  auto reservationStreamHandle = dataSource.connectToStream(&reservation, "reservation.by_id", streamOptions);
+  waitForStreamInitialization(dataSource);
+
+  ASSERT_EQ(1u, reservation.items().size());
+  ASSERT_EQ(reservations.items()[1], reservation.items()[0]);
+
+
   auto task = dataSource.queueOperation(persistence::op::EraseAllData());
   waitForTask(dataSource, task);
 
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, hotel.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
+  ASSERT_EQ(0u, reservation.items().size());
+
 }

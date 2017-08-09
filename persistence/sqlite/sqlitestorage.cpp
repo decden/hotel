@@ -269,9 +269,39 @@ namespace persistence
     template<>
     boost::optional<hotel::Reservation> SqliteStorage::loadById(int id)
     {
-      std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
-      //TODO: Should perform the query using: reservation_and_atoms.by_reservation_id
-      return boost::none;
+      boost::optional<hotel::Reservation> result;
+
+      auto& reservationsQuery = query("reservation_and_atoms.by_reservation_id");
+      reservationsQuery.execute(id);
+      while (reservationsQuery.hasResultRow())
+      {
+        std::string description;
+        std::string reservationStatus;
+        int adults;
+        int children;
+        int atomId;
+        int roomId;
+        boost::gregorian::date dateFrom;
+        boost::gregorian::date dateTo;
+        reservationsQuery.readRow(description, reservationStatus, adults, children,
+                                  atomId, roomId, dateFrom, dateTo);
+
+        if (result == boost::none)
+        {
+          result = hotel::Reservation(description, roomId, boost::gregorian::date_period(dateFrom, dateTo));
+          result->setId(id);
+          result->setStatus(parseReservationStatus(reservationStatus));
+          result->setNumberOfAdults(adults);
+          result->setNumberOfChildren(children);
+        }
+        else
+        {
+          result->addContinuation(roomId, dateTo);
+        }
+        (*result->atoms().rbegin()).setId(atomId);
+      }
+
+      return result;
     }
 
     void SqliteStorage::storeNewHotel(hotel::Hotel& hotel)
@@ -348,7 +378,7 @@ namespace persistence
                                "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
       _statements.emplace(
           "reservation_and_atoms.by_reservation_id",
-          SqliteStatement(_db, "SELECT r.id, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
+          SqliteStatement(_db, "SELECT r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
                                "FROM h_reservation as r, h_reservation_atom as a WHERE "
                                "a.reservation_id = r.id and r.id = ? ORDER BY r.id, a.date_from;"));
       _statements.emplace("reservation.insert",
