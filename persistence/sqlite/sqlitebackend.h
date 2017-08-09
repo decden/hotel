@@ -155,10 +155,6 @@ namespace persistence
       op::OperationResult executeOperation(op::StoreNewPerson& op);
       op::OperationResult executeOperation(op::DeleteReservation& op);
 
-      template <class T>
-      void initializeStreamTyped(const DataStream& dataStream);
-      void initializeStream(const DataStream& dataStream);
-
       SqliteStorage _storage;
       ChangeQueue _changeQueue;
 

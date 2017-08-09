@@ -29,11 +29,11 @@ namespace persistence
       void deleteAll();
       void deleteReservationById(int id);
 
-      std::unique_ptr<std::vector<hotel::Hotel>> loadHotels();
-      std::unique_ptr<std::vector<hotel::Reservation>> loadReservations();
+      template<typename T>
+      std::vector<T> loadAll();
 
-      boost::optional<hotel::Hotel> loadHotelById(int id);
-      boost::optional<hotel::Reservation> loadReservationById(int id);
+      template<typename T>
+      boost::optional<T> loadById(int id);
 
       void storeNewHotel(hotel::Hotel& hotel);
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);

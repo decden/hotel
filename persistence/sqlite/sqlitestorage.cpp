@@ -101,9 +101,11 @@ namespace persistence
       query("reservation.delete").execute(id, id);
     }
 
-    std::unique_ptr<std::vector<hotel::Hotel>> SqliteStorage::loadHotels()
+
+    template<>
+    std::vector<hotel::Hotel> SqliteStorage::loadAll()
     {
-      auto results = std::make_unique<std::vector<hotel::Hotel>>();
+      std::vector<hotel::Hotel> results;
 
       // Read hotels
       auto& hotelsQuery = query("hotel.all");
@@ -113,11 +115,11 @@ namespace persistence
         int id;
         std::string name;
         hotelsQuery.readRow(id, name);
-        results->emplace_back(name);
-        results->back().setId(id);
+        results.emplace_back(name);
+        results.back().setId(id);
       }
 
-      for (auto& hotel : *results)
+      for (auto& hotel : results)
       {
         // Read categories
         auto& categoriesQuery = query("room_category.by_hotel_id");
@@ -156,9 +158,10 @@ namespace persistence
       return results;
     }
 
-    std::unique_ptr<std::vector<hotel::Reservation>> SqliteStorage::loadReservations()
+    template<>
+    std::vector<hotel::Reservation> SqliteStorage::loadAll()
     {
-      auto result = std::make_unique<std::vector<hotel::Reservation>>();
+      std::vector<hotel::Reservation> result;
 
       auto& reservationsQuery = query("reservation_and_atoms.all");
       reservationsQuery.execute();
@@ -181,7 +184,7 @@ namespace persistence
         {
           if (current)
           {
-            result->push_back(std::move(*current));
+            result.push_back(std::move(*current));
             current = nullptr;
           }
           current = std::make_unique<hotel::Reservation>(description, roomId,
@@ -199,14 +202,15 @@ namespace persistence
       }
       if (current)
       {
-        result->push_back(std::move(*current));
+        result.push_back(std::move(*current));
         current = nullptr;
       }
 
       return result;
     }
 
-    boost::optional<hotel::Hotel> SqliteStorage::loadHotelById(int id)
+    template<>
+    boost::optional<hotel::Hotel> SqliteStorage::loadById(int id)
     {
       boost::optional<hotel::Hotel> result;
 
@@ -262,7 +266,8 @@ namespace persistence
       return result;
     }
 
-    boost::optional<hotel::Reservation> SqliteStorage::loadReservationById(int id)
+    template<>
+    boost::optional<hotel::Reservation> SqliteStorage::loadById(int id)
     {
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
       //TODO: Should perform the query using: reservation_and_atoms.by_reservation_id

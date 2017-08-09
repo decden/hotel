@@ -12,15 +12,26 @@ namespace persistence
     {
     public:
       virtual ~DefaultDataStreamHandler() {}
-      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override;
+      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override
+      {
+        switch(stream.streamType())
+        {
+        case StreamableType::NullStream: return;
+        case StreamableType::Hotel: return initializeTyped<hotel::Hotel>(stream, changeQueue, storage);
+        case StreamableType::Reservation: return initializeTyped<hotel::Reservation>(stream, changeQueue, storage);
+        }
+      }
+
       virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
       }
+
       virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids)
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
       }
+
       virtual void clear(DataStream& stream, ChangeQueue& changeQueue)
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
@@ -28,52 +39,42 @@ namespace persistence
 
     private:
       template <class T>
-      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage);
+      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage)
+      {
+        auto items = storage.loadAll<T>();
+        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
+      }
     };
 
-    template <>
-    void DefaultDataStreamHandler::initializeTyped<hotel::Hotel>(DataStream& stream, ChangeQueue& changeQueue,
-                                                                 sqlite::SqliteStorage& storage)
-    {
-      auto hotels = storage.loadHotels();
-      changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(*hotels)});
-    }
-
-    template <>
-    void DefaultDataStreamHandler::initializeTyped<hotel::Reservation>(DataStream& stream, ChangeQueue& changeQueue,
-                                                                       sqlite::SqliteStorage& storage)
-    {
-      auto reservations = storage.loadReservations();
-      changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(*reservations)});
-    }
-
-    void DefaultDataStreamHandler::initialize(DataStream &stream, ChangeQueue &changeQueue, sqlite::SqliteStorage &storage)
-    {
-      switch(stream.streamType())
-      {
-      case StreamableType::NullStream: return;
-      case StreamableType::Hotel: return initializeTyped<hotel::Hotel>(stream, changeQueue, storage);
-      case StreamableType::Reservation: return initializeTyped<hotel::Reservation>(stream, changeQueue, storage);
-      }
-    }
 
     class SingleIdDataStreamHandler : public DataStreamHandler
     {
     public:
       virtual ~SingleIdDataStreamHandler() {}
-      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override;
+      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override
+      {
+        switch(stream.streamType())
+        {
+        case StreamableType::NullStream: return;
+        case StreamableType::Hotel: return initializeTyped<hotel::Hotel>(stream, changeQueue, storage);
+        case StreamableType::Reservation: return initializeTyped<hotel::Reservation>(stream, changeQueue, storage);
+        }
+      }
+
       virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
       {
         auto id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
       }
+
       virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids)
       {
         auto id = stream.streamOptions()["id"];
         if (std::any_of(ids.begin(), ids.end(), [id](int item) { return item == id; }))
           changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{{id}});
       }
+
       virtual void clear(DataStream& stream, ChangeQueue& changeQueue)
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
@@ -90,46 +91,17 @@ namespace persistence
       }
 
       template <class T>
-      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage);
+      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage)
+      {
+        auto id = stream.streamOptions()["id"];
+        auto item = storage.loadById<T>(id);
+        if (item != boost::none)
+        {
+          std::vector<T> items({*item});
+          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
+        }
+      }
     };
-
-    template <>
-    void SingleIdDataStreamHandler::initializeTyped<hotel::Hotel>(DataStream& stream, ChangeQueue& changeQueue,
-                                                                  sqlite::SqliteStorage& storage)
-    {
-      auto id = stream.streamOptions()["id"];
-      auto hotel = storage.loadHotelById(id);
-      if (hotel)
-      {
-        std::vector<hotel::Hotel> items({*hotel});
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
-      }
-    }
-
-    template <>
-    void SingleIdDataStreamHandler::initializeTyped<hotel::Reservation>(DataStream& stream, ChangeQueue& changeQueue,
-                                                                        sqlite::SqliteStorage& storage)
-    {
-      auto id = stream.streamOptions()["id"];
-      auto reservation = storage.loadReservationById(id);
-      if (reservation)
-      {
-        std::vector<hotel::Reservation> items({*reservation});
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
-      }
-    }
-
-    void SingleIdDataStreamHandler::initialize(DataStream& stream, ChangeQueue& changeQueue,
-                                               sqlite::SqliteStorage& storage)
-    {
-      switch(stream.streamType())
-      {
-      case StreamableType::NullStream: return;
-      case StreamableType::Hotel: return initializeTyped<hotel::Hotel>(stream, changeQueue, storage);
-      case StreamableType::Reservation: return initializeTyped<hotel::Reservation>(stream, changeQueue, storage);
-      }
-    }
-
 
 
     DataStreamManager::DataStreamManager()
@@ -343,30 +315,6 @@ namespace persistence
       _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, {op.reservationId});
 
       return op::OperationResult{op::Successful, std::to_string(op.reservationId)};
-    }
-
-    template<>
-    void SqliteBackend::initializeStreamTyped<hotel::Hotel>(const DataStream& dataStream)
-    {
-      auto hotels = _storage.loadHotels();
-      _dataStreams.addItems(_changeQueue, StreamableType::Hotel, std::move(*hotels));
-    }
-
-    template<>
-    void SqliteBackend::initializeStreamTyped<hotel::Reservation>(const DataStream& dataStream)
-    {
-      auto reservations = _storage.loadReservations();
-      _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::move(*reservations));
-    }
-
-    void SqliteBackend::initializeStream(const DataStream &dataStream)
-    {
-      switch(dataStream.streamType())
-      {
-      case StreamableType::NullStream: return;
-      case StreamableType::Hotel: return initializeStreamTyped<hotel::Hotel>(dataStream);
-      case StreamableType::Reservation: return initializeStreamTyped<hotel::Reservation>(dataStream);
-      }
     }
 
   } // namespace sqlite
