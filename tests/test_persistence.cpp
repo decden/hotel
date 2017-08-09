@@ -180,18 +180,18 @@ TEST_F(Persistence, DataStreamsServices)
 
   ASSERT_EQ(2u, hotels.items().size());
 
-//  persistence::VectorDataStreamObserver<hotel::Hotel> hotel;
-//  nlohmann::json streamOptions;
-//  streamOptions["id"] = hotels.items()[1].id();
-//  auto hotelStreamHandle = dataSource.connectToStream(&hotel, "hotel.by_id", streamOptions);
-//  waitForAllOperations(dataSource);
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotel;
+  nlohmann::json streamOptions;
+  streamOptions["id"] = hotels.items()[1].id();
+  auto hotelStreamHandle = dataSource.connectToStream(&hotel, "hotel.by_id", streamOptions);
+  waitForStreamInitialization(dataSource);
 
-//  ASSERT_EQ(1u, hotel.items().size());
-//  ASSERT_EQ(hotels.items()[1], hotel.items()[0]);
+  ASSERT_EQ(1u, hotel.items().size());
+  ASSERT_EQ(hotels.items()[1], hotel.items()[0]);
 
-//  auto task = dataSource.queueOperation(persistence::op::EraseAllData());
-//  waitForTask(dataSource, task);
+  auto task = dataSource.queueOperation(persistence::op::EraseAllData());
+  waitForTask(dataSource, task);
 
-//  ASSERT_EQ(0u, hotels.items().size());
-//  ASSERT_EQ(0u, hotel.items().size());
+  ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, hotel.items().size());
 }

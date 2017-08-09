@@ -15,7 +15,7 @@ namespace guiapp
     std::vector<std::unique_ptr<hotel::Hotel>> result;
     std::uniform_int_distribution<> hotels_dist(2, 2);
     std::uniform_int_distribution<> floors_dist(1, 3);
-    std::uniform_int_distribution<> rooms_dist(0, 4);
+    std::uniform_int_distribution<> rooms_dist(1, 10);
 
     int numOfHotels = hotels_dist(rng);
     for (auto i : boost::irange(0, numOfHotels))

@@ -206,6 +206,69 @@ namespace persistence
       return result;
     }
 
+    boost::optional<hotel::Hotel> SqliteStorage::loadHotelById(int id)
+    {
+      boost::optional<hotel::Hotel> result;
+
+      // Read hotels
+      auto& hotelQuery = query("hotel.by_id");
+      hotelQuery.execute(id);
+      if (hotelQuery.hasResultRow())
+      {
+        int id;
+        std::string name;
+        hotelQuery.readRow(id, name);
+        result = hotel::Hotel(name);
+        result->setId(id);
+      }
+
+
+      if (result)
+      {
+        // Read categories
+        auto& categoriesQuery = query("room_category.by_hotel_id");
+        categoriesQuery.execute(result->id());
+        while (categoriesQuery.hasResultRow())
+        {
+          int id;
+          std::string short_code;
+          std::string name;
+          categoriesQuery.readRow(id, short_code, name);
+          auto category = std::make_unique<hotel::RoomCategory>(short_code, name);
+          category->setId(id);
+          result->addRoomCategory(std::move(category));
+        }
+
+        // Read rooms
+        auto& roomsQuery = query("room.by_hotel_id");
+        roomsQuery.execute(result->id());
+        while (roomsQuery.hasResultRow())
+        {
+          int id;
+          int category_id;
+          std::string name;
+          roomsQuery.readRow(id, category_id, name);
+          auto room = std::make_unique<hotel::HotelRoom>(name);
+          room->setId(id);
+          auto category = result->getCategoryById(category_id);
+          if (category)
+            result->addRoom(std::move(room), category->shortCode());
+          else
+            std::cerr << "Did not find category with id " << category_id << " in hotel " << result->name()
+                      << " for room " << name << std::endl;
+        }
+      }
+
+      return result;
+    }
+
+    boost::optional<hotel::Reservation> SqliteStorage::loadReservationById(int id)
+    {
+      std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
+      //TODO: Should perform the query using: reservation_and_atoms.by_reservation_id
+      return boost::none;
+    }
+
     void SqliteStorage::storeNewHotel(hotel::Hotel& hotel)
     {
       // First, store the hotel
@@ -262,6 +325,7 @@ namespace persistence
     {
       _statements.emplace("hotel.insert", SqliteStatement(_db, "INSERT INTO h_hotel (name) VALUES (?);"));
       _statements.emplace("hotel.all", SqliteStatement(_db, "SELECT id, name FROM h_hotel;"));
+      _statements.emplace("hotel.by_id", SqliteStatement(_db, "SELECT id, name FROM h_hotel WHERE id = ?;"));
       _statements.emplace(
           "room_category.insert",
           SqliteStatement(_db, "INSERT INTO h_room_category (hotel_id, short_code, name) VALUES (?, ?, ?);"));
@@ -277,6 +341,11 @@ namespace persistence
           SqliteStatement(_db, "SELECT r.id, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
                                "FROM h_reservation as r, h_reservation_atom as a WHERE "
                                "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
+      _statements.emplace(
+          "reservation_and_atoms.by_reservation_id",
+          SqliteStatement(_db, "SELECT r.id, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
+                               "FROM h_reservation as r, h_reservation_atom as a WHERE "
+                               "a.reservation_id = r.id and r.id = ? ORDER BY r.id, a.date_from;"));
       _statements.emplace("reservation.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
       _statements.emplace("reservation.delete",

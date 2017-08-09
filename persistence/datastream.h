@@ -5,6 +5,8 @@
 
 #include "boost/variant.hpp"
 
+#include "extern/nlohmann_json/json.hpp"
+
 #include <algorithm>
 #include <memory>
 #include <mutex>
@@ -33,9 +35,11 @@ namespace persistence
   class DataStream
   {
   public:
-    DataStream(StreamableType streamType)
-        : _streamId(0), _streamType(streamType), _isInitialized(false), _observer(nullptr)
-    {}
+    DataStream(StreamableType streamType, const std::string& endpoint, const nlohmann::json& options)
+        : _streamId(0), _streamType(streamType), _endpoint(endpoint), _options(options), _isInitialized(false),
+          _observer(nullptr)
+    {
+    }
     virtual ~DataStream() {}
 
     void connect(int streamId, DataStreamObserver* observer)
@@ -50,6 +54,9 @@ namespace persistence
     int streamId() const { return _streamId; }
     //! Returns the datatype of this stream
     StreamableType streamType() const { return _streamType; }
+
+    const std::string& streamEndpoint() const { return _endpoint; }
+    const nlohmann::json& streamOptions() const { return _options; }
     //! Returns true if there is still an observer listening on this stream
     bool isValid() const { return _observer != nullptr; }
     //! Returns true if the initial data for the observer has already been set
@@ -76,6 +83,8 @@ namespace persistence
 
     int _streamId;
     StreamableType _streamType;
+    std::string _endpoint;
+    nlohmann::json _options;
     bool _isInitialized;
     DataStreamObserver* _observer;
   };

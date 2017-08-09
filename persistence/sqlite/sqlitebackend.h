@@ -28,9 +28,21 @@ namespace persistence
   class ChangeQueue;
 
   namespace detail {
+    class DataStreamHandler
+    {
+    public:
+      virtual ~DataStreamHandler() {}
+      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) = 0;
+      virtual void addItems(DataStream& stream, ChangeQueue& changeQueues, const StreamableItems& items) = 0;
+      virtual void removeItems(DataStream& stream, ChangeQueue& ChangeQueue, const std::vector<int> ids) = 0;
+      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) = 0;
+    };
+
     class DataStreamManager
     {
     public:
+      DataStreamManager();
+
       /**
        * @note addNewStream must be synchronized!
        * @see collectNewStreams
@@ -54,8 +66,7 @@ namespace persistence
        * This function has to be called after collectNewStreams()
        * @note initialize() can only be called on the worker thread!
        */
-      template <class Func>
-      void initialize(Func initializerFunction);
+      void initialize(ChangeQueue& changeQueue, sqlite::SqliteStorage& storage);
 
       /**
        * @brief Calls func for each data stream in the active queue
@@ -66,11 +77,16 @@ namespace persistence
       template <class Func>
       void foreachStream(StreamableType type, Func func);
 
-      virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype, const StreamableItems items);
-      virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype, std::vector<int> ids);
-      virtual void clear(ChangeQueue& changeQueue, StreamableType type, const std::string& subtype);
+      virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
+      virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, std::vector<int> ids);
+      virtual void clear(ChangeQueue& changeQueue, StreamableType type);
 
     private:
+      DataStreamHandler* findHandler(const DataStream& stream);
+
+      typedef std::tuple<StreamableType, std::string> HandlerKey;
+      std::map<HandlerKey, std::unique_ptr<DataStreamHandler>> _streamHandlers;
+
       // Access to this list has to be synchronized by the backend
       std::vector<std::shared_ptr<DataStream>> _newStreams;
       // The following two lists can be operated on by the worker thread without lock!
@@ -114,7 +130,7 @@ namespace persistence
         auto sharedState = makeStream(DataStream::GetStreamTypeFor<T>(), service, options);
         if (sharedState == nullptr)
         {
-          sharedState = std::make_shared<DataStream>(StreamableType::NullStream);
+          sharedState = std::make_shared<DataStream>(StreamableType::NullStream, "", nlohmann::json());
           std::cerr << "Unknown data stream for type \"" << typeid(T).name() << "\" and service \"" << service << "\"" << std::endl;
         }
 
@@ -131,7 +147,7 @@ namespace persistence
     private:
       void threadMain();
 
-      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& json);
+      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& options);
 
       op::OperationResult executeOperation(op::EraseAllData&);
       op::OperationResult executeOperation(op::StoreNewHotel& op);
