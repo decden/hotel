@@ -397,7 +397,7 @@ namespace persistence
       _statements.emplace("reservation.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
       _statements.emplace("reservation.update",
-                          SqliteStatement(_db, "UPDATE h_reservation SET (description, status, adults, children) = (?, ?, ?, ?) WHERE id = ?;"));
+                          SqliteStatement(_db, "UPDATE h_reservation SET description=?, status=?, adults=?, children=? WHERE id = ?;"));
       _statements.emplace("reservation.delete",
                           SqliteStatement(_db, "DELETE FROM h_reservation_atom where reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
       _statements.emplace("reservation_atom.insert",

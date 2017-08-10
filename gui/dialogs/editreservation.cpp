@@ -12,14 +12,15 @@ namespace gui
     {
       setWindowTitle(tr("Edit Reservation"));
 
+      // Connect events
+      _reservationStreamHandle.itemsAddedSignal.connect(boost::bind(&EditReservationDialog::reservationsAdded, this, boost::placeholders::_1));
+      _reservationStreamHandle.itemsRemovedSignal.connect(boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
+      _reservationStreamHandle.allItemsRemovedSignal.connect(boost::bind(&EditReservationDialog::allReservationsRemoved, this));
+
       // Connect to data stream
       nlohmann::json options;
       options["id"] = objectId;
       _reservationStreamHandle.connect(ds, "reservation.by_id", options);
-
-      _reservationStreamHandle.itemsAddedSignal.connect(boost::bind(&EditReservationDialog::reservationsAdded, this, boost::placeholders::_1));
-      _reservationStreamHandle.itemsRemovedSignal.connect(boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
-      _reservationStreamHandle.allItemsRemovedSignal.connect(boost::bind(&EditReservationDialog::allReservationsRemoved, this));
 
       auto layout = new QGridLayout();
       _cbxStatus = new QComboBox();
