@@ -41,6 +41,7 @@ namespace gui
     _hotelsStream.itemsAddedSignal.connect(boost::bind(&PlanningWidget::hotelsAdded, this, boost::placeholders::_1));
     _hotelsStream.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
     _hotelsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
+    _context.reservationDoubleClickedSignal().connect(boost::bind(&PlanningWidget::emitReservationDoubleClicked, this, boost::placeholders::_1));
 
     // Connect to streams
     _hotelsStream.connect(dataSource);

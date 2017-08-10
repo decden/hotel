@@ -339,6 +339,19 @@ namespace persistence
       }
     }
 
+    template <>
+    bool SqliteStorage::update<hotel::Reservation>(const hotel::Reservation& value)
+    {
+      auto& q = query("reservation.update");
+      q.execute(value.description(), serializeReservationStatus(value.status()), value.numberOfAdults(),
+                value.numberOfChildren(), value.id());
+
+      // TODO, we need to update also the atoms!
+
+      int updatedRows = sqlite3_changes(_db);
+      return updatedRows == 1;
+    }
+
     SqliteStatement& SqliteStorage::query(const std::string& key)
     {
       auto it = _statements.find(key);
@@ -383,6 +396,8 @@ namespace persistence
                                "a.reservation_id = r.id and r.id = ? ORDER BY r.id, a.date_from;"));
       _statements.emplace("reservation.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
+      _statements.emplace("reservation.update",
+                          SqliteStatement(_db, "UPDATE h_reservation SET (description, status, adults, children) = (?, ?, ?, ?) WHERE id = ?;"));
       _statements.emplace("reservation.delete",
                           SqliteStatement(_db, "DELETE FROM h_reservation_atom where reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
       _statements.emplace("reservation_atom.insert",

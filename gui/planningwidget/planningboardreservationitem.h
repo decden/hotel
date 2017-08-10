@@ -37,6 +37,8 @@ namespace gui
       //! @brief Reacts on selection changes and propagates them to the parent PlanningBoardReservationItem
       virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
+      virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event);
+
     private:
       const Context* _context;
       const hotel::Reservation* _reservation;

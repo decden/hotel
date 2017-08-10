@@ -3,6 +3,8 @@ set(SRC
     statusbar.cpp
     planningwidget.cpp
 
+    dialogs/editreservation.cpp
+
     planningwidget/context.cpp
     planningwidget/datebarwidget.cpp
     planningwidget/planningboardlayout.cpp
@@ -16,8 +18,11 @@ set(SRC
 
 set(SRC_INCLUDES
     datasourcechangeintegrator.h
+    datastreamobserveradapter.h
     statusbar.h
     planningwidget.h
+
+    dialogs/editreservation.h
 
     planningwidget/context.h
     planningwidget/datebarwidget.h

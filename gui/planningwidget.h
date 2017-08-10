@@ -6,6 +6,7 @@
 #include "gui/planningwidget/planningboardlayout.h"
 #include "gui/planningwidget/planningboardwidget.h"
 #include "gui/planningwidget/roomlistwidget.h"
+#include "gui/datastreamobserveradapter.h"
 
 #include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
@@ -26,29 +27,6 @@
 
 namespace gui
 {
-  class PlanningWidget;
-
-  template <class T>
-  class DataStreamObserverAdapter : public persistence::DataStreamObserverTyped<T>
-  {
-  public:
-    void connect(persistence::DataSource& dataSource) { _streamHandle = dataSource.connectToStream(this); }
-
-    // DataStreamObserver<T> interface
-    virtual void addItems(const std::vector<T>& items) override { itemsAddedSignal(items); }
-    virtual void removeItems(const std::vector<int>& ids) override { itemsRemovedSignal(ids); }
-    virtual void clear() override { allItemsRemovedSignal(); }
-    virtual void initialized() override { initializedSignal(); }
-
-    // Public signals
-    boost::signals2::signal<void(const std::vector<T>&)> itemsAddedSignal;
-    boost::signals2::signal<void(const std::vector<int>&)> itemsRemovedSignal;
-    boost::signals2::signal<void()> allItemsRemovedSignal;
-    boost::signals2::signal<void()> initializedSignal;
-
-    persistence::UniqueDataStreamHandle _streamHandle;
-  };
-
   /**
    * @brief The PlanningWidget class displays a list of reservations
    *
@@ -69,11 +47,14 @@ namespace gui
 
   signals:
     void pivotDateChanged(boost::gregorian::date pivotDate);
+    void reservationDoubleClicked(const hotel::Reservation& reservation);
 
   protected:
     virtual void keyPressEvent(QKeyEvent* event) override;
 
   private:
+    void emitReservationDoubleClicked(const hotel::Reservation& reservation) { emit reservationDoubleClicked(reservation); }
+
     // Event dispatching classes
     DataStreamObserverAdapter<hotel::Hotel> _hotelsStream;
     DataStreamObserverAdapter<hotel::Reservation> _reservationsStream;

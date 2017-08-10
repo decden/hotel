@@ -4,7 +4,7 @@ set(SRC
 )
 
 set(SRC_INCLUDES
-	testdata.h
+    testdata.h
 )
 
 set(CMAKE_AUTOMOC ON)

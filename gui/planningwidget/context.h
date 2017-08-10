@@ -11,6 +11,8 @@
 #include <QGraphicsScene>
 #include <QRect>
 
+#include "boost/signals2.hpp"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -31,14 +33,20 @@ namespace gui
       Context();
       virtual ~Context() = default;
 
+      // Setup
       void setDataSource(persistence::DataSource* dataSource);
       void setDateBarScene(QGraphicsScene* scene);
       void setRoomListScene(QGraphicsScene* scene);
       void setPlanningBoardScene(QGraphicsScene* scene);
 
+      // Selection
       const std::unordered_set<const hotel::Reservation*> selectedReservations() const;
       void addSelectedReservation(const hotel::Reservation* reservation);
       void removeSelectedReservation(const hotel::Reservation* reservation);
+
+      // Event handling
+      boost::signals2::signal<void(const hotel::Reservation&)>& reservationDoubleClickedSignal() { return _reservationDoubleClickedSignal; }
+      void emitReservationDoubleClicked(const hotel::Reservation& reservation) const { _reservationDoubleClickedSignal(reservation); }
 
       // Modifying data calls
       void addHotel(const hotel::Hotel& hotel);
@@ -79,6 +87,9 @@ namespace gui
       hotel::PlanningBoard _reservations;
 
       std::unordered_set<const hotel::Reservation*> _selectedReservations;
+
+      // Events
+      boost::signals2::signal<void(const hotel::Reservation&)> _reservationDoubleClickedSignal;
 
       // Object with information on how to layout the individual elements in the planning widget, such as e.g.
       // reservations and rooms.

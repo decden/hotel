@@ -45,6 +45,11 @@ namespace gui
       return newValue;
     }
 
+    void PlanningBoardAtomItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+    {
+      _context->emitReservationDoubleClicked(*_reservation);
+    }
+
     PlanningBoardReservationItem::PlanningBoardReservationItem(Context *context,
                                                                const hotel::Reservation *reservation,
                                                                QGraphicsItem* parent)

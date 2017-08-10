@@ -22,6 +22,8 @@ namespace persistence
     struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
     struct StoreNewPerson { std::unique_ptr<hotel::Person> newPerson; };
 
+    struct UpdateReservation { std::unique_ptr<hotel::Reservation> updatedReservation; };
+
     struct DeleteReservation { int reservationId; };
 
     // Define a union type of all known operations
@@ -29,6 +31,7 @@ namespace persistence
                            op::StoreNewHotel,
                            op::StoreNewReservation,
                            op::StoreNewPerson,
+                           op::UpdateReservation,
                            op::DeleteReservation>
             Operation;
     typedef std::vector<Operation> Operations;

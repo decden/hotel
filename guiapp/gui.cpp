@@ -3,6 +3,7 @@
 #include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
+#include "gui/dialogs/editreservation.h"
 #include "gui/datasourcechangeintegrator.h"
 #include "gui/planningwidget.h"
 #include "gui/planningwidget/newreservationtool.h"
@@ -28,6 +29,16 @@ int main(int argc, char** argv)
   gui::PlanningWidget widget(dataSource);
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
   widget.activateTool("new-reservation");
+
+  QObject::connect(&widget, &gui::PlanningWidget::reservationDoubleClicked, [&](const hotel::Reservation &res)
+  {
+    if (res.status() != hotel::Reservation::Temporary)
+    {
+      auto dialog = new gui::dialogs::EditReservationDialog(dataSource, res.id());
+      dialog->show();
+    }
+  });
+
   widget.showMaximized();
 
   gui::ChangeIntegrator integrator(&dataSource);

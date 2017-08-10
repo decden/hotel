@@ -38,6 +38,9 @@ namespace persistence
       void storeNewHotel(hotel::Hotel& hotel);
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);
 
+      template<typename T>
+      bool update(const T& value);
+
       void getReservation();
 
       void beginTransaction();

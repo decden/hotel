@@ -65,7 +65,9 @@ namespace persistence
       {
         auto id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
+        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, items);
+        if (isEmpty)
+          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
       }
 
       virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids)
@@ -302,12 +304,32 @@ namespace persistence
       return op::OperationResult{op::Successful, std::to_string(op.newReservation->id())};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson& op)
+    op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson &op)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
 
       return op::OperationResult{op::Error, "Not implemented yet!"};
+    }
+
+    op::OperationResult SqliteBackend::executeOperation(op::UpdateReservation &op)
+    {
+      if (op.updatedReservation == nullptr)
+        return op::OperationResult{op::Error, "Trying to update empty reservation"};
+      if (op.updatedReservation->id() == 0)
+        return op::OperationResult{op::Error, "Cannot update reservation without id"};
+
+      // "Unknown" is not a valid reservation status for serialization
+      if (op.updatedReservation->status() == hotel::Reservation::Unknown)
+        op.updatedReservation->setStatus(hotel::Reservation::New);
+      if (!_storage.update<hotel::Reservation>(*op.updatedReservation))
+        return op::OperationResult{op::Error, "Could not update reservation (internal db error)"};
+
+      // TODO: We should have a proper update event here instead of removing the reservation and readding it...
+      _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, std::vector<int>{{op.updatedReservation->id()}});
+      _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.updatedReservation}});
+
+      return op::OperationResult{op::Successful, ""};
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
