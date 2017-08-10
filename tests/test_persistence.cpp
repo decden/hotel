@@ -205,6 +205,9 @@ TEST_F(Persistence, DataStreamsServices)
   ASSERT_EQ(1u, reservation.items().size());
   ASSERT_EQ(reservations.items()[1], reservation.items()[0]);
 
+  // Test that adding an unrelated item does not affect the single-id stream
+  storeHotel(dataSource, makeNewHotel("Hotel 3", "Category 3", 10));
+  ASSERT_EQ(1u, hotel.items().size());
 
   auto task = dataSource.queueOperation(persistence::op::EraseAllData());
   waitForTask(dataSource, task);

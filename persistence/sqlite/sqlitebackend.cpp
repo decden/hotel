@@ -147,30 +147,31 @@ namespace persistence
     {
       for (auto& activeStream : _activeStreams)
       {
-        if (activeStream->streamType() == type)
-          func(*activeStream);
+        auto handler = findHandler(*activeStream);
+        assert(handler != nullptr);
+        if (activeStream->streamType() == type && handler != nullptr)
+          func(*activeStream, *handler);
       }
     }
 
     void DataStreamManager::addItems(ChangeQueue &changeQueue, StreamableType type, const StreamableItems items)
     {
-      foreachStream(type, [&changeQueue, &items](DataStream& stream) {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
+      foreachStream(type, [&changeQueue, &items](DataStream& stream, DataStreamHandler& handler) {
+        handler.addItems(stream, changeQueue, items);
       });
-
     }
 
     void DataStreamManager::removeItems(ChangeQueue &changeQueue, StreamableType type, std::vector<int> ids)
     {
-      foreachStream(type, [&changeQueue, &ids](DataStream& stream) {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
+      foreachStream(type, [&changeQueue, &ids](DataStream& stream, DataStreamHandler& handler) {
+        handler.removeItems(stream, changeQueue, ids);
       });
     }
 
     void DataStreamManager::clear(ChangeQueue &changeQueue, StreamableType type)
     {
-      foreachStream(type, [&changeQueue](DataStream& stream) {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
+      foreachStream(type, [&changeQueue](DataStream& stream, DataStreamHandler& handler) {
+        handler.clear(stream, changeQueue);
       });
     }
 
