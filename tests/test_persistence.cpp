@@ -22,6 +22,7 @@ void waitForTask(persistence::DataSource& ds, persistence::op::Task<persistence:
   // Waits for one task to complete and to be integrated
   task.waitForCompletion();
   ds.changeQueue().applyStreamChanges();
+  ds.changeQueue().notifyCompletedTasks();
 }
 
 class Persistence : public testing::Test

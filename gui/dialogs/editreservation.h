@@ -24,21 +24,29 @@ namespace gui
     {
       Q_OBJECT
     public:
+      /**
+       * @brief Creates a new EditReservationDialog
+       * @param ds datasource to use for getting the data and modifying the data
+       * @param objectId the id of the reservation to edit
+       */
       EditReservationDialog(persistence::DataSource& ds, int objectId);
 
     private slots:
       void saveClicked();
 
     private:
-
       void reservationsAdded(const std::vector<hotel::Reservation>& reservations);
       void reservationsRemoved(const std::vector<int>& ids);
       void allReservationsRemoved();
+      void saveTaskUpdated();
 
       persistence::DataSource& _dataSource;
 
       boost::optional<hotel::Reservation> _reservation;
       gui::DataStreamObserverAdapter<hotel::Reservation> _reservationStreamHandle;
+
+      boost::signals2::scoped_connection _saveTaskUpdatedConnection;
+      boost::optional<persistence::op::Task<persistence::op::OperationResults>> _saveTask;
 
       QComboBox* _cbxStatus;
       QLineEdit* _txtDescription;

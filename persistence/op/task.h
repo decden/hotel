@@ -1,6 +1,8 @@
 #ifndef PERSISTENCE_OP_TASK_H
 #define PERSISTENCE_OP_TASK_H
 
+#include <boost/signals2.hpp>
+
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
@@ -33,6 +35,8 @@ namespace persistence
         assert(_completed);
         return _results;
       }
+      boost::signals2::connection connectToChangedSignal(boost::signals2::slot<void()> slot) { return _changedSignal.connect(slot); }
+
       void setCompleted(ResultT results)
       {
         {
@@ -43,11 +47,14 @@ namespace persistence
         _completedCondition.notify_all();
       }
 
+      void notifyChanged() { return _changedSignal(); }
+
     private:
       int _uniqueId;
       std::atomic<bool> _completed;
       mutable std::mutex _mutex;
       std::condition_variable _completedCondition;
+      boost::signals2::signal<void()> _changedSignal;
 
       ResultT _results;
     };
@@ -68,6 +75,8 @@ namespace persistence
       bool completed() const { return _sharedState->completed(); }
       void waitForCompletion() { return _sharedState->waitForCompletion(); }
       ResultT& results() { return _sharedState->results(); }
+      //! Adds an observer for the changed signal. This signal will be emitted on the main thread.
+      boost::signals2::connection connectToChangedSignal(boost::signals2::slot<void()> slot) { return _sharedState->connectToChangedSignal(slot); }
 
     private:
       std::shared_ptr<TaskSharedState<ResultT>> _sharedState;

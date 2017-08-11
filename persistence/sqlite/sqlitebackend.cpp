@@ -198,6 +198,7 @@ namespace persistence
     // Create a task
     auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
       op::Task<op::OperationResults> task(sharedState);
+      _changeQueue.addTask(sharedState);
 
       std::unique_lock<std::mutex> lock(_queueMutex);
       auto pair = QueuedOperation{std::move(operations), sharedState};

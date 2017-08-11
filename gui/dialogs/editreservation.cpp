@@ -57,9 +57,9 @@ namespace gui
       updatedReservation->setNumberOfAdults(_spbNumberOfAdults->value());
       updatedReservation->setNumberOfChildren(_spbNumberOfChildren->value());
 
-      _dataSource.queueOperation(persistence::op::UpdateReservation{std::move(updatedReservation)});
+      _saveTask = _dataSource.queueOperation(persistence::op::UpdateReservation{std::move(updatedReservation)});
+      _saveTaskUpdatedConnection = _saveTask->connectToChangedSignal(boost::bind(&EditReservationDialog::saveTaskUpdated, this));
       // TODO: Wait for task completion
-      close();
     }
 
     void EditReservationDialog::reservationsAdded(const std::vector<hotel::Reservation> &reservations)
@@ -89,6 +89,14 @@ namespace gui
       _reservation = boost::none;
       setWindowTitle(tr("Edit Reservation - Reservation was deleted"));
       setEnabled(false);
+    }
+
+    void EditReservationDialog::saveTaskUpdated()
+    {
+      if (_saveTask != boost::none && _saveTask->completed())
+      {
+        close();
+      }
     }
   } // namespace dialogs
 } // namespace gui

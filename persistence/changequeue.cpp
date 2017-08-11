@@ -5,6 +5,7 @@
 namespace persistence
 {
   void ChangeQueue::addStream(std::shared_ptr<DataStream> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
+  void ChangeQueue::addTask(std::shared_ptr<op::TaskSharedState<op::OperationResults> > task) { _tasks.push_back(std::move(task)); }
 
   bool ChangeQueue::hasUninitializedStreams() const
   {
@@ -33,9 +34,26 @@ namespace persistence
     }
   }
 
+  void ChangeQueue::notifyCompletedTasks()
+  {
+    std::vector<int> completedTasks;
+    std::unique_lock<std::mutex> lock(_completedTasksMutex);
+    std::swap(_completedTasksQueue, completedTasks);
+    lock.unlock();
+
+    for (auto& taskId : completedTasks)
+    {
+      auto it = std::find_if(_tasks.begin(), _tasks.end(), [&](std::shared_ptr<op::TaskSharedState<op::OperationResults>>& task) { return task->uniqueId() == taskId; });
+      if (it != _tasks.end())
+        (*it)->notifyChanged();
+    }
+  }
+
   void ChangeQueue::taskCompleted(int taskId)
   {
-    _taskCompletedSignal(taskId);
+    std::unique_lock<std::mutex> lock(_completedTasksMutex);
+    _completedTasksQueue.push_back(taskId);
+    _taskCompletedSignal();
   }
 
   void ChangeQueue::addStreamChange(int streamId, DataStreamChange change)
@@ -45,7 +63,7 @@ namespace persistence
     _streamChangesAvailableSignal();
   }
 
-  boost::signals2::connection ChangeQueue::connectToTaskCompletedSignal(boost::signals2::slot<void(int)> slot)
+  boost::signals2::connection ChangeQueue::connectToTaskCompletedSignal(boost::signals2::slot<void()> slot)
   {
     return _taskCompletedSignal.connect(slot);
   }

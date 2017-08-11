@@ -1,3 +1,4 @@
+
 #ifndef PERSISTENCE_RESULTINTEGRATOR_H
 #define PERSISTENCE_RESULTINTEGRATOR_H
 
@@ -39,23 +40,25 @@ namespace persistence
      */
     void addStream(std::shared_ptr<DataStream> dataStream);
 
+    void addTask(std::shared_ptr<op::TaskSharedState<op::OperationResults>> task);
+
     /**
      * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
      * @return true if at least one stream has not yet received its initial data.
      */
     bool hasUninitializedStreams() const;
 
-    /**
-     * @brief applyChanges processes all pending changes
-     */
+    // Methods for applying pending changes in the main thread
+
     void applyStreamChanges();
+    void notifyCompletedTasks();
 
     // Methods used by backend
 
     void taskCompleted(int taskId);
     void addStreamChange(int streamId, DataStreamChange change);
 
-    boost::signals2::connection connectToTaskCompletedSignal(boost::signals2::slot<void(int)> slot);
+    boost::signals2::connection connectToTaskCompletedSignal(boost::signals2::slot<void()> slot);
     boost::signals2::connection connectToStreamChangesAvailableSignal(boost::signals2::slot<void()> slot);
 
   private:
@@ -66,11 +69,14 @@ namespace persistence
     };
 
     std::vector<std::shared_ptr<DataStream>> _dataStreams;
+    std::vector<std::shared_ptr<op::TaskSharedState<op::OperationResults>>> _tasks;
 
     std::mutex _streamChangesMutex;
+    std::mutex _completedTasksMutex;
     std::vector<DataStreamDifferential> _streamChangeQueue;
+    std::vector<int> _completedTasksQueue;
 
-    boost::signals2::signal<void(int)> _taskCompletedSignal;
+    boost::signals2::signal<void()> _taskCompletedSignal;
     boost::signals2::signal<void()> _streamChangesAvailableSignal;
   };
 
