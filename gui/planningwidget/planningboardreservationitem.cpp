@@ -56,7 +56,6 @@ namespace gui
         : QGraphicsItem(parent), _context(context), _reservation(reservation), _isSelected(false),
           _isUpdatingSelection(false)
     {
-      auto numberOfAtoms = reservation->atoms().size();
       updateLayout();
     }
 

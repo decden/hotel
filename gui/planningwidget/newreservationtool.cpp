@@ -105,7 +105,6 @@ namespace gui
 
         bool modifyLastAtom = lastAtom != nullptr && lastAtom->roomId() == currentRoomId;
         auto currentStartDate = modifyLastAtom ? lastAtom->dateRange().begin() : _currentGhost->startDate;
-        auto currentEndDate = modifyLastAtom ? lastAtom->dateRange().end() : _currentGhost->startDate;
 
         // Allow switching to a new room when pressing shift
         if (event->modifiers() & Qt::ShiftModifier)

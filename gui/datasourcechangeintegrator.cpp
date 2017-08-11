@@ -7,10 +7,8 @@ namespace gui
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
 
-    _connections = {
-      _ds->changeQueue().connectToTaskCompletedSignal([this](int) { this->emitResultsAvailable(); }),
-      _ds->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); })
-    };
+    _connections[0] = _ds->changeQueue().connectToTaskCompletedSignal([this](int) { this->emitResultsAvailable(); });
+    _connections[1] = _ds->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); });
 
     // Initial update...
     handleAvailableResults();

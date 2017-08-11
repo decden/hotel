@@ -27,12 +27,12 @@ namespace persistence
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
       }
 
-      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids)
+      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
       }
 
-      virtual void clear(DataStream& stream, ChangeQueue& changeQueue)
+      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) override
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
       }
@@ -70,14 +70,14 @@ namespace persistence
           changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
       }
 
-      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids)
+      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
       {
-        auto id = stream.streamOptions()["id"];
+        int id = stream.streamOptions()["id"];
         if (std::any_of(ids.begin(), ids.end(), [id](int item) { return item == id; }))
           changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{{id}});
       }
 
-      virtual void clear(DataStream& stream, ChangeQueue& changeQueue)
+      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) override
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
       }
@@ -326,7 +326,7 @@ namespace persistence
         return op::OperationResult{op::Error, "Could not update reservation (internal db error)"};
 
       // TODO: We should have a proper update event here instead of removing the reservation and readding it...
-      _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, std::vector<int>{{op.updatedReservation->id()}});
+      _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, std::vector<int>({op.updatedReservation->id()}));
       _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.updatedReservation}});
 
       return op::OperationResult{op::Successful, ""};
