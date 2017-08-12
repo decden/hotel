@@ -38,6 +38,7 @@ namespace gui
     private:
       void reservationsInitialized();
       void reservationsAdded(const std::vector<hotel::Reservation>& reservations);
+      void reservationsUpdated(const std::vector<hotel::Reservation>& reservations);
       void reservationsRemoved(const std::vector<int>& ids);
       void allReservationsRemoved();
 

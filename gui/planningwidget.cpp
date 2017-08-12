@@ -36,9 +36,11 @@ namespace gui
     // Wire up events
     connect(_dateBar, SIGNAL(dateClicked(boost::gregorian::date)), this, SLOT(setPivotDate(boost::gregorian::date)));
     _reservationsStream.itemsAddedSignal.connect(boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
+    _reservationsStream.itemsUpdatedSignal.connect(boost::bind(&PlanningWidget::reservationsUpdated, this, boost::placeholders::_1));
     _reservationsStream.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
     _reservationsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
     _hotelsStream.itemsAddedSignal.connect(boost::bind(&PlanningWidget::hotelsAdded, this, boost::placeholders::_1));
+    _hotelsStream.itemsUpdatedSignal.connect(boost::bind(&PlanningWidget::hotelsUpdated, this, boost::placeholders::_1));
     _hotelsStream.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
     _hotelsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
     _context.reservationDoubleClickedSignal().connect(boost::bind(&PlanningWidget::emitReservationDoubleClicked, this, boost::placeholders::_1));
@@ -103,6 +105,18 @@ namespace gui
     updateDateRange();
   }
 
+  void PlanningWidget::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
+  {
+    for (auto& reservation : reservations)
+    {
+      _planningBoard->removeReservation(reservation.id());
+      _context.removeReservation(reservation.id());
+      auto reservationPtr = _context.addReservation(reservation);
+      _planningBoard->addReservation(reservationPtr);
+    }
+    updateDateRange();
+  }
+
   void PlanningWidget::reservationsRemoved(const std::vector<int> &ids)
   {
     for (auto reservationId : ids)
@@ -120,6 +134,21 @@ namespace gui
     _roomList->clear();
     for (auto& hotel : hotels)
       _context.addHotel(hotel);
+    for (auto& hotel : _context.hotels())
+      for (auto& room : hotel->rooms())
+        _roomList->addRoomItem(room.get());
+    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    updateLayout();
+  }
+
+  void PlanningWidget::hotelsUpdated(const std::vector<hotel::Hotel> &hotels)
+  {
+    _roomList->clear();
+    for (auto& hotel : hotels)
+    {
+      _context.removeHotel(hotel.id());
+      _context.addHotel(hotel);
+    }
     for (auto& hotel : _context.hotels())
       for (auto& room : hotel->rooms())
         _roomList->addRoomItem(room.get());

@@ -33,7 +33,8 @@ namespace persistence
     public:
       virtual ~DataStreamHandler() {}
       virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) = 0;
-      virtual void addItems(DataStream& stream, ChangeQueue& changeQueues, const StreamableItems& items) = 0;
+      virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) = 0;
+      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) = 0;
       virtual void removeItems(DataStream& stream, ChangeQueue& ChangeQueue, const std::vector<int> ids) = 0;
       virtual void clear(DataStream& stream, ChangeQueue& changeQueue) = 0;
     };
@@ -78,6 +79,7 @@ namespace persistence
       void foreachStream(StreamableType type, Func func);
 
       virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
+      virtual void updateItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
       virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, std::vector<int> ids);
       virtual void clear(ChangeQueue& changeQueue, StreamableType type);
 

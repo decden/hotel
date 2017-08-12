@@ -73,7 +73,7 @@ namespace hotel
 
   const ReservationAtom *Reservation::atomAtIndex(int i) const
   {
-    if (i >= 0 && i < _atoms.size())
+    if (i >= 0 && i < static_cast<int>(_atoms.size()))
       return &_atoms[i];
     return nullptr;
   }

@@ -60,9 +60,11 @@ namespace gui
     DataStreamObserverAdapter<hotel::Reservation> _reservationsStream;
 
     void reservationsAdded(const std::vector<hotel::Reservation>& reservations);
+    void reservationsUpdated(const std::vector<hotel::Reservation>& reservations);
     void reservationsRemoved(const std::vector<int>& ids);
     void allReservationsRemoved();
     void hotelsAdded(const std::vector<hotel::Hotel>& hotels);
+    void hotelsUpdated(const std::vector<hotel::Hotel>& hotels);
     void hotelsRemoved(const std::vector<int>& ids);
     void allHotelsRemoved();
 

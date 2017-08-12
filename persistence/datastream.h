@@ -20,10 +20,12 @@ namespace persistence
   enum class StreamableType { NullStream, Hotel, Reservation };
 
   struct DataStreamItemsAdded { StreamableItems newItems; };
+  struct DataStreamItemsUpdated { StreamableItems updatedItems; };
   struct DataStreamItemsRemoved { std::vector<int> removedItems; };
   struct DataStreamInitialized {};
   struct DataStreamCleared {};
   typedef boost::variant<DataStreamItemsAdded,
+                         DataStreamItemsUpdated,
                          DataStreamItemsRemoved,
                          DataStreamInitialized,
                          DataStreamCleared>
@@ -77,6 +79,7 @@ namespace persistence
 
   private:
     void applyChange(const DataStreamItemsAdded& op) { _observer->addItems(op.newItems); }
+    void applyChange(const DataStreamItemsUpdated& op) { _observer->updateItems(op.updatedItems); }
     void applyChange(const DataStreamItemsRemoved& op) { _observer->removeItems(op.removedItems); }
     void applyChange(const DataStreamInitialized& op) { _isInitialized = true; _observer->initialized(); }
     void applyChange(const DataStreamCleared& op) { _observer->clear(); }

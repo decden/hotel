@@ -27,6 +27,7 @@ namespace persistence
     virtual ~DataStreamObserver() {}
 
     virtual void addItems(const StreamableItems& items) = 0;
+    virtual void updateItems(const StreamableItems& items) = 0;
     virtual void removeItems(const std::vector<int>& ids) = 0;
     virtual void clear() = 0;
     virtual void initialized() = 0;
@@ -40,6 +41,8 @@ namespace persistence
 
     virtual void addItems(const StreamableItems& items) final override { addItems(boost::get<std::vector<T>>(items)); }
     virtual void addItems(const std::vector<T>& items) = 0;
+    virtual void updateItems(const StreamableItems& items) final override { updateItems(boost::get<std::vector<T>>(items)); }
+    virtual void updateItems(const std::vector<T>& items) = 0;
   };
 
   /**
@@ -58,6 +61,17 @@ namespace persistence
     virtual void addItems(const std::vector<T>& items) override
     {
       std::copy(items.begin(), items.end(), std::back_inserter(_dataItems));
+    }
+    virtual void updateItems(const std::vector<T>& items) override
+    {
+      for (auto& updatedItem : items)
+      {
+        auto it = std::find_if(_dataItems.begin(), _dataItems.end(), [&updatedItem](const T& item) {
+          return item.id() == updatedItem.id();
+        });
+        if (it != _dataItems.end())
+          *it = updatedItem;
+      }
     }
     virtual void removeItems(const std::vector<int>& ids) override
     {

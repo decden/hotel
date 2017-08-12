@@ -27,6 +27,11 @@ namespace persistence
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
       }
 
+      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      {
+        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsUpdated{items});
+      }
+
       virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
       {
         changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
@@ -63,11 +68,20 @@ namespace persistence
 
       virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
       {
-        auto id = stream.streamOptions()["id"];
+        int id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
-        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, items);
-        if (isEmpty)
+        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
+        if (!isEmpty)
           changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
+      }
+
+      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      {
+        int id = stream.streamOptions()["id"];
+        auto filteredItems = filter(items, id);
+        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
+        if (!isEmpty)
+          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsUpdated{filteredItems});
       }
 
       virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
@@ -160,6 +174,13 @@ namespace persistence
     {
       foreachStream(type, [&changeQueue, &items](DataStream& stream, DataStreamHandler& handler) {
         handler.addItems(stream, changeQueue, items);
+      });
+    }
+
+    void DataStreamManager::updateItems(ChangeQueue &changeQueue, StreamableType type, const StreamableItems items)
+    {
+      foreachStream(type, [&changeQueue, &items](DataStream& stream, DataStreamHandler& handler) {
+        handler.updateItems(stream, changeQueue, items);
       });
     }
 
@@ -326,9 +347,7 @@ namespace persistence
       if (!_storage.update<hotel::Reservation>(*op.updatedReservation))
         return op::OperationResult{op::Error, "Could not update reservation (internal db error)"};
 
-      // TODO: We should have a proper update event here instead of removing the reservation and readding it...
-      _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, std::vector<int>({op.updatedReservation->id()}));
-      _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.updatedReservation}});
+      _dataStreams.updateItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.updatedReservation}});
 
       return op::OperationResult{op::Successful, ""};
     }

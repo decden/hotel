@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
+#include <QMessageBox>
 
 namespace gui
 {
@@ -15,6 +16,7 @@ namespace gui
       // Connect events
       _reservationStreamHandle.initializedSignal.connect(boost::bind(&EditReservationDialog::reservationsInitialized, this));
       _reservationStreamHandle.itemsAddedSignal.connect(boost::bind(&EditReservationDialog::reservationsAdded, this, boost::placeholders::_1));
+      _reservationStreamHandle.itemsUpdatedSignal.connect(boost::bind(&EditReservationDialog::reservationsUpdated, this, boost::placeholders::_1));
       _reservationStreamHandle.itemsRemovedSignal.connect(boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
       _reservationStreamHandle.allItemsRemovedSignal.connect(boost::bind(&EditReservationDialog::allReservationsRemoved, this));
 
@@ -81,10 +83,7 @@ namespace gui
 
     void EditReservationDialog::reservationsAdded(const std::vector<hotel::Reservation> &reservations)
     {      
-      // For now, ignore changes that happen once the stream has been initialized
-      if (_status != Status::NotInitialized)
-        return;
-
+      assert(_status == Status::NotInitialized);
       assert(reservations.size() == 1);
       assert(_reservation == boost::none);
 
@@ -93,6 +92,33 @@ namespace gui
       _txtDescription->setText(QString::fromStdString(_reservation->description()));
       _spbNumberOfAdults->setValue(_reservation->numberOfAdults());
       _spbNumberOfChildren->setValue(_reservation->numberOfChildren());
+    }
+
+    void EditReservationDialog::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
+    {
+      // While saving, we are expecting updates to come in. We can safely ignore those.
+      if (_status == Status::Saving)
+        return;
+
+      assert (_status == Status::Ready);
+      assert(reservations.size() == 1);
+
+      QMessageBox msgBox(this);
+      msgBox.addButton(tr("Keep my changes"), QMessageBox::ApplyRole);
+      auto *discardChangesButton = msgBox.addButton(tr("Discard my changes"), QMessageBox::ResetRole);
+      msgBox.setWindowTitle(tr("Edit conflict"));
+      msgBox.setText(tr("While you were editing this item, somebody else did change this item.\nWhat do you want to do with your changes?"));
+      msgBox.exec();
+      if (msgBox.clickedButton() == discardChangesButton)
+      {
+        _reservation = std::move(reservations[0]);
+        _cbxStatus->setCurrentIndex(_reservation->status() - 2);
+        _txtDescription->setText(QString::fromStdString(_reservation->description()));
+        _spbNumberOfAdults->setValue(_reservation->numberOfAdults());
+        _spbNumberOfChildren->setValue(_reservation->numberOfChildren());
+      }
+
+      updateUI();
     }
 
     void EditReservationDialog::reservationsRemoved(const std::vector<int> &ids)
