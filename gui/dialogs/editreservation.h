@@ -9,6 +9,7 @@
 
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDialog>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
@@ -35,10 +36,17 @@ namespace gui
       void saveClicked();
 
     private:
+      void reservationsInitialized();
       void reservationsAdded(const std::vector<hotel::Reservation>& reservations);
       void reservationsRemoved(const std::vector<int>& ids);
       void allReservationsRemoved();
+
       void saveTaskUpdated();
+
+      void updateUI();
+
+      enum class Status { NotInitialized, Ready, Removed, Saving };
+      Status _status = Status::NotInitialized;
 
       persistence::DataSource& _dataSource;
 
@@ -48,6 +56,7 @@ namespace gui
       boost::signals2::scoped_connection _saveTaskUpdatedConnection;
       boost::optional<persistence::op::Task<persistence::op::OperationResults>> _saveTask;
 
+      QLabel* _lblMessage;
       QComboBox* _cbxStatus;
       QLineEdit* _txtDescription;
       QSpinBox* _spbNumberOfAdults;
