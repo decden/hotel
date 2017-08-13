@@ -1,7 +1,10 @@
 #include "gui/dialogs/editreservation.h"
 
+#include <QDate>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QHBoxLayout>
 #include <QMessageBox>
 
 namespace gui
@@ -11,6 +14,8 @@ namespace gui
     EditReservationDialog::EditReservationDialog(persistence::DataSource& ds, int objectId)
         : QDialog(nullptr), _dataSource(ds)
     {
+      setAttribute(Qt::WA_DeleteOnClose);
+      setMinimumWidth(500);
       setWindowTitle(tr("Edit Reservation"));
 
       // Connect events
@@ -26,7 +31,12 @@ namespace gui
       _reservationStreamHandle.connect(ds, "reservation.by_id", options);
 
       auto layout = new QGridLayout();
-      _lblMessage = new QLabel();
+      auto buttonsLayout = new QHBoxLayout();
+      auto outerLayout = new QVBoxLayout();
+      outerLayout->setMargin(0);
+      layout->setMargin(10);
+      buttonsLayout->setMargin(10);
+      _statusBar = new StatusBar();
       _cbxStatus = new QComboBox();
       _cbxStatus->addItems({"New", "Confirmed", "CheckedIn", "CheckedOut", "Archived"});
       _txtDescription = new QLineEdit();
@@ -36,17 +46,24 @@ namespace gui
       _spbNumberOfChildren->setRange(0, 10);
       _btnSave = new QPushButton(tr("Save"));
 
-      layout->addWidget(_lblMessage, 0, 0, 1, 2);
-      layout->addWidget(new QLabel(tr("Status:")), 1, 0);
-      layout->addWidget(new QLabel(tr("Description:")), 2, 0);
-      layout->addWidget(new QLabel(tr("Number of adults:")), 3, 0);
-      layout->addWidget(new QLabel(tr("Number of children:")), 4, 0);
-      layout->addWidget(_cbxStatus, 1, 1);
-      layout->addWidget(_txtDescription, 2, 1);
-      layout->addWidget(_spbNumberOfAdults, 3, 1);
-      layout->addWidget(_spbNumberOfChildren, 4, 1);
-      layout->addWidget(_btnSave, 5, 1);
-      setLayout(layout);
+      outerLayout->addWidget(_statusBar);
+      outerLayout->addLayout(layout);
+      outerLayout->addStretch();
+      outerLayout->addLayout(buttonsLayout);
+
+      layout->addWidget(new QLabel(tr("Status:")), 0, 0);
+      layout->addWidget(new QLabel(tr("Description:")), 1, 0);
+      layout->addWidget(new QLabel(tr("Number of adults:")), 2, 0);
+      layout->addWidget(new QLabel(tr("Number of children:")), 3, 0);
+      layout->addWidget(_cbxStatus, 0, 1);
+      layout->addWidget(_txtDescription, 1, 1);
+      layout->addWidget(_spbNumberOfAdults, 2, 1);
+      layout->addWidget(_spbNumberOfChildren, 3, 1);
+
+      buttonsLayout->addStretch();
+      buttonsLayout->addWidget(_btnSave);
+
+      setLayout(outerLayout);
 
       // Connect events
       connect(_btnSave, SIGNAL(clicked(bool)), this, SLOT(saveClicked()));
@@ -151,15 +168,22 @@ namespace gui
       setEnabled(_status == Status::Ready && _reservation != boost::none);
 
       if (_status == Status::Ready && _reservation != boost::none)
-        _lblMessage->setText(tr("Ready"));
+      {
+        auto description = QString::fromStdString(_reservation->description());
+        auto fromDate = _reservation->dateRange().begin();
+        auto toDate = _reservation->dateRange().end();
+        auto fromDateText = QDate(fromDate.year(), fromDate.month(), fromDate.day()).toString("dd-MM-yyyy");
+        auto toDateText = QDate(toDate.year(), toDate.month(), toDate.day()).toString("dd-MM-yyyy");
+        _statusBar->showMessage(tr("%1 - From %2 to %3").arg(description, fromDateText, toDateText), gui::StatusBar::Success);
+      }
       else if (_status == Status::Ready && _reservation == boost::none)
-        _lblMessage->setText(tr("Could not load data"));
+        _statusBar->showMessage(tr("Could not load data"), gui::StatusBar::Error);
       else if (_status == Status::NotInitialized)
-        _lblMessage->setText(tr("Loading..."));
+        _statusBar->showMessage(tr("Loading..."), gui::StatusBar::Info);
       else if (_status == Status::Removed)
-        _lblMessage->setText(tr("The reservation was deleted while you were editing it"));
+        _statusBar->showMessage(tr("The reservation was deleted while you were editing it"), gui::StatusBar::Error);
       else if (_status == Status::Saving)
-        _lblMessage->setText(tr("Saving..."));
+        _statusBar->showMessage(tr("Saving..."), gui::StatusBar::Info);
     }
   } // namespace dialogs
 } // namespace gui

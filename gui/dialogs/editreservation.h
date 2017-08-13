@@ -2,6 +2,7 @@
 #define GUIAPP_DIALOGS_EDITRESERVATION_H
 
 #include "gui/datastreamobserveradapter.h"
+#include "gui/statusbar.h"
 
 #include "persistence/datasource.h"
 
@@ -9,7 +10,6 @@
 
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDialog>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
@@ -57,7 +57,7 @@ namespace gui
       boost::signals2::scoped_connection _saveTaskUpdatedConnection;
       boost::optional<persistence::op::Task<persistence::op::OperationResults>> _saveTask;
 
-      QLabel* _lblMessage;
+      StatusBar* _statusBar;
       QComboBox* _cbxStatus;
       QLineEdit* _txtDescription;
       QSpinBox* _spbNumberOfAdults;
