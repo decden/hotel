@@ -66,6 +66,8 @@ namespace hotel
     const std::vector<std::unique_ptr<HotelRoom>>& rooms() const;
     const std::vector<std::unique_ptr<RoomCategory>>& categories() const;
 
+    void setName(const std::string& name) { _name = name; }
+
     void addRoomCategory(std::unique_ptr<RoomCategory> category);
     void addRoom(std::unique_ptr<HotelRoom> room, const std::string& categoryShortCode);
 

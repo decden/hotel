@@ -155,6 +155,7 @@ namespace persistence
       op::OperationResult executeOperation(op::StoreNewHotel& op);
       op::OperationResult executeOperation(op::StoreNewReservation& op);
       op::OperationResult executeOperation(op::StoreNewPerson& op);
+      op::OperationResult executeOperation(op::UpdateHotel& op);
       op::OperationResult executeOperation(op::UpdateReservation& op);
       op::OperationResult executeOperation(op::DeleteReservation& op);
 

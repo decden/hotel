@@ -7,10 +7,13 @@ namespace hotel
   {
   public:
     int id() const;
+    int revision() const;
     void setId(int id);
+    void setRevision(int revision);
 
   private:
     int _id = 0;
+    int _revision = 0;
   };
 
 } // namespace hotel

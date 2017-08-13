@@ -51,7 +51,11 @@ namespace gui
 
       persistence::DataSource& _dataSource;
 
-      boost::optional<hotel::Reservation> _reservation;
+      // The reference version to which we are currently editing against
+      boost::optional<hotel::Reservation> _referenceVersion;
+      // All versions which are newer then the reference version
+      std::vector<hotel::Reservation> _newerVersions;
+
       gui::DataStreamObserverAdapter<hotel::Reservation> _reservationStreamHandle;
 
       boost::signals2::scoped_connection _saveTaskUpdatedConnection;

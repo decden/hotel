@@ -39,7 +39,7 @@ namespace persistence
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);
 
       template<typename T>
-      bool update(const T& value);
+      bool update(T& value);
 
       void getReservation();
 

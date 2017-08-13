@@ -113,10 +113,12 @@ namespace persistence
       while (hotelsQuery.hasResultRow())
       {
         int id;
+        int revision;
         std::string name;
-        hotelsQuery.readRow(id, name);
+        hotelsQuery.readRow(id, revision, name);
         results.emplace_back(name);
         results.back().setId(id);
+        results.back().setRevision(revision);
       }
 
       for (auto& hotel : results)
@@ -169,6 +171,7 @@ namespace persistence
       while (reservationsQuery.hasResultRow())
       {
         int reservationId;
+        int reservationRevision;
         std::string description;
         std::string reservationStatus;
         int adults;
@@ -177,7 +180,7 @@ namespace persistence
         int roomId;
         boost::gregorian::date dateFrom;
         boost::gregorian::date dateTo;
-        reservationsQuery.readRow(reservationId, description, reservationStatus, adults, children,
+        reservationsQuery.readRow(reservationId, reservationRevision, description, reservationStatus, adults, children,
                                   atomId, roomId, dateFrom, dateTo);
 
         if (current == nullptr || current->id() != reservationId)
@@ -190,6 +193,7 @@ namespace persistence
           current = std::make_unique<hotel::Reservation>(description, roomId,
                                                          boost::gregorian::date_period(dateFrom, dateTo));
           current->setId(reservationId);
+          current->setRevision(reservationRevision);
           current->setStatus(parseReservationStatus(reservationStatus));
           current->setNumberOfAdults(adults);
           current->setNumberOfChildren(children);
@@ -220,10 +224,12 @@ namespace persistence
       if (hotelQuery.hasResultRow())
       {
         int id;
+        int revision;
         std::string name;
-        hotelQuery.readRow(id, name);
+        hotelQuery.readRow(id, revision, name);
         result = hotel::Hotel(name);
         result->setId(id);
+        result->setRevision(revision);
       }
 
 
@@ -275,6 +281,7 @@ namespace persistence
       reservationsQuery.execute(id);
       while (reservationsQuery.hasResultRow())
       {
+        int reservationRevision;
         std::string description;
         std::string reservationStatus;
         int adults;
@@ -283,13 +290,14 @@ namespace persistence
         int roomId;
         boost::gregorian::date dateFrom;
         boost::gregorian::date dateTo;
-        reservationsQuery.readRow(description, reservationStatus, adults, children,
+        reservationsQuery.readRow(reservationRevision, description, reservationStatus, adults, children,
                                   atomId, roomId, dateFrom, dateTo);
 
         if (result == boost::none)
         {
           result = hotel::Reservation(description, roomId, boost::gregorian::date_period(dateFrom, dateTo));
           result->setId(id);
+          result->setRevision(reservationRevision);
           result->setStatus(parseReservationStatus(reservationStatus));
           result->setNumberOfAdults(adults);
           result->setNumberOfChildren(children);
@@ -309,6 +317,7 @@ namespace persistence
       // First, store the hotel
       query("hotel.insert").execute(hotel.name());
       hotel.setId(static_cast<int>(lastInsertId()));
+      hotel.setRevision(1);
 
       // Store all of the categories
       for (auto& category : hotel.categories())
@@ -331,6 +340,7 @@ namespace persistence
       query("reservation.insert").execute(reservation.description(), reservationStatus,
                                           reservation.numberOfAdults(), reservation.numberOfChildren());
       reservation.setId(static_cast<int>(lastInsertId()));
+      reservation.setRevision(1);
       for (auto& atom : reservation.atoms())
       {
         auto& q = query("reservation_atom.insert");
@@ -340,16 +350,36 @@ namespace persistence
     }
 
     template <>
-    bool SqliteStorage::update<hotel::Reservation>(const hotel::Reservation& value)
+    bool SqliteStorage::update<hotel::Hotel>(hotel::Hotel& value)
+    {
+      auto& q = query("hotel.update");
+      q.execute(value.name(), value.id(), value.revision());
+
+      int updatedRows = sqlite3_changes(_db);
+      if (updatedRows == 1)
+      {
+        value.setRevision(value.revision() + 1);
+        return true;
+      }
+      return false;
+    }
+
+    template <>
+    bool SqliteStorage::update<hotel::Reservation>(hotel::Reservation& value)
     {
       auto& q = query("reservation.update");
       q.execute(value.description(), serializeReservationStatus(value.status()), value.numberOfAdults(),
-                value.numberOfChildren(), value.id());
+                value.numberOfChildren(), value.id(), value.revision());
 
       // TODO, we need to update also the atoms!
 
       int updatedRows = sqlite3_changes(_db);
-      return updatedRows == 1;
+      if (updatedRows == 1)
+      {
+        value.setRevision(value.revision() + 1);
+        return true;
+      }
+      return false;
     }
 
     SqliteStatement& SqliteStorage::query(const std::string& key)
@@ -372,8 +402,9 @@ namespace persistence
     void SqliteStorage::prepareQueries()
     {
       _statements.emplace("hotel.insert", SqliteStatement(_db, "INSERT INTO h_hotel (name) VALUES (?);"));
-      _statements.emplace("hotel.all", SqliteStatement(_db, "SELECT id, name FROM h_hotel;"));
-      _statements.emplace("hotel.by_id", SqliteStatement(_db, "SELECT id, name FROM h_hotel WHERE id = ?;"));
+      _statements.emplace("hotel.update", SqliteStatement(_db, "UPDATE h_hotel SET name=?, revision=revision+1 WHERE id=? and revision=?;"));
+      _statements.emplace("hotel.all", SqliteStatement(_db, "SELECT id, revision, name FROM h_hotel;"));
+      _statements.emplace("hotel.by_id", SqliteStatement(_db, "SELECT id, revision, name FROM h_hotel WHERE id = ?;"));
       _statements.emplace(
           "room_category.insert",
           SqliteStatement(_db, "INSERT INTO h_room_category (hotel_id, short_code, name) VALUES (?, ?, ?);"));
@@ -386,18 +417,18 @@ namespace persistence
 
       _statements.emplace(
           "reservation_and_atoms.all",
-          SqliteStatement(_db, "SELECT r.id, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
+          SqliteStatement(_db, "SELECT r.id, r.revision, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
                                "FROM h_reservation as r, h_reservation_atom as a WHERE "
                                "a.reservation_id = r.id ORDER BY r.id, a.date_from;"));
       _statements.emplace(
           "reservation_and_atoms.by_reservation_id",
-          SqliteStatement(_db, "SELECT r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
+          SqliteStatement(_db, "SELECT r.revision, r.description, r.status, r.adults, r.children, a.id, a.room_id, a.date_from, a.date_to "
                                "FROM h_reservation as r, h_reservation_atom as a WHERE "
                                "a.reservation_id = r.id and r.id = ? ORDER BY r.id, a.date_from;"));
       _statements.emplace("reservation.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
       _statements.emplace("reservation.update",
-                          SqliteStatement(_db, "UPDATE h_reservation SET description=?, status=?, adults=?, children=? WHERE id = ?;"));
+                          SqliteStatement(_db, "UPDATE h_reservation SET description=?, status=?, adults=?, children=?, revision=revision+1 WHERE id = ? AND revision = ?;"));
       _statements.emplace("reservation.delete",
                           SqliteStatement(_db, "DELETE FROM h_reservation_atom where reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
       _statements.emplace("reservation_atom.insert",
@@ -409,6 +440,7 @@ namespace persistence
     {
       executeSQL(_db, "CREATE TABLE IF NOT EXISTS h_hotel ("
                       "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                      "revision INTEGER NOT NULL DEFAULT 1, "
                       "name TEXT NOT NULL);");
       executeSQL(_db, "CREATE TABLE IF NOT EXISTS h_room_category ("
                       "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
@@ -423,6 +455,7 @@ namespace persistence
 
       executeSQL(_db, "CREATE TABLE IF NOT EXISTS h_reservation ("
                       "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+                      "revision INTEGER NOT NULL DEFAULT 1, "
                       "description TEXT NOT NULL, "
                       "status TEXT NOT NULL,"
                       "adults INTEGER NOT NULL,"

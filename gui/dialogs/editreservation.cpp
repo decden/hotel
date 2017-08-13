@@ -74,11 +74,11 @@ namespace gui
     void EditReservationDialog::saveClicked()
     {
       assert(_status == Status::Ready);
-      assert(_reservation != boost::none);
+      assert(_referenceVersion != boost::none);
 
       _status = Status::Saving;
 
-      auto updatedReservation = std::make_unique<hotel::Reservation>(*_reservation);
+      auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       updatedReservation->setStatus(static_cast<hotel::Reservation::ReservationStatus>(_cbxStatus->currentIndex() + 2));
       updatedReservation->setDescription(_txtDescription->text().toStdString());
       updatedReservation->setNumberOfAdults(_spbNumberOfAdults->value());
@@ -102,38 +102,23 @@ namespace gui
     {      
       assert(_status == Status::NotInitialized);
       assert(reservations.size() == 1);
-      assert(_reservation == boost::none);
+      assert(_referenceVersion == boost::none);
 
-      _reservation = std::move(reservations[0]);
-      _cbxStatus->setCurrentIndex(_reservation->status() - 2);
-      _txtDescription->setText(QString::fromStdString(_reservation->description()));
-      _spbNumberOfAdults->setValue(_reservation->numberOfAdults());
-      _spbNumberOfChildren->setValue(_reservation->numberOfChildren());
+      _referenceVersion = reservations[0];
+      _cbxStatus->setCurrentIndex(_referenceVersion->status() - 2);
+      _txtDescription->setText(QString::fromStdString(_referenceVersion->description()));
+      _spbNumberOfAdults->setValue(_referenceVersion->numberOfAdults());
+      _spbNumberOfChildren->setValue(_referenceVersion->numberOfChildren());
     }
 
     void EditReservationDialog::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
     {
-      // While saving, we are expecting updates to come in. We can safely ignore those.
-      if (_status == Status::Saving)
-        return;
-
-      assert (_status == Status::Ready);
       assert(reservations.size() == 1);
+      assert(_referenceVersion != boost::none);
 
-      QMessageBox msgBox(this);
-      msgBox.addButton(tr("Keep my changes"), QMessageBox::ApplyRole);
-      auto *discardChangesButton = msgBox.addButton(tr("Discard my changes"), QMessageBox::ResetRole);
-      msgBox.setWindowTitle(tr("Edit conflict"));
-      msgBox.setText(tr("While you were editing this item, somebody else did change this item.\nWhat do you want to do with your changes?"));
-      msgBox.exec();
-      if (msgBox.clickedButton() == discardChangesButton)
-      {
-        _reservation = std::move(reservations[0]);
-        _cbxStatus->setCurrentIndex(_reservation->status() - 2);
-        _txtDescription->setText(QString::fromStdString(_reservation->description()));
-        _spbNumberOfAdults->setValue(_reservation->numberOfAdults());
-        _spbNumberOfChildren->setValue(_reservation->numberOfChildren());
-      }
+      auto newVersion = reservations[0];
+      assert(newVersion.revision() > _referenceVersion->revision());
+      _newerVersions.push_back(std::move(newVersion));
 
       updateUI();
     }
@@ -141,16 +126,16 @@ namespace gui
     void EditReservationDialog::reservationsRemoved(const std::vector<int> &ids)
     {
       assert(ids.size() == 1);
-      assert(_reservation != boost::none);
-      assert(_reservation->id() == ids[0]);
-      _reservation = boost::none;
+      assert(_referenceVersion != boost::none);
+      assert(_referenceVersion->id() == ids[0]);
+      _referenceVersion = boost::none;
       _status = Status::Removed;
       updateUI();
     }
 
     void EditReservationDialog::allReservationsRemoved()
     {
-      _reservation = boost::none;
+      _referenceVersion = boost::none;
       _status = Status::Removed;
       updateUI();
     }
@@ -159,24 +144,37 @@ namespace gui
     {
       if (_saveTask != boost::none && _saveTask->completed())
       {
-        close();
+        auto result = _saveTask->results()[0];
+        if (result.status == persistence::op::OperationResultStatus::Successful)
+          close();
+        else
+        {
+          _status = Status::Ready;
+          updateUI();
+          _statusBar->showMessage(tr("Saving was unsuccessful (%1)").arg(QString::fromStdString(result.message)), StatusBar::Error);
+        }
       }
     }
 
     void EditReservationDialog::updateUI()
     {
-      setEnabled(_status == Status::Ready && _reservation != boost::none);
+      setEnabled(_status == Status::Ready && _referenceVersion != boost::none);
+      _btnSave->setEnabled(_status == Status::Ready && _newerVersions.empty());
 
-      if (_status == Status::Ready && _reservation != boost::none)
+      if (_status == Status::Ready && !_newerVersions.empty())
       {
-        auto description = QString::fromStdString(_reservation->description());
-        auto fromDate = _reservation->dateRange().begin();
-        auto toDate = _reservation->dateRange().end();
+        _statusBar->showMessage(tr("Newer versions of this item are available"), gui::StatusBar::Error);
+      }
+      else if (_status == Status::Ready && _referenceVersion != boost::none)
+      {
+        auto description = QString::fromStdString(_referenceVersion->description());
+        auto fromDate = _referenceVersion->dateRange().begin();
+        auto toDate = _referenceVersion->dateRange().end();
         auto fromDateText = QDate(fromDate.year(), fromDate.month(), fromDate.day()).toString("dd-MM-yyyy");
         auto toDateText = QDate(toDate.year(), toDate.month(), toDate.day()).toString("dd-MM-yyyy");
         _statusBar->showMessage(tr("%1 - From %2 to %3").arg(description, fromDateText, toDateText), gui::StatusBar::Success);
       }
-      else if (_status == Status::Ready && _reservation == boost::none)
+      else if (_status == Status::Ready && _referenceVersion == boost::none)
         _statusBar->showMessage(tr("Could not load data"), gui::StatusBar::Error);
       else if (_status == Status::NotInitialized)
         _statusBar->showMessage(tr("Loading..."), gui::StatusBar::Info);

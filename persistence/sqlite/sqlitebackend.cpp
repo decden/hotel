@@ -334,6 +334,20 @@ namespace persistence
       return op::OperationResult{op::Error, "Not implemented yet!"};
     }
 
+    op::OperationResult SqliteBackend::executeOperation(op::UpdateHotel &op)
+    {
+      if (op.updatedHotel == nullptr)
+        return op::OperationResult{op::Error, "Trying to update empty hotel"};
+      if (op.updatedHotel->id() == 0)
+        return op::OperationResult{op::Error, "Cannot update hotel without id"};
+      if (!_storage.update<hotel::Hotel>(*op.updatedHotel))
+        return op::OperationResult{op::Error, "Could not update hotel (internal db error)"};
+
+      _dataStreams.updateItems(_changeQueue, StreamableType::Hotel, std::vector<hotel::Hotel>{{*op.updatedHotel}});
+
+      return op::OperationResult{op::Successful, ""};
+    }
+
     op::OperationResult SqliteBackend::executeOperation(op::UpdateReservation &op)
     {
       if (op.updatedReservation == nullptr)

@@ -137,6 +137,33 @@ TEST_F(Persistence, ReservationPersistence)
   }
 }
 
+TEST_F(Persistence, VersionConflicts)
+{
+  persistence::DataSource dataSource("test.db");
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+  auto hotelStreamHandle = dataSource.connectToStream(&hotels);
+  storeHotel(dataSource, makeNewHotel("Hotel 1", "Category 1", 10));
+
+  // Test if updates to wrong revisions are rejected
+  auto changedHotel1 = hotels.items()[0];
+  changedHotel1.setName("Changed Hotel Name 1");
+  auto changedHotel2 = hotels.items()[0];
+  changedHotel2.setName("Changed Hotel Name 2");
+  auto task1 = dataSource.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
+  auto task2 = dataSource.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  waitForTask(dataSource, task1);
+  waitForTask(dataSource, task2);
+  ASSERT_EQ(persistence::op::OperationResultStatus::Successful, task1.results()[0].status);
+  ASSERT_EQ(persistence::op::OperationResultStatus::Error, task2.results()[0].status);
+
+  // Trying to make the same change to the correct revision now works
+  changedHotel2 = hotels.items()[0];
+  changedHotel2.setName("Changed Hotel Name 2");
+  task2 = dataSource.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  waitForTask(dataSource, task2);
+  ASSERT_EQ(persistence::op::OperationResultStatus::Successful, task2.results()[0].status);
+}
+
 TEST_F(Persistence, DataStreams)
 {
   persistence::DataSource dataSource("test.db");

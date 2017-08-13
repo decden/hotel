@@ -22,6 +22,7 @@ namespace persistence
     struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
     struct StoreNewPerson { std::unique_ptr<hotel::Person> newPerson; };
 
+    struct UpdateHotel { std::unique_ptr<hotel::Hotel> updatedHotel; };
     struct UpdateReservation { std::unique_ptr<hotel::Reservation> updatedReservation; };
 
     struct DeleteReservation { int reservationId; };
@@ -31,6 +32,7 @@ namespace persistence
                            op::StoreNewHotel,
                            op::StoreNewReservation,
                            op::StoreNewPerson,
+                           op::UpdateHotel,
                            op::UpdateReservation,
                            op::DeleteReservation>
             Operation;
