@@ -78,5 +78,120 @@ namespace persistence
       return resultJson;
     }
 
+    nlohmann::json JsonSerializer::serialize(const hotel::Hotel &item)
+    {
+      nlohmann::json obj;
+      obj["name"] = item.name();
+
+      obj["categories"] = nlohmann::json::array();
+      for (auto& category : item.categories())
+        obj["categories"].push_back(JsonSerializer::serialize(*category));
+
+      obj["rooms"] = nlohmann::json::array();
+      for (auto& room : item.rooms())
+        obj["rooms"].push_back(JsonSerializer::serialize(*room));
+
+      setCommonPersistentObjectFields(item, obj);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const hotel::RoomCategory &item)
+    {
+      nlohmann::json obj = {
+        {"shortCode", item.shortCode()},
+        {"name", item.name()}
+      };
+      setCommonPersistentObjectFields(item, obj);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const hotel::HotelRoom &item)
+    {
+      nlohmann::json obj = {
+        {"categoryId", item.category()->id()},
+        {"name", item.name()}
+      };
+      setCommonPersistentObjectFields(item ,obj);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const hotel::Reservation &item)
+    {
+      return {{"Reservation", "Reservation"}};
+    }
+
+    nlohmann::json JsonSerializer::serialize(const hotel::Person &item)
+    {
+      return {{"Person", "Person"}};
+    }
+
+    nlohmann::json JsonSerializer::serialize(const persistence::op::Operation &operation)
+    {
+      return boost::apply_visitor([](auto &operation){
+        return JsonSerializer::serialize(operation);
+      }, operation);
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::EraseAllData &)
+    {
+      nlohmann::json obj;
+      obj["op"] = "erase_all_data";
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::StoreNewHotel &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "store_new_hotel";
+      obj["o"] = JsonSerializer::serialize(*operation.newHotel);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::StoreNewReservation &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "store_new_reservation";
+      obj["o"] = JsonSerializer::serialize(*operation.newReservation);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::StoreNewPerson &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "store_new_person";
+      obj["o"] = JsonSerializer::serialize(*operation.newPerson);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::UpdateHotel &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "update_hotel";
+      obj["o"] = JsonSerializer::serialize(*operation.updatedHotel);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::UpdateReservation &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "update_reservation";
+      obj["o"] = JsonSerializer::serialize(*operation.updatedReservation);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const op::DeleteReservation &operation)
+    {
+      nlohmann::json obj;
+      obj["op"] = "delete_reservation";
+      obj["o"] = operation.reservationId;
+      return obj;
+    }
+
+    void JsonSerializer::setCommonPersistentObjectFields(const hotel::PersistentObject &obj, nlohmann::json &json)
+    {
+      json["id"] = obj.id();
+      json["rev"] = obj.revision();
+    }
+
   } // namespace json
 } // namespace persistence
