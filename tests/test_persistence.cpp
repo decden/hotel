@@ -6,7 +6,7 @@
 #include "hotel/hotelcollection.h"
 
 #include <condition_variable>
-
+#include <thread>
 
 void waitForStreamInitialization(persistence::DataSource& ds)
 {

@@ -1,11 +1,11 @@
 #ifndef PERSISTENCE_DATASOURCE_H
 #define PERSISTENCE_DATASOURCE_H
 
+#include "persistence/backend.h"
 #include "persistence/changequeue.h"
 #include "persistence/datastream.h"
 #include "persistence/op/operations.h"
 #include "persistence/op/results.h"
-#include "persistence/sqlite/sqlitebackend.h"
 
 #include "hotel/planning.h"
 
@@ -27,7 +27,9 @@ namespace persistence
   class DataSource
   {
   public:
+    //! Creates a data source which uses a sqlite database as backend
     DataSource(const std::string& databaseFile);
+    DataSource(std::unique_ptr<Backend> backend);
     ~DataSource();
 
     /**
@@ -55,7 +57,7 @@ namespace persistence
     template <class T>
     UniqueDataStreamHandle connectToStream(DataStreamObserverTyped<T> *observer, const std::string& service, const nlohmann::json& options)
     {
-      return UniqueDataStreamHandle(_backend.createStream(observer, service, options));
+      return UniqueDataStreamHandle(_backend->createStream(observer, service, options));
     }
 
     /**
@@ -65,7 +67,7 @@ namespace persistence
     ChangeQueue &changeQueue();
 
   private:
-    persistence::sqlite::SqliteBackend _backend;
+    std::unique_ptr<Backend> _backend;
   };
 
 } // namespace persistence

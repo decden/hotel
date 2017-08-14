@@ -54,18 +54,25 @@ namespace persistence
      * @param observer The observer which will listen to the stream
      * @param service The name of the backend service to connect to
      * @param options Additional parameters for the service endpoint
-     * @return The shared state for the data stream
+     * @return The shared state for the new data stream
      */
     template <class T>
     std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer, const std::string& service,
                                              const nlohmann::json& options)
     {
-      return createStreamImpl(observer, DataStream::GetStreamTypeFor<T>(), service, options);
+      return createStream(observer, DataStream::GetStreamTypeFor<T>(), service, options);
     }
 
-  protected:
-    virtual std::shared_ptr<DataStream> createStreamImpl(DataStreamObserver *observer, StreamableType type,
-                                                         const std::string &service, const nlohmann::json &options) = 0;
+    /**
+     * @brief Creates a new stream which connects the given observer to the given service endpoint
+     * @param observer The observer which will listen to the stream
+     * @param type The data type of the stream
+     * @param service The name of the backend service to connect to
+     * @param options Additional parameters for the service endpoint
+     * @return The shared state for the new data stream
+     */
+    virtual std::shared_ptr<DataStream> createStream(DataStreamObserver *observer, StreamableType type,
+                                                     const std::string &service, const nlohmann::json &options) = 0;
   };
 } // namespace persistence
 
