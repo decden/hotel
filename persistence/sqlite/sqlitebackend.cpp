@@ -248,6 +248,22 @@ namespace persistence
       _backendThread.join();
     }
 
+    std::shared_ptr<DataStream> SqliteBackend::createStreamImpl(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
+    {
+      std::unique_lock<std::mutex> lock(_queueMutex);
+
+      auto sharedState = std::make_shared<DataStream>(type, service, options);
+
+      sharedState->connect(_nextStreamId++, observer);
+      _changeQueue.addStream(sharedState);
+      _dataStreams.addNewStream(sharedState);
+      lock.unlock();
+
+      _workAvailableCondition.notify_one();
+
+      return sharedState;
+    }
+
     void SqliteBackend::threadMain()
     {
       while (!_quitBackendThread)
@@ -280,12 +296,6 @@ namespace persistence
           _changeQueue.taskCompleted(operationsMessage.second->uniqueId());
         }
       }
-    }
-
-    std::shared_ptr<DataStream> SqliteBackend::makeStream(StreamableType type, const std::string& service,
-                                                          const nlohmann::json& options)
-    {
-      return std::make_shared<DataStream>(type, service, options);
     }
 
     op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)

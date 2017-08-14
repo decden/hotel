@@ -1,9 +1,10 @@
 #ifndef PERSISTENCE_SQLITE_SQLITEBACKEND_H
 #define PERSISTENCE_SQLITE_SQLITEBACKEND_H
 
-#include "persistence/datastream.h"
-
 #include "persistence/sqlite/sqlitestorage.h"
+
+#include "persistence/backend.h"
+#include "persistence/datastream.h"
 
 #include "persistence/changequeue.h"
 #include "persistence/op/operations.h"
@@ -104,7 +105,7 @@ namespace persistence
      *
      * This particular backend will create its own worker thread, on which all data operations will be executed.
      */
-    class SqliteBackend
+    class SqliteBackend final : public Backend
     {
     public:
       SqliteBackend(const std::string& databasePath);
@@ -114,42 +115,14 @@ namespace persistence
       void start();
       void stopAndJoin();
 
-      ChangeQueue& getChangeQueue() { return _changeQueue; }
+      ChangeQueue& changeQueue() { return _changeQueue; }
 
-      /**
-       * @brief Creates a new stream which connects the given observer to the given service endpoint
-       * @param observer The observer which will listen to the stream
-       * @param service The name of the backend service to connect to
-       * @param options Additional parameters for the service endpoint
-       * @return The shared state for the data stream
-       */
-      template <class T>
-      std::shared_ptr<DataStream> createStream(DataStreamObserverTyped<T> *observer, const std::string& service,
-                                               const nlohmann::json& options)
-      {
-        std::unique_lock<std::mutex> lock(_queueMutex);
-
-        auto sharedState = makeStream(DataStream::GetStreamTypeFor<T>(), service, options);
-        if (sharedState == nullptr)
-        {
-          sharedState = std::make_shared<DataStream>(StreamableType::NullStream, "", nlohmann::json());
-          std::cerr << "Unknown data stream for type \"" << typeid(T).name() << "\" and service \"" << service << "\"" << std::endl;
-        }
-
-        sharedState->connect(_nextStreamId++, observer);
-        _changeQueue.addStream(sharedState);
-        _dataStreams.addNewStream(sharedState);
-        lock.unlock();
-
-        _workAvailableCondition.notify_one();
-
-        return sharedState;
-      }
+    protected:
+      std::shared_ptr<DataStream> createStreamImpl(DataStreamObserver *observer, StreamableType type,
+                                                   const std::string &service, const nlohmann::json &options);
 
     private:
       void threadMain();
-
-      std::shared_ptr<DataStream> makeStream(StreamableType type, const std::string& service, const nlohmann::json& options);
 
       op::OperationResult executeOperation(op::EraseAllData&);
       op::OperationResult executeOperation(op::StoreNewHotel& op);

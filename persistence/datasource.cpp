@@ -29,7 +29,7 @@ namespace persistence
 
   ChangeQueue &DataSource::changeQueue()
   {
-    return _backend.getChangeQueue();
+    return _backend.changeQueue();
   }
 
 } // namespace persistence
