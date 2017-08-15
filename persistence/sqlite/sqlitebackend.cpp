@@ -248,7 +248,7 @@ namespace persistence
       _backendThread.join();
     }
 
-    std::shared_ptr<DataStream> SqliteBackend::createStreamImpl(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
+    std::shared_ptr<DataStream> SqliteBackend::createStream(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
     {
       std::unique_lock<std::mutex> lock(_queueMutex);
 

@@ -117,9 +117,8 @@ namespace persistence
 
       ChangeQueue& changeQueue() { return _changeQueue; }
 
-    protected:
-      std::shared_ptr<DataStream> createStreamImpl(DataStreamObserver *observer, StreamableType type,
-                                                   const std::string &service, const nlohmann::json &options);
+      std::shared_ptr<DataStream> createStream(DataStreamObserver *observer, StreamableType type,
+                                               const std::string &service, const nlohmann::json &options);
 
     private:
       void threadMain();
