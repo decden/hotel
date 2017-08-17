@@ -209,7 +209,7 @@ namespace persistence
   namespace sqlite
   {
   SqliteBackend::SqliteBackend(const std::string& databasePath)
-    : _storage(databasePath), _nextOperationId(1), _backendThread(), _quitBackendThread(false),
+    : _storage(databasePath), _nextOperationId(1), _nextStreamId(1), _backendThread(), _quitBackendThread(false),
       _workAvailableCondition(), _queueMutex(), _operationsQueue()
   {
   }

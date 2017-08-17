@@ -17,7 +17,7 @@ endif()
 
 find_package (Threads)
 
-find_package(Boost 1.58.0 REQUIRED COMPONENTS date_time)
+find_package(Boost 1.58.0 REQUIRED COMPONENTS date_time system)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -54,4 +54,5 @@ add_subdirectory(persistence)
 if (build_gui)
   add_subdirectory(gui)
   add_subdirectory(guiapp)
+  add_subdirectory(serverapp)
 endif()

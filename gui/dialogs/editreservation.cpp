@@ -23,7 +23,7 @@ namespace gui
       {
         Resolution resolution;
         resolution.merged = base;
-        for (int i = 0; i < base.size(); ++i)
+        for (int i = 0; i < static_cast<int>(base.size()); ++i)
         {
           bool oursChanged = base[i] != ours[i];
           bool theirsChanged = base[i] != theirs[i];

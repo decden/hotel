@@ -1,7 +1,7 @@
 #include "guiapp/testdata.h"
 
 #include "persistence/datasource.h"
-#include "persistence/sqlite/sqlitestorage.h"
+#include "persistence/net/netclientbackend.h"
 
 #include "gui/dialogs/editreservation.h"
 #include "gui/datasourcechangeintegrator.h"
@@ -21,7 +21,8 @@ int main(int argc, char** argv)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
-  persistence::DataSource dataSource("test.db");
+  persistence::DataSource dataSource(std::make_unique<persistence::net::NetClientBackend>("localhost", 46835));
+  //persistence::DataSource dataSource("test.db");
 
   if (app.arguments().contains("--createTestData"))
     guiapp::createTestData(dataSource);

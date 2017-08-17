@@ -53,6 +53,7 @@ namespace persistence
   {
     std::unique_lock<std::mutex> lock(_completedTasksMutex);
     _completedTasksQueue.push_back(taskId);
+    lock.unlock();
     _taskCompletedSignal();
   }
 
@@ -60,6 +61,7 @@ namespace persistence
   {
     std::unique_lock<std::mutex> lock(_streamChangesMutex);
     _streamChangeQueue.push_back({streamId, std::move(change)});
+    lock.unlock();
     _streamChangesAvailableSignal();
   }
 

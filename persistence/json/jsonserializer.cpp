@@ -6,88 +6,17 @@ namespace persistence
 {
   namespace json
   {
-    JsonSerializer::JsonSerializer() {}
-
-    nlohmann::json JsonSerializer::serializeHotelCollection(const hotel::HotelCollection &hotelCollection)
-    {
-      using json = nlohmann::json;
-      json resultJson = json::array();
-
-      for (auto& hotel : hotelCollection.hotels())
-      {
-        json hotelJson = {
-          {"id", hotel->id()},
-          {"name", hotel->name()}
-        };
-
-        hotelJson["categories"] = json::array();
-        for (auto& category : hotel->categories())
-        {
-          json categoryJson = {
-            {"id", category->id()},
-            {"shortCode", category->shortCode()},
-            {"name", category->name()}
-          };
-          hotelJson["categories"].push_back(categoryJson);
-        }
-
-        hotelJson["rooms"] = json::array();
-        for (auto& room : hotel->rooms())
-        {
-          json roomJson = {
-            {"id", room->id()},
-            {"categoryId", room->category()->id()},
-            {"name", room->name()}
-          };
-          hotelJson["rooms"].push_back(roomJson);
-        }
-
-        resultJson.push_back(hotelJson);
-      }
-
-      return resultJson;
-    }
-
-    nlohmann::json JsonSerializer::serializePlanning(const hotel::PlanningBoard &planning)
-    {
-      using json = nlohmann::json;
-      json resultJson;
-      resultJson = json::array();
-
-      for (auto& reservation : planning.reservations())
-      {
-        json reservationJson = {
-          {"id", reservation->id()},
-          {"description", reservation->description()},
-          {"atoms", json::array()}
-        };
-
-        for (auto& atom : reservation->atoms())
-        {
-          json atomJson = {
-            {"roomId", atom.roomId()},
-            {"from", boost::gregorian::to_iso_extended_string(atom.dateRange().begin())},
-            {"to", boost::gregorian::to_iso_extended_string(atom.dateRange().end())}
-          };
-          reservationJson["atoms"].push_back(atomJson);
-        }
-
-        resultJson.push_back(reservationJson);
-      }
-
-      return resultJson;
-    }
-
     nlohmann::json JsonSerializer::serialize(const hotel::Hotel &item)
     {
-      nlohmann::json obj;
-      obj["name"] = item.name();
+      nlohmann::json obj = {
+        {"name", item.name()},
+        {"categories", nlohmann::json::array()},
+        {"rooms", nlohmann::json::array()}
+      };
 
-      obj["categories"] = nlohmann::json::array();
       for (auto& category : item.categories())
         obj["categories"].push_back(JsonSerializer::serialize(*category));
 
-      obj["rooms"] = nlohmann::json::array();
       for (auto& room : item.rooms())
         obj["rooms"].push_back(JsonSerializer::serialize(*room));
 
@@ -98,7 +27,7 @@ namespace persistence
     nlohmann::json JsonSerializer::serialize(const hotel::RoomCategory &item)
     {
       nlohmann::json obj = {
-        {"shortCode", item.shortCode()},
+        {"short_code", item.shortCode()},
         {"name", item.name()}
       };
       setCommonPersistentObjectFields(item, obj);
@@ -108,7 +37,7 @@ namespace persistence
     nlohmann::json JsonSerializer::serialize(const hotel::HotelRoom &item)
     {
       nlohmann::json obj = {
-        {"categoryId", item.category()->id()},
+        {"category_id", item.category()->shortCode()},
         {"name", item.name()}
       };
       setCommonPersistentObjectFields(item ,obj);
@@ -117,7 +46,27 @@ namespace persistence
 
     nlohmann::json JsonSerializer::serialize(const hotel::Reservation &item)
     {
-      return {{"Reservation", "Reservation"}};
+      nlohmann::json obj = {
+        {"description", item.description()},
+        {"atoms", nlohmann::json::array()}
+      };
+
+      for (auto& atom : item.atoms())
+        obj["atoms"].push_back(JsonSerializer::serialize(atom));
+
+      setCommonPersistentObjectFields(item, obj);
+      return obj;
+    }
+
+    nlohmann::json JsonSerializer::serialize(const hotel::ReservationAtom &item)
+    {
+      nlohmann::json obj = {
+        {"room_id", item.roomId()},
+        {"from", boost::gregorian::to_iso_extended_string(item.dateRange().begin())},
+        {"to", boost::gregorian::to_iso_extended_string(item.dateRange().end())}
+      };
+      setCommonPersistentObjectFields(item, obj);
+      return obj;
     }
 
     nlohmann::json JsonSerializer::serialize(const hotel::Person &item)
@@ -187,10 +136,73 @@ namespace persistence
       return obj;
     }
 
+    hotel::Hotel JsonSerializer::deserializeHotel(const nlohmann::json &json)
+    {
+      std::string name = json["name"];
+      hotel::Hotel hotel(name);
+
+      for (auto &category : json["categories"])
+        hotel.addRoomCategory(std::make_unique<hotel::RoomCategory>(deserializeRoomCategory(category)));
+
+      for (auto &room : json["rooms"])
+        hotel.addRoom(std::make_unique<hotel::HotelRoom>(deserializeHotelRoom(room)), room["category_id"]);
+
+      deserializeCommonPersistenceObjectFields(hotel, json);
+      return hotel;
+    }
+
+    hotel::RoomCategory JsonSerializer::deserializeRoomCategory(const nlohmann::json &json)
+    {
+      hotel::RoomCategory category(json["short_code"], json["name"]);
+      deserializeCommonPersistenceObjectFields(category, json);
+      return category;
+    }
+
+    hotel::HotelRoom JsonSerializer::deserializeHotelRoom(const nlohmann::json &json)
+    {
+      std::string name = json["name"];
+      hotel::HotelRoom room(name);
+      deserializeCommonPersistenceObjectFields(room, json);
+      return room;
+    }
+
+    hotel::Reservation JsonSerializer::deserializeReservation(const nlohmann::json &json)
+    {
+      std::string description = json["description"];
+      hotel::Reservation reservation(description);
+      for (auto &atom : json["atoms"])
+        reservation.addAtom(deserializeReservationAtom(atom));
+      deserializeCommonPersistenceObjectFields(reservation, json);
+      return reservation;
+    }
+
+    hotel::ReservationAtom JsonSerializer::deserializeReservationAtom(const nlohmann::json &json)
+    {
+      auto fromDate = boost::gregorian::from_string(json["from"]);
+      auto toDate = boost::gregorian::from_string(json["to"]);
+
+      hotel::ReservationAtom atom(json["room_id"], boost::gregorian::date_period(fromDate, toDate));
+      deserializeCommonPersistenceObjectFields(atom, json);
+      return atom;
+    }
+
+    hotel::Person JsonSerializer::deserializePerson(const nlohmann::json &json)
+    {
+      // Not implemented...
+      assert(false);
+      return hotel::Person("", "");
+    }
+
     void JsonSerializer::setCommonPersistentObjectFields(const hotel::PersistentObject &obj, nlohmann::json &json)
     {
       json["id"] = obj.id();
       json["rev"] = obj.revision();
+    }
+
+    void JsonSerializer::deserializeCommonPersistenceObjectFields(hotel::PersistentObject &obj, const nlohmann::json &json)
+    {
+      obj.setId(json["id"]);
+      obj.setRevision(json["rev"]);
     }
 
   } // namespace json

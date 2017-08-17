@@ -13,19 +13,14 @@ namespace persistence
 {
   namespace json
   {
-
     class JsonSerializer
     {
     public:
-      JsonSerializer();
-
-      nlohmann::json serializeHotelCollection(const hotel::HotelCollection& hotelCollection);
-      nlohmann::json serializePlanning(const hotel::PlanningBoard& planning);
-
       static nlohmann::json serialize(const hotel::Hotel& item);
       static nlohmann::json serialize(const hotel::RoomCategory& item);
       static nlohmann::json serialize(const hotel::HotelRoom& item);
       static nlohmann::json serialize(const hotel::Reservation& item);
+      static nlohmann::json serialize(const hotel::ReservationAtom& item);
       static nlohmann::json serialize(const hotel::Person& item);
 
       static nlohmann::json serialize(const op::Operation& operation);
@@ -37,8 +32,15 @@ namespace persistence
       static nlohmann::json serialize(const op::UpdateReservation& operation);
       static nlohmann::json serialize(const op::DeleteReservation& operation);
 
+      static hotel::Hotel deserializeHotel(const nlohmann::json &json);
+      static hotel::RoomCategory deserializeRoomCategory(const nlohmann::json &json);
+      static hotel::HotelRoom deserializeHotelRoom(const nlohmann::json &json);
+      static hotel::Reservation deserializeReservation(const nlohmann::json &json);
+      static hotel::ReservationAtom deserializeReservationAtom(const nlohmann::json &json);
+      static hotel::Person deserializePerson(const nlohmann::json &json);
     private:
       static void setCommonPersistentObjectFields(const hotel::PersistentObject &obj, nlohmann::json &json);
+      static void deserializeCommonPersistenceObjectFields(hotel::PersistentObject &obj, const nlohmann::json &json);
     };
 
   } // namespace json
