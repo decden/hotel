@@ -208,16 +208,16 @@ namespace persistence
 
   namespace sqlite
   {
-  SqliteBackend::SqliteBackend(const std::string& databasePath)
-    : _storage(databasePath), _nextOperationId(1), _nextStreamId(1), _backendThread(), _quitBackendThread(false),
-      _workAvailableCondition(), _queueMutex(), _operationsQueue()
-  {
-  }
+    SqliteBackend::SqliteBackend(const std::string& databasePath)
+      : _storage(databasePath), _nextOperationId(1), _nextStreamId(1), _backendThread(), _quitBackendThread(false),
+        _workAvailableCondition(), _queueMutex(), _operationsQueue()
+    {
+    }
 
-  op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
-  {
-    // Create a task
-    auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
+    op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
+    {
+      // Create a task
+      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
       op::Task<op::OperationResults> task(sharedState);
       _changeQueue.addTask(sharedState);
 

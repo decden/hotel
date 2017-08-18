@@ -15,13 +15,15 @@ namespace persistence
     class JsonSerializer
     {
     public:
-      static nlohmann::json serializeStreamAddMessage(int streamId, const persistence::StreamableItems &items);
-      static nlohmann::json serializeStreamUpdateMessage(int streamId, const persistence::StreamableItems &items);
-      static nlohmann::json serializeStreamRemoveMessage(int streamId, const std::vector<int> &ids);
+      static nlohmann::json serializeStreamAddMessage(int streamId, const persistence::StreamableItems& items);
+      static nlohmann::json serializeStreamUpdateMessage(int streamId, const persistence::StreamableItems& items);
+      static nlohmann::json serializeStreamRemoveMessage(int streamId, const std::vector<int>& ids);
       static nlohmann::json serializeStreamClearMessage(int streamId);
       static nlohmann::json serializeStreamInitializeMessage(int streamId);
 
-      static std::pair<int, persistence::StreamableItems> deserializeStreamAddMessage(const nlohmann::json &json);
+      static std::pair<int, persistence::StreamableItems> deserializeStreamAddMessage(const nlohmann::json& json);
+      static std::pair<int, persistence::StreamableItems> deserializeStreamUpdateMessage(const nlohmann::json& json);
+
     private:
       static persistence::StreamableItems deserializeStreamableItems(const std::string &type, const nlohmann::json &array);
 

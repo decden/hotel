@@ -49,6 +49,8 @@ namespace persistence
       nlohmann::json obj = {
         {"description", item.description()},
         {"status", (int)item.status()},
+        {"adults", item.numberOfAdults()},
+        {"children", item.numberOfChildren()},
         {"atoms", nlohmann::json::array()}
       };
 
@@ -173,6 +175,8 @@ namespace persistence
       int status = json["status"];
       hotel::Reservation reservation(description);
       reservation.setStatus((hotel::Reservation::ReservationStatus)status);
+      reservation.setNumberOfAdults(json["adults"]);
+      reservation.setNumberOfChildren(json["children"]);
       for (auto &atom : json["atoms"])
         reservation.addAtom(deserializeReservationAtom(atom));
       deserializeCommonPersistenceObjectFields(reservation, json);

@@ -83,6 +83,17 @@ namespace persistence
       return std::make_pair(id, std::move(items));
     }
 
+    std::pair<int, StreamableItems> JsonSerializer::deserializeStreamUpdateMessage(const nlohmann::json &json)
+    {
+      assert(json["op"] == "stream_update");
+      int id = json["id"];
+
+      std::string type = json["type"];
+      StreamableItems items = deserializeStreamableItems(type, json["items"]);
+
+      return std::make_pair(id, std::move(items));
+    }
+
     StreamableItems JsonSerializer::deserializeStreamableItems(const std::string &type, const nlohmann::json &array)
     {
       if (type == "hotel")

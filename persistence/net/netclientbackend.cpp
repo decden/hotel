@@ -188,8 +188,15 @@ namespace persistence
       {
         int id;
         persistence::StreamableItems items;
-        std::tie(id, items) =  persistence::net::JsonSerializer::deserializeStreamAddMessage(obj);
+        std::tie(id, items) = persistence::net::JsonSerializer::deserializeStreamAddMessage(obj);
         _changeQueue.addStreamChange(id, DataStreamItemsAdded{std::move(items)});
+      }
+      else if (operation == "stream_update")
+      {
+        int id;
+        persistence::StreamableItems items;
+        std::tie(id, items) = persistence::net::JsonSerializer::deserializeStreamUpdateMessage(obj);
+        _changeQueue.addStreamChange(id, DataStreamItemsUpdated{std::move(items)});
       }
       else
       {

@@ -160,6 +160,23 @@ private:
   void runScheduleOperations(const nlohmann::json &obj)
   {
     std::cout << " [R] Schedule " << obj["operations"].size() << " operation(s)" << std::endl;
+
+    persistence::op::Operations operations;
+    for (auto& operation : obj["operations"])
+    {
+      auto opType = operation["op"];
+      std::cout << "  " << opType << std::endl;
+      if (opType == "update_reservation")
+      {
+        auto reservation = persistence::json::JsonSerializer::deserializeReservation(operation["o"]);
+        operations.push_back(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
+      }
+      else
+        std::cout << " [!] Unknown operation " << opType << ": " << operation << std::endl;
+    }
+
+    // TODO: Observe the task and notify the client when it completes
+    _backend.queueOperation(std::move(operations));
   }
 
   std::vector<std::pair<persistence::UniqueDataStreamHandle, std::unique_ptr<persistence::DataStreamObserver>>> _streams;
