@@ -48,6 +48,7 @@ namespace persistence
     {
       nlohmann::json obj = {
         {"description", item.description()},
+        {"status", (int)item.status()},
         {"atoms", nlohmann::json::array()}
       };
 
@@ -169,7 +170,9 @@ namespace persistence
     hotel::Reservation JsonSerializer::deserializeReservation(const nlohmann::json &json)
     {
       std::string description = json["description"];
+      int status = json["status"];
       hotel::Reservation reservation(description);
+      reservation.setStatus((hotel::Reservation::ReservationStatus)status);
       for (auto &atom : json["atoms"])
         reservation.addAtom(deserializeReservationAtom(atom));
       deserializeCommonPersistenceObjectFields(reservation, json);
