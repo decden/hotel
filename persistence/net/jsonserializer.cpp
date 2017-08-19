@@ -16,7 +16,7 @@ namespace persistence
       auto array = nlohmann::json::array();
       boost::apply_visitor([&](auto& items) {
         for (auto& item : items)
-          array.push_back(persistence::json::JsonSerializer::serialize(item));
+          array.push_back(persistence::json::serialize(item));
       }, items);
       obj["items"] = array;
 
@@ -34,7 +34,7 @@ namespace persistence
       auto array = nlohmann::json::array();
       boost::apply_visitor([&](auto& items) {
         for (auto& item : items)
-          array.push_back(persistence::json::JsonSerializer::serialize(item));
+          array.push_back(persistence::json::serialize(item));
       }, items);
       obj["items"] = array;
 
@@ -101,7 +101,7 @@ namespace persistence
         std::vector<hotel::Hotel> data;
         data.reserve(array.size());
         for (auto &item : array)
-          data.push_back(persistence::json::JsonSerializer::deserializeHotel(item));
+          data.push_back(persistence::json::deserialize<hotel::Hotel>(item));
         return  StreamableItems(std::move(data));
       }
       else if (type == "reservation")
@@ -109,7 +109,7 @@ namespace persistence
         std::vector<hotel::Reservation> data;
         data.reserve(array.size());
         for (auto &item : array)
-          data.push_back(persistence::json::JsonSerializer::deserializeReservation(item));
+          data.push_back(persistence::json::deserialize<hotel::Reservation>(item));
         return StreamableItems(std::move(data));
       }
       else

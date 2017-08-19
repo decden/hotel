@@ -13,35 +13,36 @@ namespace persistence
 {
   namespace json
   {
-    class JsonSerializer
-    {
-    public:
-      static nlohmann::json serialize(const hotel::Hotel& item);
-      static nlohmann::json serialize(const hotel::RoomCategory& item);
-      static nlohmann::json serialize(const hotel::HotelRoom& item);
-      static nlohmann::json serialize(const hotel::Reservation& item);
-      static nlohmann::json serialize(const hotel::ReservationAtom& item);
-      static nlohmann::json serialize(const hotel::Person& item);
+    template <class T> nlohmann::json serialize(const T& item);
+    template <class T> T deserialize(const nlohmann::json& json);
 
-      static nlohmann::json serialize(const op::Operation& operation);
-      static nlohmann::json serialize(const op::EraseAllData& operation);
-      static nlohmann::json serialize(const op::StoreNewHotel& operation);
-      static nlohmann::json serialize(const op::StoreNewReservation& operation);
-      static nlohmann::json serialize(const op::StoreNewPerson& operation);
-      static nlohmann::json serialize(const op::UpdateHotel& operation);
-      static nlohmann::json serialize(const op::UpdateReservation& operation);
-      static nlohmann::json serialize(const op::DeleteReservation& operation);
+    // Basic hotel datatypes
+    template <> nlohmann::json serialize(const hotel::PersistentObject& item);
+    template <> nlohmann::json serialize(const hotel::Hotel& item);
+    template <> nlohmann::json serialize(const hotel::RoomCategory& item);
+    template <> nlohmann::json serialize(const hotel::HotelRoom& item);
+    template <> nlohmann::json serialize(const hotel::Reservation& item);
+    template <> nlohmann::json serialize(const hotel::Reservation::ReservationStatus& item);
+    template <> nlohmann::json serialize(const hotel::ReservationAtom& item);
+    template <> nlohmann::json serialize(const hotel::Person& item);
 
-      static hotel::Hotel deserializeHotel(const nlohmann::json &json);
-      static hotel::RoomCategory deserializeRoomCategory(const nlohmann::json &json);
-      static hotel::HotelRoom deserializeHotelRoom(const nlohmann::json &json);
-      static hotel::Reservation deserializeReservation(const nlohmann::json &json);
-      static hotel::ReservationAtom deserializeReservationAtom(const nlohmann::json &json);
-      static hotel::Person deserializePerson(const nlohmann::json &json);
-    private:
-      static void setCommonPersistentObjectFields(const hotel::PersistentObject &obj, nlohmann::json &json);
-      static void deserializeCommonPersistenceObjectFields(hotel::PersistentObject &obj, const nlohmann::json &json);
-    };
+    void deserializePersistentObject(hotel::PersistentObject& item, const nlohmann::json& json);
+    template <> hotel::Hotel deserialize(const nlohmann::json& json);
+    template <> hotel::RoomCategory deserialize(const nlohmann::json& json);
+    template <> hotel::HotelRoom deserialize(const nlohmann::json& json);
+    template <> hotel::Reservation deserialize(const nlohmann::json& json);
+    template <> hotel::ReservationAtom deserialize(const nlohmann::json& json);
+    template <> hotel::Reservation::ReservationStatus deserialize(const nlohmann::json& json);
+    template <> hotel::Person deserialize(const nlohmann::json& json);
+
+    template <> nlohmann::json serialize(const op::Operation& operation);
+    template <> nlohmann::json serialize(const op::EraseAllData& operation);
+    template <> nlohmann::json serialize(const op::StoreNewHotel& operation);
+    template <> nlohmann::json serialize(const op::StoreNewReservation& operation);
+    template <> nlohmann::json serialize(const op::StoreNewPerson& operation);
+    template <> nlohmann::json serialize(const op::UpdateHotel& operation);
+    template <> nlohmann::json serialize(const op::UpdateReservation& operation);
+    template <> nlohmann::json serialize(const op::DeleteReservation& operation);
 
   } // namespace json
 } // namespace persistence

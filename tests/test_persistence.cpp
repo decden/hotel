@@ -2,6 +2,7 @@
 
 #include "persistence/datasource.h"
 #include "persistence/op/operations.h"
+#include "persistence/json/jsonserializer.h"
 
 #include "hotel/hotelcollection.h"
 
@@ -252,5 +253,26 @@ TEST_F(Persistence, DataStreamsServices)
   ASSERT_EQ(0u, hotel.items().size());
   ASSERT_EQ(0u, reservations.items().size());
   ASSERT_EQ(0u, reservation.items().size());
+}
 
+TEST_F(Persistence, Serialization)
+{
+  hotel::Hotel hotelOrig("hello");
+  hotelOrig.setId(42);
+  hotelOrig.setRevision(4200);
+  auto hotelCopy = persistence::json::deserialize<hotel::Hotel>(persistence::json::serialize(hotelOrig));
+  ASSERT_EQ(hotelOrig, hotelCopy);
+  ASSERT_EQ(hotelOrig.id(), hotelCopy.id());
+  ASSERT_EQ(hotelOrig.revision(), hotelCopy.revision());
+
+  hotel::Reservation reservationOrig(
+      "Test reservation", 123,
+      boost::gregorian::date_period(boost::gregorian::date(2017, 8, 20), boost::gregorian::date(2017, 9, 10)));
+  reservationOrig.setStatus(hotel::Reservation::CheckedIn);
+  reservationOrig.setId(42);
+  reservationOrig.setRevision(4200);
+  auto reservationCopy = persistence::json::deserialize<hotel::Reservation>(persistence::json::serialize(reservationOrig));
+  ASSERT_EQ(reservationCopy, reservationOrig);
+  ASSERT_EQ(reservationCopy.id(), reservationOrig.id());
+  ASSERT_EQ(reservationCopy.revision(), reservationOrig.revision());
 }

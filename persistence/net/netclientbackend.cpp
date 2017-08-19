@@ -61,7 +61,7 @@ namespace persistence
       obj["op"] = "schedule_operations";
       std::vector<nlohmann::json> operationsArray;
       for (auto &operation : operations)
-        operationsArray.push_back(json::JsonSerializer::serialize(operation));
+        operationsArray.push_back(json::serialize(operation));
       obj["operations"]= operationsArray;
       submit(obj.dump());
 

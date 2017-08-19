@@ -168,7 +168,7 @@ private:
       std::cout << "  " << opType << std::endl;
       if (opType == "update_reservation")
       {
-        auto reservation = persistence::json::JsonSerializer::deserializeReservation(operation["o"]);
+        auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
         operations.push_back(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
       }
       else
