@@ -151,10 +151,10 @@ private:
     int clientId = obj["id"];
     auto type = static_cast<persistence::StreamableType>((int)obj["type"]);
     auto observer = std::make_unique<SessionStreamObserver>(*this, clientId);
-    auto stream = _backend.createStream(observer.get(), type, obj["service"], obj["options"]);
-    int serverId = stream->streamId();
+    auto streamHandle = _backend.createStream(observer.get(), type, obj["service"], obj["options"]);
+    int serverId = streamHandle.stream()->streamId();
     std::cout << " [R] Create stream s[" << serverId << "] => c[" << clientId << "]" << std::endl;
-    _streams.emplace_back(persistence::UniqueDataStreamHandle(stream), std::move(observer));
+    _streams.emplace_back(std::move(streamHandle), std::move(observer));
   }
 
   void runScheduleOperations(const nlohmann::json &obj)
@@ -176,7 +176,7 @@ private:
     }
 
     // TODO: Observe the task and notify the client when it completes
-    _backend.queueOperation(std::move(operations));
+    _backend.queueOperations(std::move(operations));
   }
 
   std::vector<std::pair<persistence::UniqueDataStreamHandle, std::unique_ptr<persistence::DataStreamObserver>>> _streams;
@@ -239,7 +239,6 @@ int main(int argc, char** argv)
   persistence::sqlite::SqliteBackend dataBackend("data.db");
   Server server(dataBackend);
 
-  dataBackend.start();
   auto handleChanges = [&]()
   {
     server.ioService().post([&](){
@@ -252,5 +251,4 @@ int main(int argc, char** argv)
   std::cout << std::endl << "starting server..." << std::endl;
 
   server.run();
-  dataBackend.stopAndJoin();
 }

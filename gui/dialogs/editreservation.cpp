@@ -58,8 +58,8 @@ namespace gui
     }
 
 
-    EditReservationDialog::EditReservationDialog(persistence::DataSource& ds, int objectId)
-        : QDialog(nullptr), _dataSource(ds)
+    EditReservationDialog::EditReservationDialog(persistence::Backend &backend, int objectId)
+        : QDialog(nullptr), _backend(backend)
     {
       setAttribute(Qt::WA_DeleteOnClose);
       setMinimumWidth(500);
@@ -75,7 +75,7 @@ namespace gui
       // Connect to data stream
       nlohmann::json options;
       options["id"] = objectId;
-      _reservationStreamHandle.connect(ds, "reservation.by_id", options);
+      _reservationStreamHandle.connect(backend, "reservation.by_id", options);
 
       auto layout = new QGridLayout();
       auto buttonsLayout = new QHBoxLayout();
@@ -122,7 +122,7 @@ namespace gui
 
       auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       Form::SetItemFromTuple(*updatedReservation, _form.formValues());
-      _saveTask = _dataSource.queueOperation(persistence::op::UpdateReservation{std::move(updatedReservation)});
+      _saveTask = _backend.queueOperation(persistence::op::UpdateReservation{std::move(updatedReservation)});
       _saveTaskUpdatedConnection = _saveTask->connectToChangedSignal(boost::bind(&EditReservationDialog::saveTaskUpdated, this));
 
       updateUI();

@@ -1,7 +1,7 @@
 #ifndef GUI_DATASTREAMOBSERVERADAPTER_H
 #define GUI_DATASTREAMOBSERVERADAPTER_H
 
-#include "persistence/datasource.h"
+#include "persistence/backend.h"
 #include "persistence/datastreamobserver.h"
 
 #include <boost/signals2.hpp>
@@ -15,9 +15,9 @@ namespace gui
   class DataStreamObserverAdapter : public persistence::DataStreamObserverTyped<T>
   {
   public:
-    void connect(persistence::DataSource& dataSource, const std::string& endpoint = "", const nlohmann::json& options = {})
+    void connect(persistence::Backend& backend, const std::string& endpoint = "", const nlohmann::json& options = {})
     {
-      _streamHandle = dataSource.connectToStream(this, endpoint, options);
+      _streamHandle = backend.createStreamTyped(this, endpoint, options);
     }
 
     // DataStreamObserver<T> interface

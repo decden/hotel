@@ -1,7 +1,6 @@
 set(SRC
   backend.cpp
   changequeue.cpp
-  datasource.cpp
   datastream.cpp
   datastreamobserver.cpp
 
@@ -22,7 +21,6 @@ set(SRC
 set(SRC_INCLUDES
   backend.h
   changequeue.h
-  datasource.h
   datastream.h
   datastreamobserver.h
 

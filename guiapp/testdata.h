@@ -1,7 +1,7 @@
 #ifndef GUIAPP_TESTDATA_H
 #define GUIAPP_TESTDATA_H
 
-#include "persistence/datasource.h"
+#include "persistence/backend.h"
 
 #include "hotel/hotel.h"
 #include "hotel/hotelcollection.h"
@@ -18,7 +18,7 @@ namespace guiapp
    * @note This function does destroy anything that was previously contained in the database. This function is meant
    *       to be used only during development for testing.
    */
-  void createTestData(persistence::DataSource& dataSource);
+  void createTestData(persistence::Backend& backend);
 
   std::vector<std::unique_ptr<hotel::Hotel>> createTestHotels(std::mt19937& rng);
   std::unique_ptr<hotel::PlanningBoard> createTestPlanning(std::mt19937& rng, const std::vector<hotel::Hotel> &hotels);

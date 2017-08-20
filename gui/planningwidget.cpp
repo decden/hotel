@@ -5,10 +5,10 @@
 
 namespace gui
 {
-  PlanningWidget::PlanningWidget(persistence::DataSource& dataSource)
+  PlanningWidget::PlanningWidget(persistence::Backend &backend)
   {
     // Assign the data
-    _context.setDataSource(&dataSource);
+    _context.setDataBackend(&backend);
 
     // Initialize the layout object with the above data
     _context.setPivotDate(boost::gregorian::day_clock::local_day());
@@ -46,8 +46,8 @@ namespace gui
     _context.reservationDoubleClickedSignal().connect(boost::bind(&PlanningWidget::emitReservationDoubleClicked, this, boost::placeholders::_1));
 
     // Connect to streams
-    _hotelsStream.connect(dataSource);
-    _reservationsStream.connect(dataSource);
+    _hotelsStream.connect(backend);
+    _reservationsStream.connect(backend);
 
     grid->addWidget(_dateBar, 0, 1);
     grid->addWidget(_roomList, 1, 0);
@@ -84,7 +84,7 @@ namespace gui
       persistence::op::Operations removals;
       for (auto reservation : _context.selectedReservations())
         removals.push_back(persistence::op::DeleteReservation{reservation->id()});
-      _context.dataSource().queueOperations(std::move(removals));
+      _context.dataBackend().queueOperations(std::move(removals));
     }
 
     if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)

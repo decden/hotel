@@ -1,7 +1,7 @@
 #ifndef GUI_DATASOURCECHANGEINTEGRATOR_H
 #define GUI_DATASOURCECHANGEINTEGRATOR_H
 
-#include "persistence/datasource.h"
+#include "persistence/backend.h"
 
 #include <QObject>
 
@@ -19,7 +19,7 @@ namespace gui
   {
     Q_OBJECT
   public:
-    ChangeIntegrator(persistence::DataSource* dataSource);
+    ChangeIntegrator(persistence::Backend* backend);
 
   signals:
     void resultsAvailable();
@@ -31,7 +31,7 @@ namespace gui
 
     std::atomic<bool> _eventScheduled;
     std::array<boost::signals2::connection, 2> _connections;
-    persistence::DataSource* _ds;
+    persistence::Backend* _backend;
   };
 
 } // namespace gui

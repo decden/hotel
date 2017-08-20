@@ -109,18 +109,19 @@ namespace persistence
     {
     public:
       SqliteBackend(const std::string& databasePath);
+      virtual ~SqliteBackend();
 
-      op::Task<op::OperationResults> queueOperation(op::Operations operations);
+      op::Task<op::OperationResults> queueOperations(op::Operations operations);
 
-      void start();
-      void stopAndJoin();
+      virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
+                                                               const std::string& service,
+                                                               const nlohmann::json& options) override;
 
       ChangeQueue& changeQueue() { return _changeQueue; }
 
-      std::shared_ptr<DataStream> createStream(DataStreamObserver *observer, StreamableType type,
-                                               const std::string &service, const nlohmann::json &options);
-
     private:
+      void start();
+      void stopAndJoin();
       void threadMain();
 
       op::OperationResult executeOperation(op::EraseAllData&);

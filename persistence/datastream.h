@@ -114,6 +114,8 @@ namespace persistence
     UniqueDataStreamHandle& operator=(UniqueDataStreamHandle&& that) = default;
     ~UniqueDataStreamHandle() { if (_dataStream) _dataStream->disconnect(); }
 
+    DataStream* stream() { return _dataStream.get(); }
+
   private:
     std::shared_ptr<DataStream> _dataStream;
   };

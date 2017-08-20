@@ -26,17 +26,19 @@ namespace persistence
     {
     public:
       NetClientBackend(const std::string& host, int port);
-
-      virtual void start() override;
-      virtual void stopAndJoin() override;
+      virtual ~NetClientBackend();
 
       virtual ChangeQueue& changeQueue() override;
-      virtual op::Task<op::OperationResults> queueOperation(op::Operations operations) override;
+      virtual op::Task<op::OperationResults> queueOperations(op::Operations operations) override;
 
-      virtual std::shared_ptr<DataStream> createStream(DataStreamObserver *observer, StreamableType type,
-                                                       const std::string &service, const nlohmann::json &options) override;
+      virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
+                                                               const std::string& service,
+                                                               const nlohmann::json& options) override;
 
     private:
+      void start();
+      void stopAndJoin();
+
 //      typedef std::pair<op::Operations, std::shared_ptr<op::TaskSharedState<op::OperationResults>>> QueuedOperation;
 //      typedef std::shared_ptr<DataStream> QueuedStream;
 //      typedef boost::variant<QueuedOperation, QueuedStream> QueuedMessage;

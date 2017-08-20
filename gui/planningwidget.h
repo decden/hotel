@@ -8,7 +8,6 @@
 #include "gui/planningwidget/roomlistwidget.h"
 #include "gui/datastreamobserveradapter.h"
 
-#include "persistence/datasource.h"
 #include "persistence/sqlite/sqlitestorage.h"
 
 #include "hotel/hotel.h"
@@ -37,7 +36,7 @@ namespace gui
   {
     Q_OBJECT
   public:
-    PlanningWidget(persistence::DataSource& dataSource);
+    PlanningWidget(persistence::Backend& backend);
 
     void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
     void activateTool(const std::string& toolName);

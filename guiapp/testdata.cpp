@@ -1,5 +1,8 @@
 #include "guiapp/testdata.h"
 
+#include "persistence/backend.h"
+#include "persistence/changequeue.h"
+
 #include "hotel/reservation.h"
 
 #include <boost/range/irange.hpp>
@@ -140,14 +143,14 @@ namespace guiapp
     return planning;
   }
 
-  void waitForTasks(persistence::DataSource& ds, std::vector<persistence::op::Task<persistence::op::OperationResults>>& pendingTasks)
+  void waitForTasks(persistence::Backend& backend, std::vector<persistence::op::Task<persistence::op::OperationResults>>& pendingTasks)
   {
     std::for_each(pendingTasks.begin(), pendingTasks.end(),
                   [](persistence::op::Task<persistence::op::OperationResults>& task) { task.waitForCompletion(); });
-    ds.changeQueue().applyStreamChanges();
+    backend.changeQueue().applyStreamChanges();
   }
 
-  void createTestData(persistence::DataSource &dataSource)
+  void createTestData(persistence::Backend &backend)
   {
 
     // Get us some random test data
@@ -156,16 +159,16 @@ namespace guiapp
 
     // Store all of the random test data into the database
     persistence::VectorDataStreamObserver<hotel::Hotel> hotelsStream;
-    auto hotelsStreamHandle = dataSource.connectToStream(&hotelsStream);
+    auto hotelsStreamHandle = backend.createStreamTyped(&hotelsStream);
 
     // Store hotels
     {
       std::vector<persistence::op::Task<persistence::op::OperationResults>> pendingTasks;
-      dataSource.queueOperation(persistence::op::EraseAllData());
+      backend.queueOperation(persistence::op::EraseAllData());
       auto hotels = createTestHotels(rng);
       for (auto& hotel : hotels)
-        pendingTasks.push_back(dataSource.queueOperation(persistence::op::StoreNewHotel{std::move(hotel)}));
-      waitForTasks(dataSource, pendingTasks);
+        pendingTasks.push_back(backend.queueOperation(persistence::op::StoreNewHotel{std::move(hotel)}));
+      waitForTasks(backend, pendingTasks);
     }
 
     // Store reservations
@@ -175,8 +178,8 @@ namespace guiapp
       for (auto& reservation : planning->reservations())
         operations.push_back(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(*reservation) });
       std::vector<persistence::op::Task<persistence::op::OperationResults>> pendingTasks;
-      pendingTasks.push_back(dataSource.queueOperations(std::move(operations)));
-      waitForTasks(dataSource, pendingTasks);
+      pendingTasks.push_back(backend.queueOperations(std::move(operations)));
+      waitForTasks(backend, pendingTasks);
     }
   }
 

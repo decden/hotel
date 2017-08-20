@@ -17,6 +17,12 @@ namespace persistence
     NetClientBackend::NetClientBackend(const std::string &host, int port)
       : _host(host), _port(port), _status(NotConnected), _ioService(), _socket(_ioService)
     {
+      start();
+    }
+
+    NetClientBackend::~NetClientBackend()
+    {
+      stopAndJoin();
     }
 
     void NetClientBackend::start()
@@ -40,7 +46,6 @@ namespace persistence
 
     void NetClientBackend::stopAndJoin()
     {
-      // TODO: Quit IO service
       _ioService.post([this](){ _socket.close(); });
       _communicationThread.join();
     }
@@ -50,7 +55,7 @@ namespace persistence
       return _changeQueue;
     }
 
-    op::Task<op::OperationResults> NetClientBackend::queueOperation(op::Operations operations)
+    op::Task<op::OperationResults> NetClientBackend::queueOperations(op::Operations operations)
     {
       // Create a task
       auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
@@ -68,7 +73,9 @@ namespace persistence
       return sharedState;
     }
 
-    std::shared_ptr<DataStream> NetClientBackend::createStream(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
+    persistence::UniqueDataStreamHandle NetClientBackend::createStream(DataStreamObserver* observer,
+                                                                       StreamableType type, const std::string& service,
+                                                                       const nlohmann::json& options)
     {
       auto stream = std::make_shared<DataStream>(type, service, options);
       stream->connect(_nextStreamId, observer);

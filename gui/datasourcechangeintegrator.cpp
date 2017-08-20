@@ -1,14 +1,16 @@
 #include "gui/datasourcechangeintegrator.h"
 
+#include "persistence/changequeue.h"
+
 namespace gui
 {
 
-  ChangeIntegrator::ChangeIntegrator(persistence::DataSource* dataSource) : _ds(dataSource)
+  ChangeIntegrator::ChangeIntegrator(persistence::Backend* backend) : _backend(backend)
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
 
-    _connections[0] = _ds->changeQueue().connectToTaskCompletedSignal([this]() { this->emitResultsAvailable(); });
-    _connections[1] = _ds->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); });
+    _connections[0] = _backend->changeQueue().connectToTaskCompletedSignal([this]() { this->emitResultsAvailable(); });
+    _connections[1] = _backend->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); });
 
     // Initial update...
     handleAvailableResults();
@@ -16,8 +18,8 @@ namespace gui
 
   void ChangeIntegrator::handleAvailableResults() {
     _eventScheduled = false;
-    _ds->changeQueue().applyStreamChanges();
-    _ds->changeQueue().notifyCompletedTasks();
+    _backend->changeQueue().applyStreamChanges();
+    _backend->changeQueue().notifyCompletedTasks();
   }
 
   void ChangeIntegrator::emitResultsAvailable() {

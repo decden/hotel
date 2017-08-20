@@ -183,7 +183,7 @@ namespace gui
 
           namespace op = persistence::op;
           for (auto& reservation : reservations)
-            _context->dataSource().queueOperation(op::StoreNewReservation{std::move(reservation)});
+            _context->dataBackend().queueOperation(op::StoreNewReservation{std::move(reservation)});
         }
       }
     }

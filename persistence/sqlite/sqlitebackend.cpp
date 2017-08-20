@@ -212,9 +212,15 @@ namespace persistence
       : _storage(databasePath), _nextOperationId(1), _nextStreamId(1), _backendThread(), _quitBackendThread(false),
         _workAvailableCondition(), _queueMutex(), _operationsQueue()
     {
+      start();
     }
 
-    op::Task<op::OperationResults> SqliteBackend::queueOperation(op::Operations operations)
+    SqliteBackend::~SqliteBackend()
+    {
+      stopAndJoin();
+    }
+
+    op::Task<op::OperationResults> SqliteBackend::queueOperations(op::Operations operations)
     {
       // Create a task
       auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
@@ -238,17 +244,18 @@ namespace persistence
 
     void SqliteBackend::stopAndJoin()
     {
-      assert(_backendThread.joinable());
+      if (_backendThread.joinable())
+      {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _quitBackendThread = true;
+        _workAvailableCondition.notify_all();
+        lock.unlock();
 
-      std::unique_lock<std::mutex> lock(_queueMutex);
-      _quitBackendThread = true;
-      _workAvailableCondition.notify_all();
-      lock.unlock();
-
-      _backendThread.join();
+        _backendThread.join();
+      }
     }
 
-    std::shared_ptr<DataStream> SqliteBackend::createStream(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
+    persistence::UniqueDataStreamHandle SqliteBackend::createStream(DataStreamObserver *observer, StreamableType type, const std::string &service, const nlohmann::json &options)
     {
       std::unique_lock<std::mutex> lock(_queueMutex);
 
@@ -261,7 +268,7 @@ namespace persistence
 
       _workAvailableCondition.notify_one();
 
-      return sharedState;
+      return persistence::UniqueDataStreamHandle(sharedState);
     }
 
     void SqliteBackend::threadMain()

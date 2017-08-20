@@ -3,7 +3,7 @@
 
 #include "gui/planningwidget/planningboardlayout.h"
 
-#include "persistence/datasource.h"
+#include "persistence/backend.h"
 
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
@@ -11,7 +11,7 @@
 #include <QGraphicsScene>
 #include <QRect>
 
-#include "boost/signals2.hpp"
+#include <boost/signals2.hpp>
 
 #include <map>
 #include <memory>
@@ -34,7 +34,7 @@ namespace gui
       virtual ~Context() = default;
 
       // Setup
-      void setDataSource(persistence::DataSource* dataSource);
+      void setDataBackend(persistence::Backend* backend);
       void setDateBarScene(QGraphicsScene* scene);
       void setRoomListScene(QGraphicsScene* scene);
       void setPlanningBoardScene(QGraphicsScene* scene);
@@ -59,7 +59,7 @@ namespace gui
       const hotel::PlanningBoard& planning() const;
 
       // Getters
-      persistence::DataSource& dataSource();
+      persistence::Backend& dataBackend();
       PlanningBoardLayout& layout();
       const PlanningBoardLayout& layout() const;
       PlanningBoardAppearance& appearance();
@@ -80,7 +80,7 @@ namespace gui
 
     private:
       // Hotel data
-      persistence::DataSource* _dataSource;
+      persistence::Backend* _backend;
 
       // Data from streams
       std::vector<std::unique_ptr<hotel::Hotel>> _hotels;

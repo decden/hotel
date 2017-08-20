@@ -8,7 +8,7 @@ namespace gui
   {
     Context::Context() {}
 
-    void Context::setDataSource(persistence::DataSource *dataSource) { _dataSource = dataSource; }
+    void Context::setDataBackend(persistence::Backend* backend) { _backend = backend; }
     void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
     void Context::setRoomListScene(QGraphicsScene* scene) { _roomListScene = scene; }
     void Context::setPlanningBoardScene(QGraphicsScene* scene) { _planningBoardScene = scene; }
@@ -51,13 +51,13 @@ namespace gui
       return _hotels;
     }
 
-    persistence::DataSource& Context::dataSource() { return *_dataSource; }
+    persistence::Backend& Context::dataBackend() { return *_backend; }
     void Context::setPivotDate(const boost::gregorian::date date) { _layout.setPivotDate(date); }
 
     void Context::initializeLayout(PlanningBoardLayout::LayoutType layoutType)
     {
-      assert(_dataSource != nullptr);
-      if (_dataSource)
+      assert(_backend != nullptr);
+      if (_backend)
         _layout.initializeLayout(hotels(), layoutType);
     }
 

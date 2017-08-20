@@ -1,7 +1,7 @@
 #include "guiapp/testdata.h"
 
-#include "persistence/datasource.h"
 #include "persistence/net/netclientbackend.h"
+#include "persistence/sqlite/sqlitebackend.h"
 
 #include "gui/dialogs/editreservation.h"
 #include "gui/datasourcechangeintegrator.h"
@@ -21,13 +21,13 @@ int main(int argc, char** argv)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
-  persistence::DataSource dataSource(std::make_unique<persistence::net::NetClientBackend>("localhost", 46835));
-  //persistence::DataSource dataSource("test.db");
+  persistence::net::NetClientBackend backend("localhost", 46835);
+  //persistence::sqlite::SqliteBackend backend("test.db");
 
   if (app.arguments().contains("--createTestData"))
-    guiapp::createTestData(dataSource);
+    guiapp::createTestData(backend);
 
-  gui::PlanningWidget widget(dataSource);
+  gui::PlanningWidget widget(backend);
   widget.registerTool("new-reservation", std::make_unique<gui::planningwidget::NewReservationTool>());
   widget.activateTool("new-reservation");
 
@@ -35,14 +35,14 @@ int main(int argc, char** argv)
   {
     if (res.status() != hotel::Reservation::Temporary)
     {
-      auto dialog = new gui::dialogs::EditReservationDialog(dataSource, res.id());
+      auto dialog = new gui::dialogs::EditReservationDialog(backend, res.id());
       dialog->show();
     }
   });
 
   widget.showMaximized();
 
-  gui::ChangeIntegrator integrator(&dataSource);
+  gui::ChangeIntegrator integrator(&backend);
 
   return app.exec();
 }

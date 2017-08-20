@@ -4,8 +4,6 @@
 #include "gui/datastreamobserveradapter.h"
 #include "gui/statusbar.h"
 
-#include "persistence/datasource.h"
-
 #include "boost/optional.hpp"
 
 #include <QtWidgets/QComboBox>
@@ -98,7 +96,7 @@ namespace gui
        * @param ds datasource to use for getting the data and modifying the data
        * @param objectId the id of the reservation to edit
        */
-      EditReservationDialog(persistence::DataSource& ds, int objectId);
+      EditReservationDialog(persistence::Backend& backend, int objectId);
 
     private slots:
       void saveClicked();
@@ -118,7 +116,7 @@ namespace gui
       enum class Status { NotInitialized, Ready, Removed, Saving };
       Status _status = Status::NotInitialized;
 
-      persistence::DataSource& _dataSource;
+      persistence::Backend& _backend;
 
       // The reference version to which we are currently editing against
       boost::optional<hotel::Reservation> _referenceVersion;
