@@ -72,6 +72,26 @@ namespace persistence
       return obj;
     }
 
+    nlohmann::json JsonSerializer::serializeOperationResults(int taskId, const op::OperationResults &items)
+    {
+      nlohmann::json obj = nlohmann::json::object();
+      obj["op"] = "task_results";
+      obj["id"] = taskId;
+
+      auto results = nlohmann::json::array();
+      for (auto& item : items)
+      {
+        nlohmann::json result = {
+          {"status", (int)item.status},
+          {"message", item.message}
+        };
+        results.push_back(result);
+      }
+      obj["results"] = results;
+
+      return obj;
+    }
+
     std::pair<int, StreamableItems> JsonSerializer::deserializeStreamAddMessage(const nlohmann::json &json)
     {
       assert(json["op"] == "stream_add");
@@ -92,6 +112,20 @@ namespace persistence
       StreamableItems items = deserializeStreamableItems(type, json["items"]);
 
       return std::make_pair(id, std::move(items));
+    }
+
+    std::pair<int, op::OperationResults> JsonSerializer::deserializeOperationResultsMessage(const nlohmann::json &json)
+    {
+      int id = json["id"];
+
+      op::OperationResults results;
+      for (auto& item : json["results"])
+      {
+        int status = item["status"];
+        results.push_back({(op::OperationResultStatus)status, item["message"]});
+      }
+
+      return {id, std::move(results)};
     }
 
     StreamableItems JsonSerializer::deserializeStreamableItems(const std::string &type, const nlohmann::json &array)

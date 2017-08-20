@@ -58,12 +58,14 @@ namespace persistence
     op::Task<op::OperationResults> NetClientBackend::queueOperations(op::Operations operations)
     {
       // Create a task
-      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
+      _nextOperationId++;
+      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId);
+      _tasks[_nextOperationId] = sharedState;
       _changeQueue.addTask(sharedState);
 
-      //auto operationAndState = QueuedOperation{std::move(operations), sharedState};
       nlohmann::json obj;
       obj["op"] = "schedule_operations";
+      obj["id"] = _nextOperationId;
       std::vector<nlohmann::json> operationsArray;
       for (auto &operation : operations)
         operationsArray.push_back(json::serialize(operation));
@@ -81,7 +83,7 @@ namespace persistence
       stream->connect(_nextStreamId, observer);
       _changeQueue.addStream(stream);
 
-      // Schedule a task...
+      // Schedule stream creation...
       nlohmann::json obj;
       obj["op"] = "create_stream";
       obj["id"] = _nextStreamId;
@@ -92,7 +94,15 @@ namespace persistence
 
       _nextStreamId++;
 
-      return stream;
+      return persistence::UniqueDataStreamHandle(this, stream);
+    }
+
+    void NetClientBackend::removeStream(std::shared_ptr<DataStream> stream)
+    {
+      nlohmann::json obj;
+      obj["op"] = "remove_stream";
+      obj["id"] = stream->streamId();
+      submit(obj.dump());
     }
 
     void NetClientBackend::socketConnected(boost::system::error_code ec)
@@ -204,6 +214,19 @@ namespace persistence
         persistence::StreamableItems items;
         std::tie(id, items) = persistence::net::JsonSerializer::deserializeStreamUpdateMessage(obj);
         _changeQueue.addStreamChange(id, DataStreamItemsUpdated{std::move(items)});
+      }
+      else if (operation == "task_results")
+      {
+        int id;
+        persistence::op::OperationResults items;
+        std::tie(id, items) = persistence::net::JsonSerializer::deserializeOperationResultsMessage(obj);
+        auto it = _tasks.find(id);
+        if (it != _tasks.end())
+        {
+          it->second->setCompleted(items);
+          _tasks.erase(it);
+        }
+        _changeQueue.taskCompleted(id);
       }
       else
       {

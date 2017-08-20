@@ -268,7 +268,12 @@ namespace persistence
 
       _workAvailableCondition.notify_one();
 
-      return persistence::UniqueDataStreamHandle(sharedState);
+      return persistence::UniqueDataStreamHandle(this, sharedState);
+    }
+
+    void SqliteBackend::removeStream(std::shared_ptr<DataStream> stream)
+    {
+      _dataStreams.removeStream(stream);
     }
 
     void SqliteBackend::threadMain()

@@ -4,6 +4,7 @@
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
 #include "persistence/op/task.h"
+#include "persistence/op/results.h"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -11,6 +12,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <map>
 
 namespace persistence
 {
@@ -35,13 +37,12 @@ namespace persistence
                                                                const std::string& service,
                                                                const nlohmann::json& options) override;
 
+    protected:
+      virtual void removeStream(std::shared_ptr<persistence::DataStream> stream);
+
     private:
       void start();
       void stopAndJoin();
-
-//      typedef std::pair<op::Operations, std::shared_ptr<op::TaskSharedState<op::OperationResults>>> QueuedOperation;
-//      typedef std::shared_ptr<DataStream> QueuedStream;
-//      typedef boost::variant<QueuedOperation, QueuedStream> QueuedMessage;
 
       // Internal interface for higher level communication operations
       void submit(std::string message);
@@ -57,6 +58,7 @@ namespace persistence
 
       std::array<char, 4> _headerBuffer;
       std::vector<char> _bodyBuffer;
+      std::map<int, std::shared_ptr<op::TaskSharedState<op::OperationResults>>> _tasks;
 
 
       std::string _host;

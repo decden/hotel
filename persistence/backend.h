@@ -77,6 +77,10 @@ namespace persistence
     virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
                                                              const std::string& service,
                                                              const nlohmann::json& options) = 0;
+
+  protected :
+    friend class persistence::UniqueDataStreamHandle;
+    virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) = 0;
   };
 } // namespace persistence
 

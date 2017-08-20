@@ -51,6 +51,11 @@ namespace persistence
        */
       void addNewStream(const std::shared_ptr<DataStream>& stream) { _newStreams.push_back(stream); }
 
+      void removeStream(const std::shared_ptr<DataStream>& stream)
+      {
+        std::cout << "Stub: removeStreams()" << std::endl;
+      }
+
       /**
        * @brief The purpose of this method is to move all new streams into the uninitializedStreams list
        * When this method is called it has to be ensured that no one accesses either the newStreams or
@@ -118,6 +123,9 @@ namespace persistence
                                                                const nlohmann::json& options) override;
 
       ChangeQueue& changeQueue() { return _changeQueue; }
+
+    protected:
+      virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
 
     private:
       void start();

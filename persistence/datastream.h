@@ -14,6 +14,8 @@
 
 namespace persistence
 {
+  class Backend;
+
   /**
    * @brief The StreamableType enum holds all possible native data types a steam can have
    */
@@ -103,8 +105,8 @@ namespace persistence
     UniqueDataStreamHandle()
         : _dataStream(nullptr)
     {}
-    UniqueDataStreamHandle(std::shared_ptr<DataStream> dataStream)
-        : _dataStream(dataStream)
+    UniqueDataStreamHandle(Backend* backend, std::shared_ptr<DataStream> dataStream)
+        : _backend(backend), _dataStream(dataStream)
     {}
 
     UniqueDataStreamHandle(const UniqueDataStreamHandle& that) = delete;
@@ -112,11 +114,12 @@ namespace persistence
 
     UniqueDataStreamHandle(UniqueDataStreamHandle&& that) = default;
     UniqueDataStreamHandle& operator=(UniqueDataStreamHandle&& that) = default;
-    ~UniqueDataStreamHandle() { if (_dataStream) _dataStream->disconnect(); }
+    ~UniqueDataStreamHandle();
 
     DataStream* stream() { return _dataStream.get(); }
 
   private:
+    Backend* _backend;
     std::shared_ptr<DataStream> _dataStream;
   };
 
