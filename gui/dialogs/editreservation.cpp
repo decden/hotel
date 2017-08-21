@@ -72,6 +72,8 @@ namespace gui
       _reservationStreamHandle.itemsRemovedSignal.connect(boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
       _reservationStreamHandle.allItemsRemovedSignal.connect(boost::bind(&EditReservationDialog::allReservationsRemoved, this));
 
+      _saveTask.resultsSetSignal.connect(boost::bind(&EditReservationDialog::saveTaskUpdated, this, boost::placeholders::_1));
+
       // Connect to data stream
       nlohmann::json options;
       options["id"] = objectId;
@@ -122,8 +124,7 @@ namespace gui
 
       auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       Form::SetItemFromTuple(*updatedReservation, _form.formValues());
-      _saveTask = _backend.queueOperation(persistence::op::UpdateReservation{std::move(updatedReservation)});
-      _saveTaskUpdatedConnection = _saveTask->connectToChangedSignal(boost::bind(&EditReservationDialog::saveTaskUpdated, this));
+      _saveTask.connect(_backend, persistence::op::UpdateReservation{std::move(updatedReservation)});
 
       updateUI();
     }
@@ -217,19 +218,16 @@ namespace gui
       updateUI();
     }
 
-    void EditReservationDialog::saveTaskUpdated()
+    void EditReservationDialog::saveTaskUpdated(const std::vector<persistence::TaskResult> &results)
     {
-      if (_saveTask != boost::none && _saveTask->completed())
+      auto result = results[0];
+      if (result.status == persistence::TaskResultStatus::Successful)
+        close();
+      else
       {
-        auto result = _saveTask->results()[0];
-        if (result.status == persistence::op::OperationResultStatus::Successful)
-          close();
-        else
-        {
-          _status = Status::Ready;
-          updateUI();
-          _statusBar->showMessage(tr("Saving was unsuccessful (%1)").arg(QString::fromStdString(result.message)), StatusBar::Error);
-        }
+        _status = Status::Ready;
+        updateUI();
+        _statusBar->showMessage(tr("Saving was unsuccessful (%1)").arg(QString::fromStdString(result.result["message"])), StatusBar::Error);
       }
     }
 

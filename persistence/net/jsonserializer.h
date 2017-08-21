@@ -2,7 +2,7 @@
 #define PERSISTENCE_NETCLIENT_ENVELOPE_H
 
 #include "persistence/datastream.h"
-#include "persistence/op/results.h"
+#include "persistence/task.h"
 
 #include "extern/nlohmann_json/json.hpp"
 
@@ -22,12 +22,12 @@ namespace persistence
       static nlohmann::json serializeStreamClearMessage(int streamId);
       static nlohmann::json serializeStreamInitializeMessage(int streamId);
 
-      static nlohmann::json serializeOperationResults(int taskId, const persistence::op::OperationResults& items);
+      static nlohmann::json serializeTaskResultsMessage(int taskId, const std::vector<persistence::TaskResult>& items);
 
       static std::pair<int, persistence::StreamableItems> deserializeStreamAddMessage(const nlohmann::json& json);
       static std::pair<int, persistence::StreamableItems> deserializeStreamUpdateMessage(const nlohmann::json& json);
 
-      static std::pair<int, persistence::op::OperationResults> deserializeOperationResultsMessage(const nlohmann::json& json);
+      static std::pair<int, std::vector<TaskResult> > deserializeTaskResultsMessage(const nlohmann::json& json);
 
     private:
       static persistence::StreamableItems deserializeStreamableItems(const std::string &type, const nlohmann::json &array);

@@ -5,7 +5,7 @@
 namespace persistence
 {
   void ChangeQueue::addStream(std::shared_ptr<DataStream> dataStream) { _dataStreams.push_back(std::move(dataStream)); }
-  void ChangeQueue::addTask(std::shared_ptr<op::TaskSharedState<op::OperationResults> > task) { _tasks.push_back(std::move(task)); }
+  void ChangeQueue::addTask(std::shared_ptr<Task> task) { _tasks.push_back(std::move(task)); }
 
   bool ChangeQueue::hasUninitializedStreams() const
   {
@@ -25,6 +25,7 @@ namespace persistence
     std::unique_lock<std::mutex> lock(_streamChangesMutex);
     std::swap(_streamChangeQueue, changes);
     lock.unlock();
+
     for (auto& change: changes)
     {
       auto it = std::find_if(_dataStreams.begin(),
@@ -34,25 +35,32 @@ namespace persistence
     }
   }
 
-  void ChangeQueue::notifyCompletedTasks()
+  void ChangeQueue::applyTaskChanges()
   {
-    std::vector<int> completedTasks;
+    // Remove invalid tasks
+    _tasks.erase(std::remove_if(_tasks.begin(), _tasks.end(), [](auto& task) {
+      return !task->isValid() && task->isCompleted();
+    }), _tasks.end());
+
+    // Apply all of the task changes
+    std::vector<TaskDifferential> changes;
     std::unique_lock<std::mutex> lock(_completedTasksMutex);
-    std::swap(_completedTasksQueue, completedTasks);
+    std::swap(_taskChangeQueue, changes);
     lock.unlock();
 
-    for (auto& taskId : completedTasks)
+    for (auto& change : changes)
     {
-      auto it = std::find_if(_tasks.begin(), _tasks.end(), [&](std::shared_ptr<op::TaskSharedState<op::OperationResults>>& task) { return task->uniqueId() == taskId; });
+      auto it = std::find_if(_tasks.begin(), _tasks.end(),
+                             [&](std::shared_ptr<Task>& task) { return task->taskId() == change.taskId; });
       if (it != _tasks.end())
-        (*it)->notifyChanged();
+        (*it)->setResults(std::move(change.results));
     }
   }
 
-  void ChangeQueue::taskCompleted(int taskId)
+  void ChangeQueue::addTaskChange(int taskId, std::vector<TaskResult> results)
   {
     std::unique_lock<std::mutex> lock(_completedTasksMutex);
-    _completedTasksQueue.push_back(taskId);
+    _taskChangeQueue.push_back({taskId, std::move(results)});
     lock.unlock();
     _taskCompletedSignal();
   }

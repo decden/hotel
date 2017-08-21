@@ -8,8 +8,6 @@
 
 #include "persistence/changequeue.h"
 #include "persistence/op/operations.h"
-#include "persistence/op/results.h"
-#include "persistence/op/task.h"
 
 #include "extern/nlohmann_json/json.hpp"
 
@@ -116,7 +114,7 @@ namespace persistence
       SqliteBackend(const std::string& databasePath);
       virtual ~SqliteBackend();
 
-      op::Task<op::OperationResults> queueOperations(op::Operations operations);
+      virtual UniqueTaskHandle queueOperations(op::Operations operations, TaskObserver* observer = nullptr) override;
 
       virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
                                                                const std::string& service,
@@ -126,19 +124,20 @@ namespace persistence
 
     protected:
       virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
+      virtual void removeTask(std::shared_ptr<persistence::Task> task) override;
 
     private:
       void start();
       void stopAndJoin();
       void threadMain();
 
-      op::OperationResult executeOperation(op::EraseAllData&);
-      op::OperationResult executeOperation(op::StoreNewHotel& op);
-      op::OperationResult executeOperation(op::StoreNewReservation& op);
-      op::OperationResult executeOperation(op::StoreNewPerson& op);
-      op::OperationResult executeOperation(op::UpdateHotel& op);
-      op::OperationResult executeOperation(op::UpdateReservation& op);
-      op::OperationResult executeOperation(op::DeleteReservation& op);
+      TaskResult executeOperation(op::EraseAllData&);
+      TaskResult executeOperation(op::StoreNewHotel& op);
+      TaskResult executeOperation(op::StoreNewReservation& op);
+      TaskResult executeOperation(op::StoreNewPerson& op);
+      TaskResult executeOperation(op::UpdateHotel& op);
+      TaskResult executeOperation(op::UpdateReservation& op);
+      TaskResult executeOperation(op::DeleteReservation& op);
 
       SqliteStorage _storage;
       ChangeQueue _changeQueue;
@@ -151,8 +150,7 @@ namespace persistence
       std::condition_variable _workAvailableCondition;
 
       std::mutex _queueMutex;
-      typedef std::shared_ptr<op::TaskSharedState<op::OperationResults>> SharedState;
-      typedef std::pair<op::Operations, SharedState> QueuedOperation;
+      typedef std::pair<op::Operations, std::shared_ptr<Task>> QueuedOperation;
       std::vector<QueuedOperation> _operationsQueue;
 
       detail::DataStreamManager _dataStreams;

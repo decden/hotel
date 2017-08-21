@@ -55,11 +55,12 @@ namespace persistence
       return _changeQueue;
     }
 
-    op::Task<op::OperationResults> NetClientBackend::queueOperations(op::Operations operations)
+    UniqueTaskHandle NetClientBackend::queueOperations(op::Operations operations, TaskObserver *observer)
     {
       // Create a task
       _nextOperationId++;
-      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId);
+      auto sharedState = std::make_shared<Task>(_nextOperationId);
+      sharedState->connect(observer);
       _tasks[_nextOperationId] = sharedState;
       _changeQueue.addTask(sharedState);
 
@@ -72,7 +73,7 @@ namespace persistence
       obj["operations"]= operationsArray;
       submit(obj.dump());
 
-      return sharedState;
+      return UniqueTaskHandle(this, sharedState);
     }
 
     persistence::UniqueDataStreamHandle NetClientBackend::createStream(DataStreamObserver* observer,
@@ -103,6 +104,11 @@ namespace persistence
       obj["op"] = "remove_stream";
       obj["id"] = stream->streamId();
       submit(obj.dump());
+    }
+
+    void NetClientBackend::removeTask(std::shared_ptr<Task> task)
+    {
+      // TODO: Remove tasks?
     }
 
     void NetClientBackend::socketConnected(boost::system::error_code ec)
@@ -218,15 +224,14 @@ namespace persistence
       else if (operation == "task_results")
       {
         int id;
-        persistence::op::OperationResults items;
-        std::tie(id, items) = persistence::net::JsonSerializer::deserializeOperationResultsMessage(obj);
+        std::vector<TaskResult> items;
+        std::tie(id, items) = persistence::net::JsonSerializer::deserializeTaskResultsMessage(obj);
         auto it = _tasks.find(id);
         if (it != _tasks.end())
         {
-          it->second->setCompleted(items);
+          _changeQueue.addTaskChange(it->second->taskId(), std::move(items));
           _tasks.erase(it);
         }
-        _changeQueue.taskCompleted(id);
       }
       else
       {

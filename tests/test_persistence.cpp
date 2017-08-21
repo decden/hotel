@@ -2,6 +2,7 @@
 
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
+#include "persistence/simpletaskobserver.h"
 #include "persistence/sqlite/sqlitebackend.h"
 #include "persistence/op/operations.h"
 #include "persistence/json/jsonserializer.h"
@@ -16,16 +17,19 @@ void waitForStreamInitialization(persistence::Backend& backend)
   while (backend.changeQueue().hasUninitializedStreams())
   {
     backend.changeQueue().applyStreamChanges();
+    backend.changeQueue().applyTaskChanges();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 }
 
-void waitForTask(persistence::Backend& backend, persistence::op::Task<persistence::op::OperationResults>& task)
+void waitForTask(persistence::Backend& backend, persistence::Task& task)
 {
-  // Waits for one task to complete and to be integrated
-  task.waitForCompletion();
-  backend.changeQueue().applyStreamChanges();
-  backend.changeQueue().notifyCompletedTasks();
+  while (!task.isCompleted())
+  {
+    backend.changeQueue().applyStreamChanges();
+    backend.changeQueue().applyTaskChanges();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 }
 
 class Persistence : public testing::Test
@@ -35,8 +39,8 @@ public:
   {
     // Make sure the database is empty before each test
     persistence::sqlite::SqliteBackend backend("test.db");
-    auto task = backend.queueOperation(persistence::op::EraseAllData());
-    waitForTask(backend, task);
+    auto handle = backend.queueOperation(persistence::op::EraseAllData());
+    waitForTask(backend, *handle.task());
   }
 
   hotel::Hotel makeNewHotel(const std::string& name, const std::string& category, int numberOfRooms)
@@ -60,15 +64,15 @@ public:
   void storeHotel(persistence::Backend& backend, const hotel::Hotel& hotel)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto task = backend.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
-    waitForTask(backend, task);
+    auto handle = backend.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
+    waitForTask(backend, *handle.task());
   }
 
   void storeReservation(persistence::Backend& backend, const hotel::Reservation& reservation)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto task = backend.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
-    waitForTask(backend, task);
+    auto handle = backend.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
+    waitForTask(backend, *handle.task());
   }
 };
 
@@ -152,19 +156,19 @@ TEST_F(Persistence, VersionConflicts)
   changedHotel1.setName("Changed Hotel Name 1");
   auto changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  auto task1 = backend.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
-  auto task2 = backend.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
-  waitForTask(backend, task1);
-  waitForTask(backend, task2);
-  ASSERT_EQ(persistence::op::OperationResultStatus::Successful, task1.results()[0].status);
-  ASSERT_EQ(persistence::op::OperationResultStatus::Error, task2.results()[0].status);
+  persistence::SimpleTaskObserver task1(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
+  persistence::SimpleTaskObserver task2(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  waitForTask(backend, *task1.task());
+  waitForTask(backend, *task2.task());
+  ASSERT_EQ(persistence::TaskResultStatus::Successful, task1.results()[0].status);
+  ASSERT_EQ(persistence::TaskResultStatus::Error, task2.results()[0].status);
 
   // Trying to make the same change to the correct revision now works
   changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  task2 = backend.queueOperation(persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
-  waitForTask(backend, task2);
-  ASSERT_EQ(persistence::op::OperationResultStatus::Successful, task2.results()[0].status);
+  persistence::SimpleTaskObserver task3(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  waitForTask(backend, *task3.task());
+  ASSERT_EQ(persistence::TaskResultStatus::Successful, task3.results()[0].status);
 }
 
 TEST_F(Persistence, DataStreams)
@@ -191,11 +195,11 @@ TEST_F(Persistence, DataStreams)
   auto updatedReservation = reservations.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
   auto updateTask = backend.queueOperation(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(updatedReservation)});
-  waitForTask(backend, updateTask);
+  waitForTask(backend, *updateTask.task());
   ASSERT_EQ(reservations.items()[0], updatedReservation);
 
   auto task = backend.queueOperation(persistence::op::EraseAllData());
-  waitForTask(backend, task);
+  waitForTask(backend, *task.task());
 
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, reservations.items().size());
@@ -245,12 +249,12 @@ TEST_F(Persistence, DataStreamsServices)
   auto updatedReservation = reservation.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
   auto updateTask = backend.queueOperation(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(updatedReservation)});
-  waitForTask(backend, updateTask);
+  waitForTask(backend, *updateTask.task());
   ASSERT_EQ(reservation.items()[0], updatedReservation);
 
   // Test that removing all items clears all streams
   auto task = backend.queueOperation(persistence::op::EraseAllData());
-  waitForTask(backend, task);
+  waitForTask(backend, *task.task());
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, hotel.items().size());
   ASSERT_EQ(0u, reservations.items().size());

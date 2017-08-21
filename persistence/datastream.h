@@ -103,7 +103,7 @@ namespace persistence
   {
   public:
     UniqueDataStreamHandle()
-        : _dataStream(nullptr)
+        : _backend(nullptr), _dataStream(nullptr)
     {}
     UniqueDataStreamHandle(Backend* backend, std::shared_ptr<DataStream> dataStream)
         : _backend(backend), _dataStream(dataStream)

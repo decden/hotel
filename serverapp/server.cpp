@@ -1,5 +1,6 @@
 #include <boost/asio.hpp>
 
+#include "persistence/simpletaskobserver.h"
 #include "persistence/sqlite/sqlitebackend.h"
 #include "persistence/json/jsonserializer.h"
 #include "persistence/net/jsonserializer.h"
@@ -59,30 +60,25 @@ private:
   int _clientStreamId;
 };
 
-class SessionTaskObserver
+class SessionTaskObserver final : public persistence::TaskObserver
 {
 public:
-  SessionTaskObserver(StreamMessageSender& sender, int clientTaskId,
-                      persistence::op::Task<persistence::op::OperationResults> task)
-      : _sender(sender), _clientTaskId(clientTaskId), _task(task)
+  SessionTaskObserver(StreamMessageSender& sender, int clientTaskId, persistence::Backend& backend, persistence::op::Operations ops)
+      : _sender(sender), _clientTaskId(clientTaskId), _handle()
   {
-    _connection = _task.connectToChangedSignal(boost::bind(&SessionTaskObserver::taskChanged, this));
+    _handle = backend.queueOperations(std::move(ops), this);
   }
 
 private:
-  void taskChanged()
+  virtual void setResults(const std::vector<persistence::TaskResult>& results) override
   {
-    if (_task.completed())
-    {
-      auto message = persistence::net::JsonSerializer::serializeOperationResults(_clientTaskId, _task.results());
-      _sender.sendMessage(message);
-    }
+    auto message = persistence::net::JsonSerializer::serializeTaskResultsMessage(_clientTaskId, results);
+    _sender.sendMessage(message);
   }
 
   StreamMessageSender& _sender;
   int _clientTaskId;
-  persistence::op::Task<persistence::op::OperationResults> _task;
-  boost::signals2::scoped_connection _connection;
+  persistence::UniqueTaskHandle _handle;
 };
 
 class ClientSession : public std::enable_shared_from_this<ClientSession>, public StreamMessageSender
@@ -200,12 +196,12 @@ private:
     }
 
     // TODO: Observe the task and notify the client when it completes
-    auto task = _backend.queueOperations(std::move(operations));
-    _taskObservers.emplace_back(*this, obj["id"], task);
+    auto observer = std::make_unique<SessionTaskObserver>(*this, obj["id"], _backend, std::move(operations));
+    _taskObservers.push_back(std::move(observer));
   }
 
   std::vector<std::pair<persistence::UniqueDataStreamHandle, std::unique_ptr<persistence::DataStreamObserver>>> _streams;
-  std::vector<SessionTaskObserver> _taskObservers;
+  std::vector<std::unique_ptr<SessionTaskObserver>> _taskObservers;
 
   persistence::sqlite::SqliteBackend& _backend;
   std::array<char, 4> _headerData;
@@ -269,7 +265,7 @@ int main(int argc, char** argv)
   {
     server.ioService().post([&](){
       dataBackend.changeQueue().applyStreamChanges();
-      dataBackend.changeQueue().notifyCompletedTasks();
+      dataBackend.changeQueue().applyTaskChanges();
     });
   };
   dataBackend.changeQueue().connectToStreamChangesAvailableSignal(handleChanges);

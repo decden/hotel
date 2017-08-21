@@ -3,8 +3,6 @@
 
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
-#include "persistence/op/task.h"
-#include "persistence/op/results.h"
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -31,14 +29,15 @@ namespace persistence
       virtual ~NetClientBackend();
 
       virtual ChangeQueue& changeQueue() override;
-      virtual op::Task<op::OperationResults> queueOperations(op::Operations operations) override;
+      virtual UniqueTaskHandle queueOperations(op::Operations operations, TaskObserver* observer = nullptr) override;
 
       virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
                                                                const std::string& service,
                                                                const nlohmann::json& options) override;
 
     protected:
-      virtual void removeStream(std::shared_ptr<persistence::DataStream> stream);
+      virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
+      virtual void removeTask(std::shared_ptr<persistence::Task> task) override;
 
     private:
       void start();
@@ -58,7 +57,7 @@ namespace persistence
 
       std::array<char, 4> _headerBuffer;
       std::vector<char> _bodyBuffer;
-      std::map<int, std::shared_ptr<op::TaskSharedState<op::OperationResults>>> _tasks;
+      std::map<int, std::shared_ptr<Task>> _tasks;
 
 
       std::string _host;

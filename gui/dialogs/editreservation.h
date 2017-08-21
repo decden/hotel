@@ -16,6 +16,21 @@ namespace gui
 {
   namespace dialogs
   {
+    class TaskObserverAdapter : public persistence::TaskObserver
+    {
+    public:
+      void connect(persistence::Backend& backend, persistence::op::Operations ops) { _taskHandle = backend.queueOperations(std::move(ops), this); }
+      void connect(persistence::Backend& backend, persistence::op::Operation op) { _taskHandle = backend.queueOperation(std::move(op), this); }
+
+      virtual void setResults(const std::vector<persistence::TaskResult>& results) override { resultsSetSignal(results); }
+
+      // Public signals
+      boost::signals2::signal<void(const std::vector<persistence::TaskResult>&)> resultsSetSignal;
+
+    private:
+      persistence::UniqueTaskHandle _taskHandle;
+    };
+
     class Form
     {
     public:
@@ -109,7 +124,7 @@ namespace gui
       void reservationsRemoved(const std::vector<int>& ids);
       void allReservationsRemoved();
 
-      void saveTaskUpdated();
+      void saveTaskUpdated(const std::vector<persistence::TaskResult>& results);
 
       void updateUI();
 
@@ -125,7 +140,7 @@ namespace gui
       gui::DataStreamObserverAdapter<hotel::Reservation> _reservationStreamHandle;
 
       boost::signals2::scoped_connection _saveTaskUpdatedConnection;
-      boost::optional<persistence::op::Task<persistence::op::OperationResults>> _saveTask;
+      TaskObserverAdapter _saveTask;
 
       Form _form;
       StatusBar* _statusBar;

@@ -19,7 +19,7 @@ namespace gui
   void ChangeIntegrator::handleAvailableResults() {
     _eventScheduled = false;
     _backend->changeQueue().applyStreamChanges();
-    _backend->changeQueue().notifyCompletedTasks();
+    _backend->changeQueue().applyTaskChanges();
   }
 
   void ChangeIntegrator::emitResultsAvailable() {

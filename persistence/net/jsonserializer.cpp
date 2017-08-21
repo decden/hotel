@@ -72,7 +72,7 @@ namespace persistence
       return obj;
     }
 
-    nlohmann::json JsonSerializer::serializeOperationResults(int taskId, const op::OperationResults &items)
+    nlohmann::json JsonSerializer::serializeTaskResultsMessage(int taskId, const std::vector<TaskResult>& items)
     {
       nlohmann::json obj = nlohmann::json::object();
       obj["op"] = "task_results";
@@ -83,7 +83,7 @@ namespace persistence
       {
         nlohmann::json result = {
           {"status", (int)item.status},
-          {"message", item.message}
+          {"data", item.result}
         };
         results.push_back(result);
       }
@@ -114,15 +114,15 @@ namespace persistence
       return std::make_pair(id, std::move(items));
     }
 
-    std::pair<int, op::OperationResults> JsonSerializer::deserializeOperationResultsMessage(const nlohmann::json &json)
+    std::pair<int, std::vector<persistence::TaskResult>> JsonSerializer::deserializeTaskResultsMessage(const nlohmann::json &json)
     {
       int id = json["id"];
 
-      op::OperationResults results;
+      std::vector<persistence::TaskResult> results;
       for (auto& item : json["results"])
       {
         int status = item["status"];
-        results.push_back({(op::OperationResultStatus)status, item["message"]});
+        results.push_back({(persistence::TaskResultStatus)status, item["data"]});
       }
 
       return {id, std::move(results)};

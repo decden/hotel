@@ -220,12 +220,12 @@ namespace persistence
       stopAndJoin();
     }
 
-    op::Task<op::OperationResults> SqliteBackend::queueOperations(op::Operations operations)
+    UniqueTaskHandle SqliteBackend::queueOperations(op::Operations operations, TaskObserver *observer)
     {
       // Create a task
-      auto sharedState = std::make_shared<op::TaskSharedState<op::OperationResults>>(_nextOperationId++);
-      op::Task<op::OperationResults> task(sharedState);
+      auto sharedState = std::make_shared<Task>(_nextOperationId++);
       _changeQueue.addTask(sharedState);
+      sharedState->connect(observer);
 
       std::unique_lock<std::mutex> lock(_queueMutex);
       auto pair = QueuedOperation{std::move(operations), sharedState};
@@ -233,7 +233,7 @@ namespace persistence
       lock.unlock();
       _workAvailableCondition.notify_one();
 
-      return task;
+      return UniqueTaskHandle(this, sharedState);
     }
 
     void SqliteBackend::start()
@@ -276,6 +276,11 @@ namespace persistence
       _dataStreams.removeStream(stream);
     }
 
+    void SqliteBackend::removeTask(std::shared_ptr<Task> task)
+    {
+      // TODO: Remove task?
+    }
+
     void SqliteBackend::threadMain()
     {
       while (!_quitBackendThread)
@@ -296,7 +301,7 @@ namespace persistence
         // Process tasks
         for (auto& operationsMessage : newTasks)
         {
-          op::OperationResults results;
+          std::vector<TaskResult> results;
           _storage.beginTransaction();
           for (auto& operation : operationsMessage.first)
           {
@@ -304,39 +309,38 @@ namespace persistence
             results.push_back(result);
           }
           _storage.commitTransaction();
-          operationsMessage.second->setCompleted(std::move(results));
-          _changeQueue.taskCompleted(operationsMessage.second->uniqueId());
+          _changeQueue.addTaskChange(operationsMessage.second->taskId(), std::move(results));
         }
       }
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::EraseAllData&)
+    TaskResult SqliteBackend::executeOperation(op::EraseAllData&)
     {
       _storage.deleteAll();
 
       _dataStreams.clear(_changeQueue, StreamableType::Reservation);
       _dataStreams.clear(_changeQueue, StreamableType::Hotel);
 
-      return op::OperationResult{op::Successful, ""};
+      return TaskResult{TaskResultStatus::Successful, {}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewHotel& op)
+    TaskResult SqliteBackend::executeOperation(op::StoreNewHotel& op)
     {
       assert(op.newHotel != nullptr);
       if (op.newHotel == nullptr)
-        return op::OperationResult{op::Error, "Trying to store empty hotel"};
+        return TaskResult{TaskResultStatus::Successful, {{"message", "Trying to store empty hotel"}}};
 
       _storage.storeNewHotel(*op.newHotel);
 
       _dataStreams.addItems(_changeQueue, StreamableType::Hotel, std::vector<hotel::Hotel>{{*op.newHotel}});
 
-      return op::OperationResult{op::Successful, std::to_string(op.newHotel->id())};
+      return TaskResult{TaskResultStatus::Successful, {{"id", op.newHotel->id()}}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewReservation& op)
+    TaskResult SqliteBackend::executeOperation(op::StoreNewReservation& op)
     {
       if (op.newReservation == nullptr)
-        return op::OperationResult{op::Error, "Trying to store empty reservation"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Trying to store empty reservation"}}};
 
       // "Unknown" is not a valid reservation status for serialization
       if (op.newReservation->status() == hotel::Reservation::Unknown)
@@ -345,56 +349,56 @@ namespace persistence
 
       _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.newReservation}});
 
-      return op::OperationResult{op::Successful, std::to_string(op.newReservation->id())};
+      return TaskResult{TaskResultStatus::Successful, {{"id", op.newReservation->id()}}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::StoreNewPerson &op)
+    TaskResult SqliteBackend::executeOperation(op::StoreNewPerson &op)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
 
-      return op::OperationResult{op::Error, "Not implemented yet!"};
+      return TaskResult{TaskResultStatus::Error, {{"message", "Not implemented yet!"}}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::UpdateHotel &op)
+    TaskResult SqliteBackend::executeOperation(op::UpdateHotel &op)
     {
       if (op.updatedHotel == nullptr)
-        return op::OperationResult{op::Error, "Trying to update empty hotel"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Trying to update empty hotel"}}};
       if (op.updatedHotel->id() == 0)
-        return op::OperationResult{op::Error, "Cannot update hotel without id"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Cannot update hotel without id"}}};
       if (!_storage.update<hotel::Hotel>(*op.updatedHotel))
-        return op::OperationResult{op::Error, "Could not update hotel (internal db error)"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Could not update hotel (internal db error)"}}};
 
       _dataStreams.updateItems(_changeQueue, StreamableType::Hotel, std::vector<hotel::Hotel>{{*op.updatedHotel}});
 
-      return op::OperationResult{op::Successful, ""};
+      return TaskResult{TaskResultStatus::Successful, {}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::UpdateReservation &op)
+    TaskResult SqliteBackend::executeOperation(op::UpdateReservation &op)
     {
       if (op.updatedReservation == nullptr)
-        return op::OperationResult{op::Error, "Trying to update empty reservation"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Trying to update empty reservation"}}};
       if (op.updatedReservation->id() == 0)
-        return op::OperationResult{op::Error, "Cannot update reservation without id"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Cannot update reservation without id"}}};
 
       // "Unknown" is not a valid reservation status for serialization
       if (op.updatedReservation->status() == hotel::Reservation::Unknown)
         op.updatedReservation->setStatus(hotel::Reservation::New);
       if (!_storage.update<hotel::Reservation>(*op.updatedReservation))
-        return op::OperationResult{op::Error, "Could not update reservation (internal db error)"};
+        return TaskResult{TaskResultStatus::Error, {{"message", "Could not update reservation (internal db error)"}}};
 
       _dataStreams.updateItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{*op.updatedReservation}});
 
-      return op::OperationResult{op::Successful, ""};
+      return TaskResult{TaskResultStatus::Successful, {}};
     }
 
-    op::OperationResult SqliteBackend::executeOperation(op::DeleteReservation& op)
+    TaskResult SqliteBackend::executeOperation(op::DeleteReservation& op)
     {
       _storage.deleteReservationById(op.reservationId);
 
       _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, {op.reservationId});
 
-      return op::OperationResult{op::Successful, std::to_string(op.reservationId)};
+      return TaskResult{TaskResultStatus::Successful, {{"id", op.reservationId}}};
     }
 
   } // namespace sqlite

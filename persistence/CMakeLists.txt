@@ -3,10 +3,11 @@ set(SRC
   changequeue.cpp
   datastream.cpp
   datastreamobserver.cpp
+  simpletaskobserver.cpp
+  task.cpp
+  taskobserver.cpp
 
   op/operations.cpp
-  op/results.cpp
-  op/task.cpp
 
   json/jsonserializer.cpp
 
@@ -23,10 +24,11 @@ set(SRC_INCLUDES
   changequeue.h
   datastream.h
   datastreamobserver.h
+  simpletaskobserver.h
+  task.h
+  taskobserver.h
 
   op/operations.h
-  op/results.h
-  op/task.h
 
   json/jsonserializer.h
 

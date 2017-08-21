@@ -5,7 +5,10 @@
 
 #include <QObject>
 
+#include <boost/signals2.hpp>
+
 #include <atomic>
+#include <array>
 
 namespace gui
 {

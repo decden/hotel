@@ -3,10 +3,9 @@
 #define PERSISTENCE_RESULTINTEGRATOR_H
 
 #include "persistence/datastream.h"
+#include "persistence/task.h"
 
 #include "persistence/op/operations.h"
-#include "persistence/op/results.h"
-#include "persistence/op/task.h"
 
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
@@ -40,7 +39,7 @@ namespace persistence
      */
     void addStream(std::shared_ptr<DataStream> dataStream);
 
-    void addTask(std::shared_ptr<op::TaskSharedState<op::OperationResults>> task);
+    void addTask(std::shared_ptr<Task> task);
 
     /**
      * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
@@ -51,11 +50,11 @@ namespace persistence
     // Methods for applying pending changes in the main thread
 
     void applyStreamChanges();
-    void notifyCompletedTasks();
+    void applyTaskChanges();
 
     // Methods used by backend
 
-    void taskCompleted(int taskId);
+    void addTaskChange(int taskId, std::vector<TaskResult> results);
     void addStreamChange(int streamId, DataStreamChange change);
 
     boost::signals2::connection connectToTaskCompletedSignal(boost::signals2::slot<void()> slot);
@@ -67,14 +66,19 @@ namespace persistence
       int streamId;
       DataStreamChange change;
     };
+    struct TaskDifferential
+    {
+      int taskId;
+      std::vector<TaskResult> results;
+    };
 
     std::vector<std::shared_ptr<DataStream>> _dataStreams;
-    std::vector<std::shared_ptr<op::TaskSharedState<op::OperationResults>>> _tasks;
+    std::vector<std::shared_ptr<Task>> _tasks;
 
     std::mutex _streamChangesMutex;
     std::mutex _completedTasksMutex;
     std::vector<DataStreamDifferential> _streamChangeQueue;
-    std::vector<int> _completedTasksQueue;
+    std::vector<TaskDifferential> _taskChangeQueue;
 
     boost::signals2::signal<void()> _taskCompletedSignal;
     boost::signals2::signal<void()> _streamChangesAvailableSignal;
