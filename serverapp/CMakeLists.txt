@@ -1,8 +1,14 @@
 set(SRC
+    messagesender.cpp
+    netclientsession.cpp
+    netserver.cpp
     server.cpp
 )
 
 set(SRC_INCLUDES
+    netclientsession.h
+    messagesender.h
+    netserver.h
 )
 
 set(CMAKE_AUTOMOC ON)
