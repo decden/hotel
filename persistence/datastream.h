@@ -112,11 +112,13 @@ namespace persistence
     UniqueDataStreamHandle(const UniqueDataStreamHandle& that) = delete;
     UniqueDataStreamHandle& operator=(const UniqueDataStreamHandle& that) = delete;
 
-    UniqueDataStreamHandle(UniqueDataStreamHandle&& that) = default;
-    UniqueDataStreamHandle& operator=(UniqueDataStreamHandle&& that) = default;
+    UniqueDataStreamHandle(UniqueDataStreamHandle&& that);
+    UniqueDataStreamHandle& operator=(UniqueDataStreamHandle&& that);
     ~UniqueDataStreamHandle();
 
     DataStream* stream() { return _dataStream.get(); }
+
+    void reset();
 
   private:
     Backend* _backend;

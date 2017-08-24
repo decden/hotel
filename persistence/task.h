@@ -54,11 +54,13 @@ namespace persistence
     UniqueTaskHandle(const UniqueTaskHandle& that) = delete;
     UniqueTaskHandle& operator=(const UniqueTaskHandle& that) = delete;
 
-    UniqueTaskHandle(UniqueTaskHandle&& that) = default;
-    UniqueTaskHandle& operator=(UniqueTaskHandle&& that) = default;
+    UniqueTaskHandle(UniqueTaskHandle&& that);
+    UniqueTaskHandle& operator=(UniqueTaskHandle&& that);
     ~UniqueTaskHandle();
 
     Task* task() { return _task.get(); }
+
+    void reset();
 
   private:
     Backend* _backend;
