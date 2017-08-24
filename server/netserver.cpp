@@ -1,8 +1,8 @@
-#include "serverapp/netserver.h"
+#include "server/netserver.h"
 
-#include "serverapp/netclientsession.h"
+#include "server/netclientsession.h"
 
-namespace serverapp
+namespace server
 {
 
   NetServer::NetServer(persistence::Backend &backend)
@@ -17,7 +17,7 @@ namespace serverapp
   void NetServer::doAccept()
   {
     // Create a new blank session
-    auto session = std::make_shared<serverapp::NetClientSession>(_ioService, _backend);
+    auto session = std::make_shared<server::NetClientSession>(_ioService, _backend);
     _sessions.push_back(session);
 
     // Wait for some client to accept the connection
@@ -31,4 +31,4 @@ namespace serverapp
     });
   }
 
-} // namespace serverapp
+} // namespace server

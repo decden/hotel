@@ -1,5 +1,5 @@
-#ifndef SERVERAPP_NETSERVER_H
-#define SERVERAPP_NETSERVER_H
+#ifndef SERVER_NETSERVER_H
+#define SERVER_NETSERVER_H
 
 #include "persistence/backend.h"
 
@@ -8,7 +8,7 @@
 #include <vector>
 #include <memory>
 
-namespace serverapp
+namespace server
 {
   class NetClientSession;
 
@@ -45,6 +45,6 @@ namespace serverapp
     std::vector<std::weak_ptr<NetClientSession>> _sessions;
   };
 
-} // namespace serverapp
+} // namespace server
 
-#endif // SERVERAPP_NETSERVER_H
+#endif // SERVER_NETSERVER_H

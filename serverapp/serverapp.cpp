@@ -1,6 +1,6 @@
 #include <boost/asio.hpp>
 
-#include "serverapp/netserver.h"
+#include "server/netserver.h"
 
 #include "persistence/sqlite/sqlitebackend.h"
 
@@ -13,7 +13,7 @@ int main(int argc, char** argv)
   std::cout << "================================================================================" << std::endl;
 
   persistence::sqlite::SqliteBackend dataBackend("data.db");
-  serverapp::NetServer server(dataBackend);
+  server::NetServer server(dataBackend);
 
   auto handleChanges = [&]()
   {

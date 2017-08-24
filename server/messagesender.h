@@ -1,9 +1,9 @@
-#ifndef SERVERAPP_MESSAGESENDER_H
-#define SERVERAPP_MESSAGESENDER_H
+#ifndef SERVER_MESSAGESENDER_H
+#define SERVER_MESSAGESENDER_H
 
 #include "extern/nlohmann_json/json.hpp"
 
-namespace serverapp
+namespace server
 {
 
   /**
@@ -16,6 +16,6 @@ namespace serverapp
     virtual void sendMessage(const nlohmann::json& json) = 0;
   };
 
-} // namespace serverapp
+} // namespace server
 
-#endif // SERVERAPP_MESSAGESENDER_H
+#endif // SERVER_MESSAGESENDER_H

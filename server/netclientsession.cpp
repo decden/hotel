@@ -1,12 +1,12 @@
-#include "serverapp/netclientsession.h"
+#include "server/netclientsession.h"
 
-#include "serverapp/messagesender.h"
+#include "server/messagesender.h"
 
 #include "persistence/datastreamobserver.h"
 #include "persistence/json/jsonserializer.h"
 #include "persistence/net/jsonserializer.h"
 
-namespace serverapp
+namespace server
 {
 
   namespace detail
@@ -196,4 +196,4 @@ namespace serverapp
     _taskObservers.push_back(std::move(observer));
   }
 
-} // namespace serverapp
+} // namespace server

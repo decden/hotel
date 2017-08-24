@@ -1,7 +1,7 @@
-#ifndef SERVERAPP_NETCLIENTSESSION_H
-#define SERVERAPP_NETCLIENTSESSION_H
+#ifndef SERVER_NETCLIENTSESSION_H
+#define SERVER_NETCLIENTSESSION_H
 
-#include "serverapp/messagesender.h"
+#include "server/messagesender.h"
 
 #include "persistence/backend.h"
 
@@ -15,7 +15,7 @@
 #include <vector>
 #include <queue>
 
-namespace serverapp
+namespace server
 {
 
   namespace detail
@@ -118,6 +118,6 @@ namespace serverapp
 
 
 
-} // namespace serverapp
+} // namespace server
 
-#endif // SERVERAPP_NETCLIENTSESSION_H
+#endif // SERVER_NETCLIENTSESSION_H
