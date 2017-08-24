@@ -19,6 +19,7 @@ namespace server
       {
       }
       virtual ~SessionStreamObserver() {}
+      int clientStreamId() { return _clientStreamId; }
 
       virtual void addItems(const persistence::StreamableItems& items) override
       {
@@ -131,7 +132,7 @@ namespace server
   void NetClientSession::doSend()
   {
     auto message = _outgoingMessages.front();
-    std::cout << " [S] " << message.size() << " bytes" << std::endl;
+    std::cout << " [W] " << message.size() << " bytes" << std::endl;
     std::vector<char> data(message.size() + 4, 0);
     auto size = message.size();
     data[0] = (size >> 0) & 0xff;
@@ -157,6 +158,8 @@ namespace server
 
     if (operation == "create_stream")
       runCreateStream(obj);
+    else if (operation == "remove_stream")
+      runRemoveStream(obj);
     else if (operation == "schedule_operations")
       runScheduleOperations(obj);
     else
@@ -174,6 +177,20 @@ namespace server
     _streams.emplace_back(std::move(streamHandle), std::move(observer));
   }
 
+  void NetClientSession::runRemoveStream(const nlohmann::json &obj)
+  {
+    int clientId = obj["id"];
+    auto it = std::find_if(_streams.begin(), _streams.end(), [clientId](const auto& pair) {
+      return pair.second->clientStreamId() == clientId;
+    });
+
+    if (it != _streams.end())
+    {
+      std::cout << " [R] Removed stream s[" << it->first.stream()->streamId() << "] => c[" << it->second->clientStreamId() << "]" << std::endl;
+      _streams.erase(it);
+    }
+  }
+
   void NetClientSession::runScheduleOperations(const nlohmann::json &obj)
   {
     std::cout << " [R] Schedule " << obj["operations"].size() << " operation(s)" << std::endl;
@@ -187,8 +204,7 @@ namespace server
       {
         auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
         operations.push_back(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
-      }
-      else
+      } else
         std::cout << " [!] Unknown operation " << opType << ": " << operation << std::endl;
     }
 

@@ -47,24 +47,9 @@ namespace persistence
        * @note addNewStream must be synchronized!
        * @see collectNewStreams
        */
-      void addNewStream(const std::shared_ptr<DataStream>& stream) { _newStreams.push_back(stream); }
+      void addNewStream(const std::shared_ptr<DataStream>& stream);
 
-      void removeStream(const std::shared_ptr<DataStream>& stream)
-      {
-        std::cout << "Stub: removeStreams()" << std::endl;
-      }
-
-      /**
-       * @brief The purpose of this method is to move all new streams into the uninitializedStreams list
-       * When this method is called it has to be ensured that no one accesses either the newStreams or
-       * uninitializedStreams list.
-       *
-       * @note Before calling this method again, initialize() has to be called.
-       * @note initialize() can only be called on the worker thread while no other thread is accessing _newStreams.
-       *
-       * @return True if there are uninitialized streams to process
-       */
-      bool collectNewStreams();
+      void removeStream(const std::shared_ptr<DataStream>& stream);
 
       /**
        * @brief Initializes all new streams
@@ -82,6 +67,12 @@ namespace persistence
       template <class Func>
       void foreachStream(StreamableType type, Func func);
 
+      bool hasUninitializedStreams() const
+      {
+        std::lock_guard<std::mutex> lock(_streamMutex);
+        return !_uninitializedStreams.empty();
+      }
+
       virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
       virtual void updateItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
       virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, std::vector<int> ids);
@@ -93,9 +84,7 @@ namespace persistence
       typedef std::tuple<StreamableType, std::string> HandlerKey;
       std::map<HandlerKey, std::unique_ptr<DataStreamHandler>> _streamHandlers;
 
-      // Access to this list has to be synchronized by the backend
-      std::vector<std::shared_ptr<DataStream>> _newStreams;
-      // The following two lists can be operated on by the worker thread without lock!
+      mutable std::mutex _streamMutex;
       std::vector<std::shared_ptr<DataStream>> _uninitializedStreams;
       std::vector<std::shared_ptr<DataStream>> _activeStreams;
     };

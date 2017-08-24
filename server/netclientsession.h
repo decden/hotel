@@ -97,6 +97,7 @@ namespace server
     // and is not yet complete. Only a few of the available commands are implemented yet...
     void runCommand(const nlohmann::json &obj);
     void runCreateStream(const nlohmann::json &obj);
+    void runRemoveStream(const nlohmann::json &obj);
     void runScheduleOperations(const nlohmann::json &obj);
 
 

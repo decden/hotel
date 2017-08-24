@@ -129,27 +129,39 @@ namespace persistence
       _streamHandlers[HandlerKey{StreamableType::Reservation, "reservation.by_id"}] = std::make_unique<SingleIdDataStreamHandler>();
     }
 
-    bool DataStreamManager::collectNewStreams()
+    void DataStreamManager::addNewStream(const std::shared_ptr<DataStream>& stream)
     {
-      assert(_uninitializedStreams.size() == 0);
-      std::swap(_uninitializedStreams, _newStreams);
-      return !_uninitializedStreams.empty();
+      std::lock_guard<std::mutex> lock(_streamMutex);
+      _uninitializedStreams.push_back(stream);
+    }
+
+    void DataStreamManager::removeStream(const std::shared_ptr<DataStream> &stream)
+    {
+      std::lock_guard<std::mutex> lock(_streamMutex);
+      _uninitializedStreams.erase(std::remove(_uninitializedStreams.begin(), _uninitializedStreams.end(), stream), _uninitializedStreams.end());
+      _activeStreams.erase(std::remove(_activeStreams.begin(), _activeStreams.end(), stream), _activeStreams.end());
     }
 
     void DataStreamManager::initialize(ChangeQueue &changeQueue, sqlite::SqliteStorage &storage)
     {
-      for (auto& uninitializedStream : _uninitializedStreams)
+      // Copy the uninitialized streams to the active list while holding the lock.
+      // The actual initialization is done while not holding the lock, since it may take a long time.
+      std::vector<std::shared_ptr<DataStream>> uninitializedStreams;
+      std::unique_lock<std::mutex> lock(_streamMutex);
+      std::swap(uninitializedStreams, _uninitializedStreams);
+      std::copy(uninitializedStreams.begin(), uninitializedStreams.end(), std::back_inserter(_activeStreams));
+      lock.unlock();
+
+      for (auto& uninitializedStream : uninitializedStreams)
       {
         auto streamPtr = uninitializedStream.get();
         auto streamHandler = findHandler(*streamPtr);
-        _activeStreams.push_back(std::move(uninitializedStream));
         if (streamHandler)
           streamHandler->initialize(*streamPtr, changeQueue, storage);
         else
           std::cerr << "Cannot initialize stream, because there is no handler registered" << std::endl;
         changeQueue.addStreamChange(streamPtr->streamId(), DataStreamInitialized{});
       }
-      _uninitializedStreams.clear();
     }
 
     template<class T, class Func>
@@ -161,6 +173,7 @@ namespace persistence
     template<class Func>
     void DataStreamManager::foreachStream(StreamableType type, Func func)
     {
+      std::unique_lock<std::mutex> lock(_streamMutex);
       for (auto& activeStream : _activeStreams)
       {
         auto handler = findHandler(*activeStream);
@@ -289,7 +302,7 @@ namespace persistence
         std::unique_lock<std::mutex> lock(_queueMutex);
         std::vector<QueuedOperation> newTasks;
         std::swap(newTasks, _operationsQueue);
-        const bool hasUninitializedStreams = _dataStreams.collectNewStreams();
+        const bool hasUninitializedStreams = _dataStreams.hasUninitializedStreams();
         // Sleep until there is work to do
         if (!_quitBackendThread && newTasks.empty() && !hasUninitializedStreams)
           _workAvailableCondition.wait(lock);
