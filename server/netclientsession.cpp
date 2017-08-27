@@ -83,7 +83,10 @@ namespace server
   {
   }
 
-  NetClientSession::~NetClientSession() = default;
+  NetClientSession::~NetClientSession()
+  {
+    std::cout << " [-] Client disconnected " << _socket.remote_endpoint().address().to_string() << std::endl;
+  }
 
   void NetClientSession::start()
   {
@@ -132,7 +135,7 @@ namespace server
   void NetClientSession::doSend()
   {
     auto message = _outgoingMessages.front();
-    std::cout << " [W] " << message.size() << " bytes" << std::endl;
+    std::cout << " [W] " << nlohmann::json::parse(message)["op"] << " " << message.size() << " bytes" << std::endl;
     std::vector<char> data(message.size() + 4, 0);
     auto size = message.size();
     data[0] = (size >> 0) & 0xff;
@@ -199,12 +202,23 @@ namespace server
     for (auto& operation : obj["operations"])
     {
       auto opType = operation["op"];
-      std::cout << "  " << opType << std::endl;
-      if (opType == "update_reservation")
+      std::cout << "     " << opType << std::endl;
+      if (opType == "store_new_reservation")
+      {
+        auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
+        operations.push_back(persistence::op::StoreNewReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
+      }
+      else if (opType == "update_reservation")
       {
         auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
         operations.push_back(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
-      } else
+      }
+      else if (opType == "delete_reservation")
+      {
+        int id = operation["o"];
+        operations.push_back(persistence::op::DeleteReservation{id});
+      }
+      else
         std::cout << " [!] Unknown operation " << opType << ": " << operation << std::endl;
     }
 

@@ -221,6 +221,12 @@ namespace persistence
         std::tie(id, items) = persistence::net::JsonSerializer::deserializeStreamUpdateMessage(obj);
         _changeQueue.addStreamChange(id, DataStreamItemsUpdated{std::move(items)});
       }
+      else if (operation == "stream_remove")
+      {
+        int id = obj["id"];
+        std::vector<int> ids = obj["items"];
+        _changeQueue.addStreamChange(id, DataStreamItemsRemoved{std::move(ids)});
+      }
       else if (operation == "task_results")
       {
         int id;
@@ -235,7 +241,7 @@ namespace persistence
       }
       else
       {
-        std::cout << "Unknown operation " << operation << std::endl;
+        std::cout << "Unknown operation " << obj << std::endl;
       }
     }
 
