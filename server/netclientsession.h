@@ -52,6 +52,7 @@ namespace server
     ~NetClientSession();
 
     void start();
+    void close();
 
     /**
      * @brief Returns the socket which has been allocated for this session.

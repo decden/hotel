@@ -2,14 +2,63 @@
 
 #include "server/netclientsession.h"
 
+#include "persistence/changequeue.h"
+
 namespace server
 {
 
-  NetServer::NetServer(persistence::Backend &backend)
-      : _backend(backend), _ioService(), _endpoint(boost::asio::ip::tcp::v4(), 46835), _acceptor(_ioService, _endpoint),
+  NetServer::NetServer(std::unique_ptr<persistence::Backend> backend)
+      : _backend(std::move(backend)), _ioService(), _endpoint(boost::asio::ip::tcp::v4(), 46835), _acceptor(_ioService, _endpoint),
         _socket(_ioService)
   {
+    // Configure backend to apply changes in the ioservice thread (server thread)
+    auto handleChanges = [this]()
+    {
+      _ioService.post([this](){
+        _backend->changeQueue().applyStreamChanges();
+        _backend->changeQueue().applyTaskChanges();
+      });
+    };
+    _backend->changeQueue().connectToStreamChangesAvailableSignal(handleChanges);
+    _backend->changeQueue().connectToTaskCompletedSignal(handleChanges);
+
+    // Start accepting connections
     doAccept();
+  }
+
+  NetServer::~NetServer()
+  {
+    stopAndJoin();
+    _backend = nullptr;
+  }
+
+  void NetServer::start()
+  {
+    assert(!_serverThread.joinable());
+
+    // Start processing io operations on a separate thread
+    _serverThread = std::thread([this](){
+      _ioService.run();
+    });
+  }
+
+  void NetServer::stopAndJoin()
+  {
+    if (!_serverThread.joinable())
+      return;
+
+    // Stop accepting connections and close the existing connections
+    _ioService.post([this](){
+      _acceptor.close();
+      for (auto& weakSession : _sessions)
+      {
+        auto session = weakSession.lock();
+        if (session != nullptr)
+          session->close();
+      }
+    });
+
+    _serverThread.join();
   }
 
   void NetServer::run() { _ioService.run(); }
@@ -17,7 +66,7 @@ namespace server
   void NetServer::doAccept()
   {
     // Create a new blank session
-    auto session = std::make_shared<server::NetClientSession>(_ioService, _backend);
+    auto session = std::make_shared<server::NetClientSession>(_ioService, *_backend);
     _sessions.push_back(session);
 
     // Wait for some client to accept the connection

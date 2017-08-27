@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <thread>
 
 namespace server
 {
@@ -22,21 +23,25 @@ namespace server
      * @brief Creates a new NetServer instance
      * @param backend The real backend which will handle all of the requests
      */
-    NetServer(persistence::Backend & backend);
+    NetServer(std::unique_ptr<persistence::Backend> backend);
+    ~NetServer();
 
-    boost::asio::io_service& ioService() { return _ioService; }
+    void start();
+    void stopAndJoin();
 
+  private:
     /**
      * @brief Runs the server message loop.
      */
     void run();
 
-  private:
     // This function is contiunously being executed to accept new connections
     void doAccept();
 
   private:
-    persistence::Backend& _backend;
+    std::thread _serverThread;
+
+    std::unique_ptr<persistence::Backend> _backend;
     boost::asio::io_service _ioService;
     boost::asio::ip::tcp::endpoint _endpoint;
     boost::asio::ip::tcp::acceptor _acceptor;

@@ -8,6 +8,8 @@
 #include "gui/planningwidget.h"
 #include "gui/planningwidget/newreservationtool.h"
 
+#include "server/netserver.h"
+
 #include <QApplication>
 #include <QGridLayout>
 #include <QWindow>
@@ -21,9 +23,16 @@ int main(int argc, char** argv)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
-  persistence::net::NetClientBackend backend("localhost", 46835);
-  //persistence::sqlite::SqliteBackend backend("test.db");
 
+  std::unique_ptr<server::NetServer> server;
+  if (app.arguments().contains("--startNetServer"))
+  {
+    auto backend = std::make_unique<persistence::sqlite::SqliteBackend>("test.db");
+    server = std::make_unique<server::NetServer>(std::move(backend));
+    server->start();
+  }
+
+  persistence::net::NetClientBackend backend("localhost", 46835);
   if (app.arguments().contains("--createTestData"))
     guiapp::createTestData(backend);
 

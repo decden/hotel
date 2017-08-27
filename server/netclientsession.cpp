@@ -85,12 +85,19 @@ namespace server
 
   NetClientSession::~NetClientSession()
   {
-    std::cout << " [-] Client disconnected " << _socket.remote_endpoint().address().to_string() << std::endl;
+    if (_socket.is_open())
+      std::cout << " [-] Client disconnected " << _socket.remote_endpoint().address().to_string() << std::endl;
   }
 
   void NetClientSession::start()
   {
     doReadHeader();
+  }
+
+  void NetClientSession::close()
+  {
+    if (_socket.is_open())
+      _socket.close();
   }
 
   void NetClientSession::sendMessage(const nlohmann::json& json)
