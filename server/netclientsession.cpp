@@ -110,7 +110,7 @@ namespace server
 
   void NetClientSession::doReadHeader()
   {
-    _socket.async_read_some(boost::asio::buffer(_headerData.data(), _headerData.size()),
+    boost::asio::async_read(_socket, boost::asio::buffer(_headerData.data(), _headerData.size()), boost::asio::transfer_exactly(4),
                             [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
     {
       if (!ec)
@@ -123,11 +123,12 @@ namespace server
   void NetClientSession::doReadBody()
   {
     size_t size = static_cast<size_t>(static_cast<unsigned char>(_headerData[0])) <<  0 |
-                                                                                      static_cast<size_t>(static_cast<unsigned char>(_headerData[1])) <<  8 |
-                                                                                                                                                          static_cast<size_t>(static_cast<unsigned char>(_headerData[2])) << 16 |
-                                                                                                                                                                                                                             static_cast<size_t>(static_cast<unsigned char>(_headerData[3])) << 24;
+                  static_cast<size_t>(static_cast<unsigned char>(_headerData[1])) <<  8 |
+                  static_cast<size_t>(static_cast<unsigned char>(_headerData[2])) << 16 |
+                  static_cast<size_t>(static_cast<unsigned char>(_headerData[3])) << 24;
+
     _bodyData.resize(size, 0);
-    _socket.async_read_some(boost::asio::buffer(_bodyData.data(), _bodyData.size()),
+    boost::asio::async_read(_socket, boost::asio::buffer(_bodyData.data(), _bodyData.size()), boost::asio::transfer_exactly(_bodyData.size()),
                             [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
     {
       if (!ec)
@@ -143,16 +144,17 @@ namespace server
   {
     auto message = _outgoingMessages.front();
     std::cout << " [W] " << nlohmann::json::parse(message)["op"] << " " << message.size() << " bytes" << std::endl;
-    std::vector<char> data(message.size() + 4, 0);
+    _writeData.resize(message.size() + 4);
     auto size = message.size();
-    data[0] = (size >> 0) & 0xff;
-    data[1] = (size >> 8) & 0xff;
-    data[2] = (size >> 16) & 0xff;
-    data[3] = (size >> 24) & 0xff;
-    memcpy(data.data() + 4, message.data(), size);
+    _writeData[0] = (size >> 0) & 0xff;
+    _writeData[1] = (size >> 8) & 0xff;
+    _writeData[2] = (size >> 16) & 0xff;
+    _writeData[3] = (size >> 24) & 0xff;
+    memcpy(_writeData.data() + 4, message.data(), size);
 
-    _socket.async_write_some(boost::asio::buffer(data.data(), data.size()),
-                             [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length){
+    boost::asio::async_write(_socket, boost::asio::buffer(_writeData.data(), _writeData.size()),
+                             [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
+    {
       if (!ec)
       {
         session->_outgoingMessages.pop();
@@ -209,8 +211,16 @@ namespace server
     for (auto& operation : obj["operations"])
     {
       auto opType = operation["op"];
-      std::cout << "     " << opType << std::endl;
-      if (opType == "store_new_reservation")
+      if (opType == "erase_all_data")
+      {
+        operations.push_back(persistence::op::EraseAllData());
+      }
+      else if (opType == "store_new_hotel")
+      {
+        auto hotel = persistence::json::deserialize<hotel::Hotel>(operation["o"]);
+        operations.push_back(persistence::op::StoreNewHotel{std::make_unique<hotel::Hotel>(std::move(hotel))});
+      }
+      else if (opType == "store_new_reservation")
       {
         auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
         operations.push_back(persistence::op::StoreNewReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});

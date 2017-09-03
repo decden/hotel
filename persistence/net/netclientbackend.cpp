@@ -14,8 +14,9 @@ namespace persistence
   namespace net
   {
 
-    NetClientBackend::NetClientBackend(const std::string &host, int port)
-      : _host(host), _port(port), _status(NotConnected), _ioService(), _socket(_ioService)
+    NetClientBackend::NetClientBackend(const std::string& host, int port)
+        : _host(host), _port(port), _status(NotConnected), _ioService(), _socket(_ioService), _nextOperationId(1),
+          _nextStreamId(1)
     {
       start();
     }
@@ -139,16 +140,15 @@ namespace persistence
 
       // Make a message...
       int messageSize = data.size();
-      std::vector<char> bufferData(messageSize + 4, 0);
-      bufferData[0] = (messageSize >>  0) & 0xff;
-      bufferData[1] = (messageSize >>  8) & 0xff;
-      bufferData[2] = (messageSize >> 16) & 0xff;
-      bufferData[3] = (messageSize >> 24) & 0xff;
-      memcpy(bufferData.data() + 4, data.data(), messageSize);
+      _writeBuffer.resize(messageSize + 4);
+      _writeBuffer[0] = (messageSize >>  0) & 0xff;
+      _writeBuffer[1] = (messageSize >>  8) & 0xff;
+      _writeBuffer[2] = (messageSize >> 16) & 0xff;
+      _writeBuffer[3] = (messageSize >> 24) & 0xff;
+      memcpy(_writeBuffer.data() + 4, data.data(), messageSize);
 
-      auto buffer = boost::asio::buffer(bufferData.data(), bufferData.size());
-
-      boost::asio::async_write(_socket, std::move(buffer), [this](boost::system::error_code ec, std::size_t /*length*/)
+      boost::asio::async_write(_socket, boost::asio::buffer(_writeBuffer.data(), _writeBuffer.size()),
+                               [this](boost::system::error_code ec, std::size_t /*length*/)
       {
         if (!ec)
         {

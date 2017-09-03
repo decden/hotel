@@ -113,6 +113,9 @@ namespace server
     std::array<char, 4> _headerData;
     std::vector<char> _bodyData;
 
+    // Buffers for writing the next message
+    std::vector<char> _writeData;
+
     // Queue of messages which have not yet been sent
     std::queue<std::string> _outgoingMessages;
 

@@ -170,10 +170,13 @@ namespace guiapp
     // Store hotels
     {
       std::vector<std::unique_ptr<persistence::SimpleTaskObserver>> pendingTasks;
-      backend.queueOperation(persistence::op::EraseAllData());
+      persistence::op::Operations ops;
+      ops.push_back(persistence::op::EraseAllData());
       auto hotels = createTestHotels(rng);
       for (auto& hotel : hotels)
-        pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, persistence::op::StoreNewHotel{std::move(hotel)}));
+        ops.push_back(persistence::op::StoreNewHotel{std::move(hotel)});
+
+      pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, std::move(ops)));
       waitForTasks(backend, pendingTasks);
     }
 

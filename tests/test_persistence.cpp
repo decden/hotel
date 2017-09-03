@@ -1,11 +1,14 @@
 #include "gtest/gtest.h"
 
+#include "server/netserver.h"
+
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
 #include "persistence/simpletaskobserver.h"
 #include "persistence/sqlite/sqlitebackend.h"
 #include "persistence/op/operations.h"
 #include "persistence/json/jsonserializer.h"
+#include "persistence/net/netclientbackend.h"
 
 #include "hotel/hotelcollection.h"
 
@@ -281,4 +284,27 @@ TEST_F(Persistence, Serialization)
   ASSERT_EQ(reservationCopy, reservationOrig);
   ASSERT_EQ(reservationCopy.id(), reservationOrig.id());
   ASSERT_EQ(reservationCopy.revision(), reservationOrig.revision());
+}
+
+TEST_F(Persistence, Net)
+{
+  server::NetServer server(std::make_unique<persistence::sqlite::SqliteBackend>("test.db"));
+  server.start();
+
+  persistence::net::NetClientBackend backend("localhost", 46835);
+  persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+  persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
+  auto hotelsStreamHandle = backend.createStreamTyped(&hotels);
+  auto reservationsStreamHandle = backend.createStreamTyped(&reservations);
+  waitForStreamInitialization(backend);
+
+  ASSERT_EQ(0u, hotels.items().size());
+  ASSERT_EQ(0u, reservations.items().size());
+
+  // Create new items
+  storeHotel(backend, makeNewHotel("Hotel 1", "Category 1", 10));
+  storeReservation(backend, makeNewReservation("Reservation 1", hotels.items()[0].rooms()[0]->id()));
+
+  ASSERT_EQ(1u, hotels.items().size());
+  ASSERT_EQ(1u, reservations.items().size());
 }

@@ -57,6 +57,7 @@ namespace persistence
 
       std::array<char, 4> _headerBuffer;
       std::vector<char> _bodyBuffer;
+      std::vector<char> _writeBuffer;
       std::map<int, std::shared_ptr<Task>> _tasks;
 
 
