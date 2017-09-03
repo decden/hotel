@@ -50,10 +50,10 @@ endif()
 
 add_subdirectory(hotel)
 add_subdirectory(persistence)
+add_subdirectory(server)
 
 if (build_gui)
   add_subdirectory(gui)
   add_subdirectory(guiapp)
   add_subdirectory(serverapp)
-  add_subdirectory(server)
 endif()
