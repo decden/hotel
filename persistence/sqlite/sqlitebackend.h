@@ -121,12 +121,17 @@ namespace persistence
       void threadMain();
 
       TaskResult executeOperation(op::EraseAllData&);
-      TaskResult executeOperation(op::StoreNewHotel& op);
-      TaskResult executeOperation(op::StoreNewReservation& op);
-      TaskResult executeOperation(op::StoreNewPerson& op);
-      TaskResult executeOperation(op::UpdateHotel& op);
-      TaskResult executeOperation(op::UpdateReservation& op);
-      TaskResult executeOperation(op::DeleteReservation& op);
+      TaskResult executeOperation(op::StoreNew& op);
+      TaskResult executeOperation(op::Update& op);
+      TaskResult executeOperation(op::Delete& op);
+
+      TaskResult executeStoreNew(hotel::Hotel& hotel);
+      TaskResult executeStoreNew(hotel::Reservation& reservation);
+      TaskResult executeStoreNew(hotel::Person& person);
+
+      void executeUpdate(const hotel::Hotel& hotel);
+      void executeUpdate(const hotel::Reservation& reservation);
+      void executeUpdate(const hotel::Person& person);
 
       SqliteStorage _storage;
       ChangeQueue _changeQueue;

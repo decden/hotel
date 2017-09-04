@@ -18,23 +18,26 @@ namespace persistence
     //! Operations which deletes everyghing present in the database
     struct EraseAllData { };
 
-    struct StoreNewHotel { std::unique_ptr<hotel::Hotel> newHotel; };
-    struct StoreNewReservation { std::unique_ptr<hotel::Reservation> newReservation; };
-    struct StoreNewPerson { std::unique_ptr<hotel::Person> newPerson; };
+    typedef boost::variant<std::unique_ptr<hotel::Hotel>,
+                           std::unique_ptr<hotel::Reservation>,
+                           std::unique_ptr<hotel::Person>> StreamableTypePtr;
 
-    struct UpdateHotel { std::unique_ptr<hotel::Hotel> updatedHotel; };
-    struct UpdateReservation { std::unique_ptr<hotel::Reservation> updatedReservation; };
+    enum class StreamableType { Hotel, Reservation, Person };
 
-    struct DeleteReservation { int reservationId; };
+    template <class T>
+    StreamableType getStreamableType();
+    StreamableType getStreamableType(const StreamableTypePtr& ptr);
+
+    struct StoreNew { StreamableTypePtr newItem; };
+    struct Update { StreamableTypePtr updatedItem; };
+    struct Delete { StreamableType type; int id; };
 
     // Define a union type of all known operations
     typedef boost::variant<op::EraseAllData,
-                           op::StoreNewHotel,
-                           op::StoreNewReservation,
-                           op::StoreNewPerson,
-                           op::UpdateHotel,
-                           op::UpdateReservation,
-                           op::DeleteReservation>
+                           // crud operations
+                           op::StoreNew,
+                           op::Update,
+                           op::Delete>
             Operation;
     typedef std::vector<Operation> Operations;
 

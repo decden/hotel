@@ -67,14 +67,14 @@ public:
   void storeHotel(persistence::Backend& backend, const hotel::Hotel& hotel)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto handle = backend.queueOperation(persistence::op::StoreNewHotel { std::make_unique<hotel::Hotel>(hotel) });
+    auto handle = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Hotel>(hotel) });
     waitForTask(backend, *handle.task());
   }
 
   void storeReservation(persistence::Backend& backend, const hotel::Reservation& reservation)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto handle = backend.queueOperation(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(reservation) });
+    auto handle = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(reservation) });
     waitForTask(backend, *handle.task());
   }
 };
@@ -159,8 +159,8 @@ TEST_F(Persistence, VersionConflicts)
   changedHotel1.setName("Changed Hotel Name 1");
   auto changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  persistence::SimpleTaskObserver task1(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
-  persistence::SimpleTaskObserver task2(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  persistence::SimpleTaskObserver task1(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
+  persistence::SimpleTaskObserver task2(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
   waitForTask(backend, *task1.task());
   waitForTask(backend, *task2.task());
   ASSERT_EQ(persistence::TaskResultStatus::Successful, task1.results()[0].status);
@@ -169,7 +169,7 @@ TEST_F(Persistence, VersionConflicts)
   // Trying to make the same change to the correct revision now works
   changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  persistence::SimpleTaskObserver task3(backend, persistence::op::UpdateHotel{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  persistence::SimpleTaskObserver task3(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
   waitForTask(backend, *task3.task());
   ASSERT_EQ(persistence::TaskResultStatus::Successful, task3.results()[0].status);
 }
@@ -197,7 +197,7 @@ TEST_F(Persistence, DataStreams)
   // Updating streams
   auto updatedReservation = reservations.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
-  auto updateTask = backend.queueOperation(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(updatedReservation)});
+  auto updateTask = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
   waitForTask(backend, *updateTask.task());
   ASSERT_EQ(reservations.items()[0], updatedReservation);
 
@@ -251,7 +251,7 @@ TEST_F(Persistence, DataStreamsServices)
   // Test that item modifications affect single-id streams
   auto updatedReservation = reservation.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
-  auto updateTask = backend.queueOperation(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(updatedReservation)});
+  auto updateTask = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
   waitForTask(backend, *updateTask.task());
   ASSERT_EQ(reservation.items()[0], updatedReservation);
 
@@ -302,9 +302,16 @@ TEST_F(Persistence, Net)
   ASSERT_EQ(0u, reservations.items().size());
 
   // Create new items
-  storeHotel(backend, makeNewHotel("Hotel 1", "Category 1", 10));
-  storeReservation(backend, makeNewReservation("Reservation 1", hotels.items()[0].rooms()[0]->id()));
+  auto newHotel = makeNewHotel("Hotel 1", "Category 1", 10);
+  storeHotel(backend, newHotel);
+  auto newReservation1 = makeNewReservation("Reservation 1", hotels.items()[0].rooms()[0]->id());
+  auto newReservation2 = makeNewReservation("Reservation 2", hotels.items()[0].rooms()[1]->id());
+  storeReservation(backend, newReservation1);
+  storeReservation(backend, newReservation2);
 
   ASSERT_EQ(1u, hotels.items().size());
-  ASSERT_EQ(1u, reservations.items().size());
+  ASSERT_EQ(newHotel, hotels.items()[0]);
+  ASSERT_EQ(2u, reservations.items().size());
+  ASSERT_EQ(newReservation1, reservations.items()[0]);
+  ASSERT_EQ(newReservation2, reservations.items()[1]);
 }

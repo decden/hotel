@@ -174,7 +174,7 @@ namespace guiapp
       ops.push_back(persistence::op::EraseAllData());
       auto hotels = createTestHotels(rng);
       for (auto& hotel : hotels)
-        ops.push_back(persistence::op::StoreNewHotel{std::move(hotel)});
+        ops.push_back(persistence::op::StoreNew{std::move(hotel)});
 
       pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, std::move(ops)));
       waitForTasks(backend, pendingTasks);
@@ -185,7 +185,7 @@ namespace guiapp
       persistence::op::Operations operations;
       auto planning = createTestPlanning(rng, hotelsStream.items());
       for (auto& reservation : planning->reservations())
-        operations.push_back(persistence::op::StoreNewReservation{ std::make_unique<hotel::Reservation>(*reservation) });
+        operations.push_back(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(*reservation) });
       std::vector<std::unique_ptr<persistence::SimpleTaskObserver>> pendingTasks;
       pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, std::move(operations)));
       waitForTasks(backend, pendingTasks);

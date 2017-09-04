@@ -1,5 +1,7 @@
 #include "persistence/sqlite/sqlitestorage.h"
 
+#include "hotel/person.h"
+
 #include <iostream>
 
 namespace persistence
@@ -379,6 +381,13 @@ namespace persistence
         value.setRevision(value.revision() + 1);
         return true;
       }
+      return false;
+    }
+
+    template<>
+    bool SqliteStorage::update<hotel::Person>(hotel::Person& value)
+    {
+      // TODO: Not yet implemented
       return false;
     }
 

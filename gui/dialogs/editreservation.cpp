@@ -124,7 +124,7 @@ namespace gui
 
       auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       Form::SetItemFromTuple(*updatedReservation, _form.formValues());
-      _saveTask.connect(_backend, persistence::op::UpdateReservation{std::move(updatedReservation)});
+      _saveTask.connect(_backend, persistence::op::Update{std::move(updatedReservation)});
 
       updateUI();
     }

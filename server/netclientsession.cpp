@@ -208,35 +208,13 @@ namespace server
     std::cout << " [R] Schedule " << obj["operations"].size() << " operation(s)" << std::endl;
 
     persistence::op::Operations operations;
-    for (auto& operation : obj["operations"])
+    for (auto& operationObj : obj["operations"])
     {
-      auto opType = operation["op"];
-      if (opType == "erase_all_data")
-      {
-        operations.push_back(persistence::op::EraseAllData());
-      }
-      else if (opType == "store_new_hotel")
-      {
-        auto hotel = persistence::json::deserialize<hotel::Hotel>(operation["o"]);
-        operations.push_back(persistence::op::StoreNewHotel{std::make_unique<hotel::Hotel>(std::move(hotel))});
-      }
-      else if (opType == "store_new_reservation")
-      {
-        auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
-        operations.push_back(persistence::op::StoreNewReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
-      }
-      else if (opType == "update_reservation")
-      {
-        auto reservation = persistence::json::deserialize<hotel::Reservation>(operation["o"]);
-        operations.push_back(persistence::op::UpdateReservation{std::make_unique<hotel::Reservation>(std::move(reservation))});
-      }
-      else if (opType == "delete_reservation")
-      {
-        int id = operation["o"];
-        operations.push_back(persistence::op::DeleteReservation{id});
-      }
+      auto operation = persistence::json::deserialize<boost::optional<persistence::op::Operation>>(operationObj);
+      if (operation)
+        operations.push_back(std::move(*operation));
       else
-        std::cout << " [!] Unknown operation " << opType << ": " << operation << std::endl;
+        std::cout << " [!] Unknown operation " << operationObj << std::endl;
     }
 
     auto observer = std::make_unique<detail::SessionTaskObserver>(*this, obj["id"], _backend, std::move(operations));

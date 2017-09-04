@@ -9,6 +9,8 @@
 
 #include "json.hpp"
 
+#include <boost/optional.hpp>
+
 namespace persistence
 {
   namespace json
@@ -25,6 +27,7 @@ namespace persistence
     template <> nlohmann::json serialize(const hotel::Reservation::ReservationStatus& item);
     template <> nlohmann::json serialize(const hotel::ReservationAtom& item);
     template <> nlohmann::json serialize(const hotel::Person& item);
+    template <> nlohmann::json serialize(const persistence::op::StreamableType& type);
 
     void deserializePersistentObject(hotel::PersistentObject& item, const nlohmann::json& json);
     template <> hotel::Hotel deserialize(const nlohmann::json& json);
@@ -35,14 +38,14 @@ namespace persistence
     template <> hotel::Reservation::ReservationStatus deserialize(const nlohmann::json& json);
     template <> hotel::Person deserialize(const nlohmann::json& json);
 
+    template <> persistence::op::StreamableType deserialize(const nlohmann::json& json);
+    template <> boost::optional<persistence::op::Operation> deserialize(const nlohmann::json& json);
+
     template <> nlohmann::json serialize(const op::Operation& operation);
     template <> nlohmann::json serialize(const op::EraseAllData& operation);
-    template <> nlohmann::json serialize(const op::StoreNewHotel& operation);
-    template <> nlohmann::json serialize(const op::StoreNewReservation& operation);
-    template <> nlohmann::json serialize(const op::StoreNewPerson& operation);
-    template <> nlohmann::json serialize(const op::UpdateHotel& operation);
-    template <> nlohmann::json serialize(const op::UpdateReservation& operation);
-    template <> nlohmann::json serialize(const op::DeleteReservation& operation);
+    template <> nlohmann::json serialize(const op::StoreNew& operation);
+    template <> nlohmann::json serialize(const op::Update& operation);
+    template <> nlohmann::json serialize(const op::Delete& operation);
 
   } // namespace json
 } // namespace persistence

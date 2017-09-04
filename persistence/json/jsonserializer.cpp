@@ -172,52 +172,85 @@ namespace persistence
       return obj;
     }
 
-    template <> nlohmann::json serialize(const op::StoreNewHotel& operation)
+    template <> nlohmann::json serialize(const op::StoreNew &operation)
     {
       nlohmann::json obj;
-      obj["op"] = "store_new_hotel";
-      obj["o"] = serialize(*operation.newHotel);
+      obj["op"] = "store";
+      obj["t"] = serialize(persistence::op::getStreamableType(operation.newItem));
+      obj["o"] = boost::apply_visitor([](const auto& item) { return serialize(*item); }, operation.newItem);
       return obj;
     }
 
-    template <> nlohmann::json serialize(const op::StoreNewReservation& operation)
+    template <> nlohmann::json serialize(const op::Update &operation)
     {
       nlohmann::json obj;
-      obj["op"] = "store_new_reservation";
-      obj["o"] = serialize(*operation.newReservation);
+      obj["op"] = "update";
+      obj["t"] = serialize(persistence::op::getStreamableType(operation.updatedItem));
+      obj["o"] = boost::apply_visitor([](const auto& item) { return serialize(*item); }, operation.updatedItem);
       return obj;
     }
 
-    template <> nlohmann::json serialize(const op::StoreNewPerson& operation)
+    template <> nlohmann::json serialize(const op::Delete &operation)
     {
       nlohmann::json obj;
-      obj["op"] = "store_new_person";
-      obj["o"] = serialize(*operation.newPerson);
+      obj["op"] = "delete";
+      obj["t"] = serialize(operation.type);
+      obj["o"] = operation.id;
       return obj;
     }
 
-    template <> nlohmann::json serialize(const op::UpdateHotel& operation)
+    template<> nlohmann::json serialize(const persistence::op::StreamableType& type)
     {
-      nlohmann::json obj;
-      obj["op"] = "update_hotel";
-      obj["o"] = serialize(*operation.updatedHotel);
-      return obj;
+      switch (type)
+      {
+      case persistence::op::StreamableType::Hotel: return "hotel";
+      case persistence::op::StreamableType::Reservation: return "reservation";
+      case persistence::op::StreamableType::Person: return "person";
+      default:
+        assert(false);
+        return "";
+      }
     }
 
-    template <> nlohmann::json serialize(const op::UpdateReservation& operation)
+    template<>
+    op::StreamableType deserialize(const nlohmann::json &json)
     {
-      nlohmann::json obj;
-      obj["op"] = "update_reservation";
-      obj["o"] = serialize(*operation.updatedReservation);
-      return obj;
+      std::string type = json;
+      if (type == "hotel") return persistence::op::StreamableType::Hotel;
+      if (type == "reservation") return persistence::op::StreamableType::Reservation;
+      if (type == "person") return persistence::op::StreamableType::Person;
     }
 
-    template <> nlohmann::json serialize(const op::DeleteReservation& operation)
+    template<>
+    boost::optional<op::Operation> deserialize(const nlohmann::json &json)
     {
-      nlohmann::json obj;
-      obj["op"] = "delete_reservation";
-      obj["o"] = operation.reservationId;
-      return obj;
+      std::string operation = json["op"];
+
+      if (operation == "erase_all_data")
+      {
+        return op::Operation{op::EraseAllData()};
+      }
+      else if (operation == "store")
+      {
+        auto type = deserialize<persistence::op::StreamableType>(json["t"]);
+        if (type == persistence::op::StreamableType::Hotel)
+        {
+          auto item = deserialize<hotel::Hotel>(json["o"]);
+          return op::Operation{persistence::op::StoreNew{std::make_unique<hotel::Hotel>(std::move(item))}};
+        }
+        else if (type == persistence::op::StreamableType::Reservation)
+        {
+          auto item = deserialize<hotel::Reservation>(json["o"]);
+          return op::Operation{persistence::op::StoreNew{std::make_unique<hotel::Reservation>(std::move(item))}};
+        }
+        else { assert(false); }
+      }
+      else
+      {
+        assert(false);
+      }
+
+      return boost::none;
     }
 
   } // namespace json

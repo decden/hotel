@@ -83,7 +83,7 @@ namespace gui
     {
       persistence::op::Operations removals;
       for (auto reservation : _context.selectedReservations())
-        removals.push_back(persistence::op::DeleteReservation{reservation->id()});
+        removals.push_back(persistence::op::Delete{persistence::op::StreamableType::Reservation, reservation->id()});
       _context.dataBackend().queueOperations(std::move(removals));
     }
 
