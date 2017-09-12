@@ -345,7 +345,7 @@ namespace persistence
         return TaskResult{TaskResultStatus::Successful, {{"message", "Trying to store empty item"}}};
 
       return boost::apply_visitor([this](const auto& newItem) {
-        return executeStoreNew(*newItem);
+        return this->executeStoreNew(*newItem);
       }, op.newItem);
     }
 
@@ -391,7 +391,7 @@ namespace persistence
 
       // TODO: This should be implementable using
       boost::apply_visitor([this](const auto& updatedItem) {
-        return executeUpdate(*updatedItem);
+        return this->executeUpdate(*updatedItem);
       }, op.updatedItem);
 
       return result;
