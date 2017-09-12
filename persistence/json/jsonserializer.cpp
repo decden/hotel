@@ -221,6 +221,24 @@ namespace persistence
       if (type == "person") return persistence::op::StreamableType::Person;
     }
 
+    boost::optional<persistence::op::StreamableTypePtr> deserializeStreamableType(const nlohmann::json& json)
+    {
+      auto type = deserialize<persistence::op::StreamableType>(json["t"]);
+      if (type == persistence::op::StreamableType::Hotel)
+      {
+        auto item = deserialize<hotel::Hotel>(json["o"]);
+        return op::StreamableTypePtr{std::make_unique<hotel::Hotel>(std::move(item))};
+      }
+      else if (type == persistence::op::StreamableType::Reservation)
+      {
+        auto item = deserialize<hotel::Reservation>(json["o"]);
+        return op::StreamableTypePtr{std::make_unique<hotel::Reservation>(std::move(item))};
+      }
+
+      assert(false);
+      return boost::none;
+    }
+
     template<>
     boost::optional<op::Operation> deserialize(const nlohmann::json &json)
     {
@@ -232,21 +250,26 @@ namespace persistence
       }
       else if (operation == "store")
       {
+        auto item = deserializeStreamableType(json);
+        assert(item);
+        if (item)
+          return op::Operation{op::StoreNew{std::move(*item)}};
+      }
+      else if (operation == "update")
+      {
+        auto item = deserializeStreamableType(json);
+        assert(item);
+        if (item)
+          return op::Operation{op::Update{std::move(*item)}};
+      }
+      else if (operation == "delete")
+      {
         auto type = deserialize<persistence::op::StreamableType>(json["t"]);
-        if (type == persistence::op::StreamableType::Hotel)
-        {
-          auto item = deserialize<hotel::Hotel>(json["o"]);
-          return op::Operation{persistence::op::StoreNew{std::make_unique<hotel::Hotel>(std::move(item))}};
-        }
-        else if (type == persistence::op::StreamableType::Reservation)
-        {
-          auto item = deserialize<hotel::Reservation>(json["o"]);
-          return op::Operation{persistence::op::StoreNew{std::make_unique<hotel::Reservation>(std::move(item))}};
-        }
-        else { assert(false); }
+        return op::Operation{persistence::op::Delete{type, json["o"]}};
       }
       else
       {
+        std::cerr << "Unknown operation " << operation << std::endl;
         assert(false);
       }
 

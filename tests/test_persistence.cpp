@@ -314,4 +314,21 @@ TEST_F(Persistence, Net)
   ASSERT_EQ(2u, reservations.items().size());
   ASSERT_EQ(newReservation1, reservations.items()[0]);
   ASSERT_EQ(newReservation2, reservations.items()[1]);
+
+  // Update existing items
+  auto updatedHotel = hotels.items()[0];
+  updatedHotel.setName("Fancy Hotel 1");
+  persistence::SimpleTaskObserver updateTask1(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
+  waitForTask(backend, *updateTask1.task());
+  auto updatedReservation = reservations.items()[0];
+  updatedReservation.setDescription("Hello!");
+  persistence::SimpleTaskObserver updateTask2(backend, persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
+  waitForTask(backend, *updateTask2.task());
+
+  ASSERT_EQ(1u, hotels.items().size());
+  // TODO: This does not yet pass, the update process duplicates some of the data (e.g. rooms and categories)
+  //ASSERT_EQ(updatedHotel, hotels.items()[0]);
+  ASSERT_EQ(2u, reservations.items().size());
+  ASSERT_EQ(updatedReservation, reservations.items()[0]);
+  ASSERT_EQ(newReservation2, reservations.items()[1]);
 }
