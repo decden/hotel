@@ -12,7 +12,7 @@ namespace persistence
     {
     public:
       virtual ~DefaultDataStreamHandler() {}
-      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override
+      virtual void initialize(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage) override
       {
         switch(stream.streamType())
         {
@@ -22,32 +22,32 @@ namespace persistence
         }
       }
 
-      virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      virtual void addItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) override
       {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{items});
+        changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{items}});
       }
 
-      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      virtual void updateItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) override
       {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsUpdated{items});
+        changeQueue.push_back({stream.streamId(), DataStreamItemsUpdated{items}});
       }
 
-      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
+      virtual void removeItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const std::vector<int> ids) override
       {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{ids});
+        changeQueue.push_back({stream.streamId(), DataStreamItemsRemoved{ids}});
       }
 
-      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) override
+      virtual void clear(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue) override
       {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
+        changeQueue.push_back({stream.streamId(), DataStreamCleared{}});
       }
 
     private:
       template <class T>
-      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage)
+      void initializeTyped(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage)
       {
         auto items = storage.loadAll<T>();
-        changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
+        changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{std::move(items)}});
       }
     };
 
@@ -56,7 +56,7 @@ namespace persistence
     {
     public:
       virtual ~SingleIdDataStreamHandler() {}
-      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) override
+      virtual void initialize(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage) override
       {
         switch(stream.streamType())
         {
@@ -66,34 +66,34 @@ namespace persistence
         }
       }
 
-      virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      virtual void addItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) override
       {
         int id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
         bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
         if (!isEmpty)
-          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{filteredItems});
+          changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{filteredItems}});
       }
 
-      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) override
+      virtual void updateItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) override
       {
         int id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
         bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
         if (!isEmpty)
-          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsUpdated{filteredItems});
+          changeQueue.push_back({stream.streamId(), DataStreamItemsUpdated{filteredItems}});
       }
 
-      virtual void removeItems(DataStream& stream, ChangeQueue& changeQueue, const std::vector<int> ids) override
+      virtual void removeItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const std::vector<int> ids) override
       {
         int id = stream.streamOptions()["id"];
         if (std::any_of(ids.begin(), ids.end(), [id](int item) { return item == id; }))
-          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsRemoved{{id}});
+          changeQueue.push_back({stream.streamId(), DataStreamItemsRemoved{{id}}});
       }
 
-      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) override
+      virtual void clear(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue) override
       {
-        changeQueue.addStreamChange(stream.streamId(), DataStreamCleared{});
+        changeQueue.push_back({stream.streamId(), DataStreamCleared{}});
       }
 
     private:
@@ -107,14 +107,14 @@ namespace persistence
       }
 
       template <class T>
-      void initializeTyped(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage)
+      void initializeTyped(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage)
       {
         auto id = stream.streamOptions()["id"];
         auto item = storage.loadById<T>(id);
         if (item != boost::none)
         {
           std::vector<T> items({*item});
-          changeQueue.addStreamChange(stream.streamId(), DataStreamItemsAdded{std::move(items)});
+          changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{std::move(items)}});
         }
       }
     };
@@ -156,11 +156,14 @@ namespace persistence
       {
         auto streamPtr = uninitializedStream.get();
         auto streamHandler = findHandler(*streamPtr);
+        std::vector<DataStreamDifferential> changes;
         if (streamHandler)
-          streamHandler->initialize(*streamPtr, changeQueue, storage);
+          streamHandler->initialize(*streamPtr, changes, storage);
         else
           std::cerr << "Cannot initialize stream, because there is no handler registered" << std::endl;
-        changeQueue.addStreamChange(streamPtr->streamId(), DataStreamInitialized{});
+        changes.push_back({streamPtr->streamId(), DataStreamInitialized{}});
+        for (auto& change : changes)
+          changeQueue.addStreamChange(change.streamId, std::move(change.change));
       }
     }
 
@@ -183,28 +186,28 @@ namespace persistence
       }
     }
 
-    void DataStreamManager::addItems(ChangeQueue &changeQueue, StreamableType type, const StreamableItems items)
+    void DataStreamManager::addItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, const StreamableItems items)
     {
       foreachStream(type, [&changeQueue, &items](DataStream& stream, DataStreamHandler& handler) {
         handler.addItems(stream, changeQueue, items);
       });
     }
 
-    void DataStreamManager::updateItems(ChangeQueue &changeQueue, StreamableType type, const StreamableItems items)
+    void DataStreamManager::updateItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, const StreamableItems items)
     {
       foreachStream(type, [&changeQueue, &items](DataStream& stream, DataStreamHandler& handler) {
         handler.updateItems(stream, changeQueue, items);
       });
     }
 
-    void DataStreamManager::removeItems(ChangeQueue &changeQueue, StreamableType type, std::vector<int> ids)
+    void DataStreamManager::removeItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, std::vector<int> ids)
     {
       foreachStream(type, [&changeQueue, &ids](DataStream& stream, DataStreamHandler& handler) {
         handler.removeItems(stream, changeQueue, ids);
       });
     }
 
-    void DataStreamManager::clear(ChangeQueue &changeQueue, StreamableType type)
+    void DataStreamManager::clear(std::vector<DataStreamDifferential>& changeQueue, StreamableType type)
     {
       foreachStream(type, [&changeQueue](DataStream& stream, DataStreamHandler& handler) {
         handler.clear(stream, changeQueue);
@@ -314,63 +317,83 @@ namespace persistence
         // Process tasks
         for (auto& operationsMessage : newTasks)
         {
-          std::vector<TaskResult> results;
           _storage.beginTransaction();
+
+          std::vector<TaskResult> results;
+          std::vector<DataStreamDifferential> streamChanges;
+          bool rollback = false;
           for (auto& operation : operationsMessage.first)
           {
-            auto result = boost::apply_visitor([this](auto& op) { return this->executeOperation(op); }, operation);
-            results.push_back(result);
+            auto result = boost::apply_visitor([this, &streamChanges](auto& op) { return this->executeOperation(op, streamChanges); }, operation);
+            bool succeeded = result.status != TaskResultStatus::Error;
+            results.push_back(std::move(result));
+
+            if (!succeeded)
+            {
+              rollback = true;
+              break;
+            }
           }
-          _storage.commitTransaction();
+
+          if (rollback)
+          {
+            _storage.rollbackTransaction();
+          }
+          else
+          {
+            _storage.commitTransaction();
+            for (auto& streamChange : streamChanges)
+              _changeQueue.addStreamChange(streamChange.streamId, std::move(streamChange.change));
+          }
           _changeQueue.addTaskChange(operationsMessage.second->taskId(), std::move(results));
         }
       }
     }
 
-    TaskResult SqliteBackend::executeOperation(op::EraseAllData&)
+    TaskResult SqliteBackend::executeOperation(op::EraseAllData&, std::vector<DataStreamDifferential>& streamChanges)
     {
       _storage.deleteAll();
 
-      _dataStreams.clear(_changeQueue, StreamableType::Reservation);
-      _dataStreams.clear(_changeQueue, StreamableType::Hotel);
+      _dataStreams.clear(streamChanges, StreamableType::Reservation);
+      _dataStreams.clear(streamChanges, StreamableType::Hotel);
 
       return TaskResult{TaskResultStatus::Successful, {}};
     }
 
-    TaskResult SqliteBackend::executeOperation(op::StoreNew& op)
+    TaskResult SqliteBackend::executeOperation(op::StoreNew& op, std::vector<DataStreamDifferential>& streamChanges)
     {
       bool isNull = boost::apply_visitor([](const auto& item) { return item == nullptr; }, op.newItem);
       assert(!isNull );
       if (isNull )
         return TaskResult{TaskResultStatus::Successful, {{"message", "Trying to store empty item"}}};
 
-      return boost::apply_visitor([this](const auto& newItem) {
-        return this->executeStoreNew(*newItem);
+      return boost::apply_visitor([this, &streamChanges](const auto& newItem) {
+        return this->executeStoreNew(*newItem, streamChanges);
       }, op.newItem);
     }
 
-    TaskResult SqliteBackend::executeStoreNew(hotel::Hotel& hotel)
+    TaskResult SqliteBackend::executeStoreNew(hotel::Hotel& hotel, std::vector<DataStreamDifferential>& streamChanges)
     {
       _storage.storeNewHotel(hotel);
-      _dataStreams.addItems(_changeQueue, StreamableType::Hotel, std::vector<hotel::Hotel>{{hotel}});
+      _dataStreams.addItems(streamChanges, StreamableType::Hotel, std::vector<hotel::Hotel>{{hotel}});
       return TaskResult{TaskResultStatus::Successful, {{"id", hotel.id()}}};
     }
 
-    TaskResult SqliteBackend::executeStoreNew(hotel::Reservation& reservation)
+    TaskResult SqliteBackend::executeStoreNew(hotel::Reservation& reservation, std::vector<DataStreamDifferential>& streamChanges)
     {
       _storage.storeNewReservationAndAtoms(reservation);
-      _dataStreams.addItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{reservation}});
+      _dataStreams.addItems(streamChanges, StreamableType::Reservation, std::vector<hotel::Reservation>{{reservation}});
       return TaskResult{TaskResultStatus::Successful, {{"id", reservation.id()}}};
     }
 
-    TaskResult SqliteBackend::executeStoreNew(hotel::Person& person)
+    TaskResult SqliteBackend::executeStoreNew(hotel::Person& person, std::vector<DataStreamDifferential>& streamChanges)
     {
       // TODO: Implement this
       std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
       return TaskResult{TaskResultStatus::Error, {{"message", "Not implemented yet!"}}};
     }
 
-    TaskResult SqliteBackend::executeOperation(op::Update &op)
+    TaskResult SqliteBackend::executeOperation(op::Update& op, std::vector<DataStreamDifferential>& streamChanges)
     {
       bool isNull = boost::apply_visitor([](const auto& item) { return item == nullptr; }, op.updatedItem);
       int id = boost::apply_visitor([](const auto& item) { return item->id(); }, op.updatedItem);
@@ -390,36 +413,36 @@ namespace persistence
         return result;
 
       // TODO: This should be implementable using
-      boost::apply_visitor([this](const auto& updatedItem) {
-        return this->executeUpdate(*updatedItem);
+      boost::apply_visitor([this, &streamChanges](const auto& updatedItem) {
+        return this->executeUpdate(*updatedItem, streamChanges);
       }, op.updatedItem);
 
       return result;
     }
 
-    void SqliteBackend::executeUpdate(const hotel::Hotel& hotel)
+    void SqliteBackend::executeUpdate(const hotel::Hotel& hotel, std::vector<DataStreamDifferential> &streamChanges)
     {
-      _dataStreams.updateItems(_changeQueue, StreamableType::Hotel, std::vector<hotel::Hotel>{{hotel}});
+      _dataStreams.updateItems(streamChanges, StreamableType::Hotel, std::vector<hotel::Hotel>{{hotel}});
     }
 
-    void SqliteBackend::executeUpdate(const hotel::Reservation& reservation)
+    void SqliteBackend::executeUpdate(const hotel::Reservation& reservation, std::vector<DataStreamDifferential> &streamChanges)
     {
-      _dataStreams.updateItems(_changeQueue, StreamableType::Reservation, std::vector<hotel::Reservation>{{reservation}});
+      _dataStreams.updateItems(streamChanges, StreamableType::Reservation, std::vector<hotel::Reservation>{{reservation}});
     }
 
-    void SqliteBackend::executeUpdate(const hotel::Person &person)
+    void SqliteBackend::executeUpdate(const hotel::Person &person, std::vector<DataStreamDifferential> &streamChanges)
     {
       // TODO: Implement this
     }
 
-    TaskResult SqliteBackend::executeOperation(op::Delete &op)
+    TaskResult SqliteBackend::executeOperation(op::Delete &op, std::vector<DataStreamDifferential> &streamChanges)
     {
       //if (op.type == persistence::op::StreamableType::Hotel)
       //  _storage.deleteById<hotel::Hotel>(op.id);
       if (op.type == persistence::op::StreamableType::Reservation)
       {
         _storage.deleteReservationById(op.id);
-        _dataStreams.removeItems(_changeQueue, StreamableType::Reservation, {op.id});
+        _dataStreams.removeItems(streamChanges, StreamableType::Reservation, {op.id});
       }
       else
       {

@@ -18,6 +18,18 @@
 
 namespace persistence
 {
+  struct DataStreamDifferential
+  {
+    int streamId;
+    DataStreamChange change;
+  };
+
+  struct TaskDifferential
+  {
+    int taskId;
+    std::vector<TaskResult> results;
+  };
+
   /**
    * @brief The ChangeQueue class collects changes from a backend and makes them available to the backend.
    */
@@ -61,16 +73,6 @@ namespace persistence
     boost::signals2::connection connectToStreamChangesAvailableSignal(boost::signals2::slot<void()> slot);
 
   private:
-    struct DataStreamDifferential
-    {
-      int streamId;
-      DataStreamChange change;
-    };
-    struct TaskDifferential
-    {
-      int taskId;
-      std::vector<TaskResult> results;
-    };
 
     std::vector<std::shared_ptr<DataStream>> _dataStreams;
     std::vector<std::shared_ptr<Task>> _tasks;

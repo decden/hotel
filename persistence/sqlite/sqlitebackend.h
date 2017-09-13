@@ -31,11 +31,11 @@ namespace persistence
     {
     public:
       virtual ~DataStreamHandler() {}
-      virtual void initialize(DataStream& stream, ChangeQueue& changeQueue, sqlite::SqliteStorage& storage) = 0;
-      virtual void addItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) = 0;
-      virtual void updateItems(DataStream& stream, ChangeQueue& changeQueue, const StreamableItems& items) = 0;
-      virtual void removeItems(DataStream& stream, ChangeQueue& ChangeQueue, const std::vector<int> ids) = 0;
-      virtual void clear(DataStream& stream, ChangeQueue& changeQueue) = 0;
+      virtual void initialize(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage) = 0;
+      virtual void addItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) = 0;
+      virtual void updateItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) = 0;
+      virtual void removeItems(DataStream& stream, std::vector<DataStreamDifferential>& ChangeQueue, const std::vector<int> ids) = 0;
+      virtual void clear(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue) = 0;
     };
 
     class DataStreamManager
@@ -73,10 +73,10 @@ namespace persistence
         return !_uninitializedStreams.empty();
       }
 
-      virtual void addItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
-      virtual void updateItems(ChangeQueue& changeQueue, StreamableType type, const StreamableItems items);
-      virtual void removeItems(ChangeQueue& changeQueue, StreamableType type, std::vector<int> ids);
-      virtual void clear(ChangeQueue& changeQueue, StreamableType type);
+      virtual void addItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, const StreamableItems items);
+      virtual void updateItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, const StreamableItems items);
+      virtual void removeItems(std::vector<DataStreamDifferential>& changeQueue, StreamableType type, std::vector<int> ids);
+      virtual void clear(std::vector<DataStreamDifferential>& changeQueue, StreamableType type);
 
     private:
       DataStreamHandler* findHandler(const DataStream& stream);
@@ -120,18 +120,18 @@ namespace persistence
       void stopAndJoin();
       void threadMain();
 
-      TaskResult executeOperation(op::EraseAllData&);
-      TaskResult executeOperation(op::StoreNew& op);
-      TaskResult executeOperation(op::Update& op);
-      TaskResult executeOperation(op::Delete& op);
+      TaskResult executeOperation(op::EraseAllData&, std::vector<DataStreamDifferential>& streamChanges);
+      TaskResult executeOperation(op::StoreNew& op, std::vector<DataStreamDifferential>& streamChanges);
+      TaskResult executeOperation(op::Update& op, std::vector<DataStreamDifferential>& streamChanges);
+      TaskResult executeOperation(op::Delete& op, std::vector<DataStreamDifferential>& streamChanges);
 
-      TaskResult executeStoreNew(hotel::Hotel& hotel);
-      TaskResult executeStoreNew(hotel::Reservation& reservation);
-      TaskResult executeStoreNew(hotel::Person& person);
+      TaskResult executeStoreNew(hotel::Hotel& hotel, std::vector<DataStreamDifferential>& streamChanges);
+      TaskResult executeStoreNew(hotel::Reservation& reservation, std::vector<DataStreamDifferential>& streamChanges);
+      TaskResult executeStoreNew(hotel::Person& person, std::vector<DataStreamDifferential>& streamChanges);
 
-      void executeUpdate(const hotel::Hotel& hotel);
-      void executeUpdate(const hotel::Reservation& reservation);
-      void executeUpdate(const hotel::Person& person);
+      void executeUpdate(const hotel::Hotel& hotel, std::vector<DataStreamDifferential>& streamChanges);
+      void executeUpdate(const hotel::Reservation& reservation, std::vector<DataStreamDifferential>& streamChanges);
+      void executeUpdate(const hotel::Person& person, std::vector<DataStreamDifferential>& streamChanges);
 
       SqliteStorage _storage;
       ChangeQueue _changeQueue;

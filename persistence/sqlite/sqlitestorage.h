@@ -45,6 +45,7 @@ namespace persistence
 
       void beginTransaction();
       void commitTransaction();
+      void rollbackTransaction();
 
     private:
       SqliteStatement& query(const std::string& key);

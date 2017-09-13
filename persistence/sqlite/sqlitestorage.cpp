@@ -405,8 +405,8 @@ namespace persistence
     int64_t SqliteStorage::lastInsertId() { return sqlite3_last_insert_rowid(_db); }
 
     void SqliteStorage::beginTransaction() { sqlite3_exec(_db, "BEGIN TRANSACTION", nullptr, nullptr, nullptr); }
-
-    void SqliteStorage::commitTransaction() { sqlite3_exec(_db, "END TRANSACTION", nullptr, nullptr, nullptr); }
+    void SqliteStorage::commitTransaction() { sqlite3_exec(_db, "COMMIT TRANSACTION", nullptr, nullptr, nullptr); }
+    void SqliteStorage::rollbackTransaction() { sqlite3_exec(_db, "ROLLBACK TRANSACTION", nullptr, nullptr, nullptr); }
 
     void SqliteStorage::prepareQueries()
     {

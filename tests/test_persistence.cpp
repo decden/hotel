@@ -264,6 +264,49 @@ TEST_F(Persistence, DataStreamsServices)
   ASSERT_EQ(0u, reservation.items().size());
 }
 
+TEST_F(Persistence, FailedTransaction)
+{
+  {
+    persistence::sqlite::SqliteBackend backend("test.db");
+    persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+    auto hotelsStreamHandle = backend.createStreamTyped(&hotels);
+    storeHotel(backend, makeNewHotel("Hotel 1", "Category 1", 10));
+
+    ASSERT_EQ(1u, hotels.items().size());
+    ASSERT_EQ(1u, hotels.items()[0].revision());
+    ASSERT_EQ("Hotel 1", hotels.items()[0].name());
+
+    // Queue two changes to the same hotel, this is illegal, since both changes will reference the same revision and
+    // thus one will fail. We want to check that in this case the whole transaction is rolled back
+    auto updatedHotel = hotels.items()[0];
+    updatedHotel.setName("Changed Name");
+    persistence::op::Operations ops;
+    ops.push_back(persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
+    ops.push_back(persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
+
+    persistence::SimpleTaskObserver updateTask(backend, std::move(ops));
+    waitForTask(backend, *updateTask.task());
+
+    ASSERT_EQ(persistence::TaskResultStatus::Successful, updateTask.results()[0].status);
+    ASSERT_EQ(persistence::TaskResultStatus::Error, updateTask.results()[1].status);
+    ASSERT_EQ(1u, hotels.items().size());
+    ASSERT_EQ(1u, hotels.items()[0].revision());
+    ASSERT_EQ("Hotel 1", hotels.items()[0].name());
+  }
+
+  // After reloading the database, we should still see no changes...
+  {
+    persistence::sqlite::SqliteBackend backend("test.db");
+    persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
+    auto hotelsStreamHandle = backend.createStreamTyped(&hotels);
+    waitForStreamInitialization(backend);
+
+    ASSERT_EQ(1u, hotels.items().size());
+    ASSERT_EQ(1u, hotels.items()[0].revision());
+    ASSERT_EQ("Hotel 1", hotels.items()[0].name());
+  }
+}
+
 TEST_F(Persistence, Serialization)
 {
   hotel::Hotel hotelOrig("hello");
