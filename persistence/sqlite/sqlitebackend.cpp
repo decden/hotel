@@ -318,13 +318,12 @@ namespace persistence
         for (auto& operationsMessage : newTasks)
         {
           _storage.beginTransaction();
-
-          std::vector<TaskResult> results;
-          std::vector<DataStreamDifferential> streamChanges;
+          ChangeList transactionChanges;
+          std::vector<persistence::TaskResult> results;
           bool rollback = false;
           for (auto& operation : operationsMessage.first)
           {
-            auto result = boost::apply_visitor([this, &streamChanges](auto& op) { return this->executeOperation(op, streamChanges); }, operation);
+            auto result = boost::apply_visitor([this, &transactionChanges](auto& op) { return this->executeOperation(op, transactionChanges.streamChanges); }, operation);
             bool succeeded = result.status != TaskResultStatus::Error;
             results.push_back(std::move(result));
 
@@ -342,8 +341,7 @@ namespace persistence
           else
           {
             _storage.commitTransaction();
-            for (auto& streamChange : streamChanges)
-              _changeQueue.addStreamChange(streamChange.streamId, std::move(streamChange.change));
+            _changeQueue.addChanges(std::move(transactionChanges));
           }
           _changeQueue.addTaskChange(operationsMessage.second->taskId(), std::move(results));
         }

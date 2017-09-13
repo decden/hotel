@@ -31,6 +31,15 @@ namespace persistence
   };
 
   /**
+   * @brief The ChangeList class holds a list of changes to tasks and streams
+   */
+  struct ChangeList
+  {
+    std::vector<DataStreamDifferential> streamChanges;
+    std::vector<TaskDifferential> taskChanges;
+  };
+
+  /**
    * @brief The ChangeQueue class collects changes from a backend and makes them available to the backend.
    */
   class ChangeQueue
@@ -66,6 +75,7 @@ namespace persistence
 
     // Methods used by backend
 
+    void addChanges(ChangeList list);
     void addTaskChange(int taskId, std::vector<TaskResult> results);
     void addStreamChange(int streamId, DataStreamChange change);
 
@@ -79,8 +89,7 @@ namespace persistence
 
     std::mutex _streamChangesMutex;
     std::mutex _completedTasksMutex;
-    std::vector<DataStreamDifferential> _streamChangeQueue;
-    std::vector<TaskDifferential> _taskChangeQueue;
+    ChangeList _changeList;
 
     boost::signals2::signal<void()> _taskCompletedSignal;
     boost::signals2::signal<void()> _streamChangesAvailableSignal;

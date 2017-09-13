@@ -23,7 +23,7 @@ namespace persistence
     // Apply all of the strema changes
     std::vector<DataStreamDifferential> changes;
     std::unique_lock<std::mutex> lock(_streamChangesMutex);
-    std::swap(_streamChangeQueue, changes);
+    std::swap(_changeList.streamChanges, changes);
     lock.unlock();
 
     for (auto& change: changes)
@@ -45,7 +45,7 @@ namespace persistence
     // Apply all of the task changes
     std::vector<TaskDifferential> changes;
     std::unique_lock<std::mutex> lock(_completedTasksMutex);
-    std::swap(_taskChangeQueue, changes);
+    std::swap(_changeList.taskChanges, changes);
     lock.unlock();
 
     for (auto& change : changes)
@@ -57,10 +57,29 @@ namespace persistence
     }
   }
 
+  void ChangeQueue::addChanges(ChangeList list)
+  {
+    if (!list.taskChanges.empty())
+    {
+      std::unique_lock<std::mutex> lock(_completedTasksMutex);
+      std::move(list.taskChanges.begin(), list.taskChanges.end(), std::back_inserter(_changeList.taskChanges));
+      lock.unlock();
+      _taskCompletedSignal();
+    }
+
+    if (!list.streamChanges.empty())
+    {
+      std::unique_lock<std::mutex> lock(_streamChangesMutex);
+      std::move(list.streamChanges.begin(), list.streamChanges.end(), std::back_inserter(_changeList.streamChanges));
+      lock.unlock();
+      _streamChangesAvailableSignal();
+    }
+  }
+
   void ChangeQueue::addTaskChange(int taskId, std::vector<TaskResult> results)
   {
     std::unique_lock<std::mutex> lock(_completedTasksMutex);
-    _taskChangeQueue.push_back({taskId, std::move(results)});
+    _changeList.taskChanges.push_back({taskId, std::move(results)});
     lock.unlock();
     _taskCompletedSignal();
   }
@@ -68,7 +87,7 @@ namespace persistence
   void ChangeQueue::addStreamChange(int streamId, DataStreamChange change)
   {
     std::unique_lock<std::mutex> lock(_streamChangesMutex);
-    _streamChangeQueue.push_back({streamId, std::move(change)});
+    _changeList.streamChanges.push_back({streamId, std::move(change)});
     lock.unlock();
     _streamChangesAvailableSignal();
   }
