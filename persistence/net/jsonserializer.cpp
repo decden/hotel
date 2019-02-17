@@ -14,7 +14,7 @@ namespace persistence
       };
 
       auto array = nlohmann::json::array();
-      boost::apply_visitor([&](auto& items) {
+      std::visit([&](auto& items) {
         for (auto& item : items)
           array.push_back(persistence::json::serialize(item));
       }, items);
@@ -32,7 +32,7 @@ namespace persistence
       };
 
       auto array = nlohmann::json::array();
-      boost::apply_visitor([&](auto& items) {
+      std::visit([&](auto& items) {
         for (auto& item : items)
           array.push_back(persistence::json::serialize(item));
       }, items);
@@ -158,7 +158,7 @@ namespace persistence
 
     std::string JsonSerializer::serializeListType(const StreamableItems &items)
     {
-      return boost::apply_visitor([](const auto &list) {
+      return std::visit([](const auto &list) {
         return JsonSerializer::serializeListType<typename std::decay<decltype(list)>::type>();
       }, items);
     }

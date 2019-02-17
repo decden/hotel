@@ -12,7 +12,7 @@
 #include "hotel/planning.h"
 #include "hotel/reservation.h"
 
-#include <QGraphicsView>
+#include <QtWidgets/QGraphicsView>
 
 #include <boost/date_time.hpp>
 

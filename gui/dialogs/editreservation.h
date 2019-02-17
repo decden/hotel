@@ -4,13 +4,13 @@
 #include "gui/datastreamobserveradapter.h"
 #include "gui/statusbar.h"
 
-#include "boost/optional.hpp"
-
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
+
+#include <variant>
 
 namespace gui
 {
@@ -34,7 +34,7 @@ namespace gui
     class Form
     {
     public:
-      typedef boost::variant<int, std::string, hotel::Reservation::ReservationStatus> Value;
+      typedef std::variant<int, std::string, hotel::Reservation::ReservationStatus> Value;
       typedef std::array<Value, 4> Tuple;
 
       Form()
@@ -61,10 +61,10 @@ namespace gui
 
       void setFormValues(const Tuple& tuple)
       {
-        _cbxStatus->setCurrentIndex(boost::get<hotel::Reservation::ReservationStatus>(tuple[0]) - 2);
-        _txtDescription->setText(QString::fromStdString(boost::get<std::string>(tuple[1])));
-        _spbNumberOfAdults->setValue(boost::get<int>(tuple[2]));
-        _spbNumberOfChildren->setValue(boost::get<int>(tuple[3]));
+        _cbxStatus->setCurrentIndex(std::get<hotel::Reservation::ReservationStatus>(tuple[0]) - 2);
+        _txtDescription->setText(QString::fromStdString(std::get<std::string>(tuple[1])));
+        _spbNumberOfAdults->setValue(std::get<int>(tuple[2]));
+        _spbNumberOfChildren->setValue(std::get<int>(tuple[3]));
       }
 
       std::vector<std::pair<const char*, QWidget*>> getWidgets()
@@ -86,10 +86,10 @@ namespace gui
 
       static void SetItemFromTuple(hotel::Reservation& item, const Tuple& tuple)
       {
-        item.setStatus(boost::get<hotel::Reservation::ReservationStatus>(tuple[0]));
-        item.setDescription(boost::get<std::string>(tuple[1]));
-        item.setNumberOfAdults(boost::get<int>(tuple[2]));
-        item.setNumberOfChildren(boost::get<int>(tuple[3]));
+        item.setStatus(std::get<hotel::Reservation::ReservationStatus>(tuple[0]));
+        item.setDescription(std::get<std::string>(tuple[1]));
+        item.setNumberOfAdults(std::get<int>(tuple[2]));
+        item.setNumberOfChildren(std::get<int>(tuple[3]));
       }
 
     private:

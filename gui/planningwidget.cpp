@@ -1,7 +1,7 @@
 #include "planningwidget.h"
 
-#include <QGridLayout>
-#include <QKeyEvent>
+#include <QtWidgets/QGridLayout>
+#include <QtGui/QKeyEvent>
 
 namespace gui
 {

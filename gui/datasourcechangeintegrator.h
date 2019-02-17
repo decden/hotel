@@ -3,7 +3,7 @@
 
 #include "persistence/backend.h"
 
-#include <QObject>
+#include <QtCore/QObject>
 
 #include <boost/signals2.hpp>
 

@@ -1,8 +1,8 @@
 #ifndef GUI_STATUSBAR_H
 #define GUI_STATUSBAR_H
 
-#include <QWidget>
-#include <QObject>
+#include <QtCore/QObject>
+#include <QtWidgets/QWidget>
 
 namespace gui
 {

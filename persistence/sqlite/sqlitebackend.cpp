@@ -70,7 +70,7 @@ namespace persistence
       {
         int id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
-        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
+        bool isEmpty = std::visit([](const auto& items) { return items.empty(); }, filteredItems);
         if (!isEmpty)
           changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{filteredItems}});
       }
@@ -79,7 +79,7 @@ namespace persistence
       {
         int id = stream.streamOptions()["id"];
         auto filteredItems = filter(items, id);
-        bool isEmpty = boost::apply_visitor([](const auto& items) { return items.empty(); }, filteredItems);
+        bool isEmpty = std::visit([](const auto& items) { return items.empty(); }, filteredItems);
         if (!isEmpty)
           changeQueue.push_back({stream.streamId(), DataStreamItemsUpdated{filteredItems}});
       }
@@ -99,7 +99,7 @@ namespace persistence
     private:
       StreamableItems filter(const StreamableItems& items, int id)
       {
-        return boost::apply_visitor([id](const auto& items) -> StreamableItems {
+        return std::visit([id](const auto& items) -> StreamableItems {
           typename std::remove_const<typename std::remove_reference<decltype(items)>::type>::type filteredItems;
           std::copy_if(items.begin(), items.end(), std::back_inserter(filteredItems), [id](const auto& item) { return item.id() == id; });
           return filteredItems;
@@ -323,7 +323,7 @@ namespace persistence
           bool rollback = false;
           for (auto& operation : operationsMessage.first)
           {
-            auto result = boost::apply_visitor([this, &transactionChanges](auto& op) { return this->executeOperation(op, transactionChanges.streamChanges); }, operation);
+            auto result = std::visit([this, &transactionChanges](auto& op) { return this->executeOperation(op, transactionChanges.streamChanges); }, operation);
             bool succeeded = result.status != TaskResultStatus::Error;
             results.push_back(std::move(result));
 
@@ -360,12 +360,12 @@ namespace persistence
 
     TaskResult SqliteBackend::executeOperation(op::StoreNew& op, std::vector<DataStreamDifferential>& streamChanges)
     {
-      bool isNull = boost::apply_visitor([](const auto& item) { return item == nullptr; }, op.newItem);
+      bool isNull = std::visit([](const auto& item) { return item == nullptr; }, op.newItem);
       assert(!isNull );
       if (isNull )
         return TaskResult{TaskResultStatus::Successful, {{"message", "Trying to store empty item"}}};
 
-      return boost::apply_visitor([this, &streamChanges](const auto& newItem) {
+      return std::visit([this, &streamChanges](const auto& newItem) {
         return this->executeStoreNew(*newItem, streamChanges);
       }, op.newItem);
     }
@@ -393,10 +393,7 @@ namespace persistence
 
     TaskResult SqliteBackend::executeOperation(op::Update& op, std::vector<DataStreamDifferential>& streamChanges)
     {
-      bool isNull = boost::apply_visitor([](const auto& item) { return item == nullptr; }, op.updatedItem);
-      int id = boost::apply_visitor([](const auto& item) { return item->id(); }, op.updatedItem);
-
-      auto result = boost::apply_visitor([this](const auto& item) {
+      auto result = std::visit([this](const auto& item) {
         if (item == nullptr)
           return TaskResult{TaskResultStatus::Error, {{"message", "Trying to update empty item"}}};
         if (item->id() == 0)
@@ -411,7 +408,7 @@ namespace persistence
         return result;
 
       // TODO: This should be implementable using
-      boost::apply_visitor([this, &streamChanges](const auto& updatedItem) {
+      std::visit([this, &streamChanges](const auto& updatedItem) {
         return this->executeUpdate(*updatedItem, streamChanges);
       }, op.updatedItem);
 

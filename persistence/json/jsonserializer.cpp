@@ -160,7 +160,7 @@ namespace persistence
 
     template <> nlohmann::json serialize(const op::Operation& operation)
     {
-      return boost::apply_visitor([](auto &operation){
+      return std::visit([](const auto &operation){
         return serialize(operation);
       }, operation);
     }
@@ -177,7 +177,7 @@ namespace persistence
       nlohmann::json obj;
       obj["op"] = "store";
       obj["t"] = serialize(persistence::op::getStreamableType(operation.newItem));
-      obj["o"] = boost::apply_visitor([](const auto& item) { return serialize(*item); }, operation.newItem);
+      obj["o"] = std::visit([](const auto& item) { return serialize(*item); }, operation.newItem);
       return obj;
     }
 
@@ -186,7 +186,7 @@ namespace persistence
       nlohmann::json obj;
       obj["op"] = "update";
       obj["t"] = serialize(persistence::op::getStreamableType(operation.updatedItem));
-      obj["o"] = boost::apply_visitor([](const auto& item) { return serialize(*item); }, operation.updatedItem);
+      obj["o"] = std::visit([](const auto& item) { return serialize(*item); }, operation.updatedItem);
       return obj;
     }
 
@@ -219,6 +219,8 @@ namespace persistence
       if (type == "hotel") return persistence::op::StreamableType::Hotel;
       if (type == "reservation") return persistence::op::StreamableType::Reservation;
       if (type == "person") return persistence::op::StreamableType::Person;
+      
+      throw std::logic_error("Invalid streamable type");
     }
 
     boost::optional<persistence::op::StreamableTypePtr> deserializeStreamableType(const nlohmann::json& json)

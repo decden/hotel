@@ -35,6 +35,7 @@ namespace persistence
     _backend = that._backend;
     that._backend = nullptr;
     _task = std::move(that._task);
+    return *this;
   }
 
   UniqueTaskHandle::~UniqueTaskHandle() { reset(); }

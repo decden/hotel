@@ -3,14 +3,13 @@
 
 #include "persistence/datastreamobserver.h"
 
-#include "boost/variant.hpp"
-
 #include "extern/nlohmann_json/json.hpp"
 
 #include <algorithm>
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <variant>
 
 namespace persistence
 {
@@ -26,7 +25,7 @@ namespace persistence
   struct DataStreamItemsRemoved { std::vector<int> removedItems; };
   struct DataStreamInitialized {};
   struct DataStreamCleared {};
-  typedef boost::variant<DataStreamItemsAdded,
+  typedef std::variant<DataStreamItemsAdded,
                          DataStreamItemsUpdated,
                          DataStreamItemsRemoved,
                          DataStreamInitialized,
@@ -71,7 +70,7 @@ namespace persistence
     void applyChange(DataStreamChange change)
     {
       if (_observer)
-        boost::apply_visitor([this](auto& change){
+        std::visit([this](const auto& change){
           this->applyChange(change);
         }, change);
     }

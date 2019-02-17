@@ -1,20 +1,21 @@
 #include "gui/planningwidget/datebarwidget.h"
 
-#include <QPainter>
+#include <QtGui/QPainter>
 
 namespace gui
 {
   namespace planningwidget
   {
 
-    DateBarDayItem::DateBarDayItem(DateBarWidget* parent, const PlanningBoardAppearance &appearance, boost::gregorian::date date, bool isPivot, bool isToday)
-        : QGraphicsRectItem(), _parent(parent), _appearance(appearance), _date(date), _isPivot(isPivot), _isToday(isToday)
+    DateBarDayItem::DateBarDayItem(DateBarWidget* parent, const PlanningBoardAppearance& appearance,
+                                   boost::gregorian::date date, bool isPivot, bool isToday)
+        : _parent(parent), _appearance(appearance), _date(date), _isPivot(isPivot), _isToday(isToday)
     {
       if (isPivot)
         setZValue(1);
     }
 
-    void DateBarDayItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+    void DateBarDayItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
     {
       auto itemRect = rect().adjusted(0, 0, 0, 0);
 
@@ -48,17 +49,14 @@ namespace gui
       painter->restore();
     }
 
-    void DateBarDayItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
-    {
-      _parent->dateItemClicked(_date);
-    }
+    void DateBarDayItem::mousePressEvent(QGraphicsSceneMouseEvent* /*event*/) { _parent->dateItemClicked(_date); }
 
-    DateBarMonthItem::DateBarMonthItem(const PlanningBoardAppearance &appearance, int month, int year)
-        : QGraphicsRectItem(), _appearance(appearance), _month(month), _year(year)
+    DateBarMonthItem::DateBarMonthItem(const PlanningBoardAppearance& appearance, int month, int year)
+        : _appearance(appearance), _month(month), _year(year)
     {
     }
 
-    void DateBarMonthItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+    void DateBarMonthItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
     {
       auto color = (_month % 2 == 0) ? _appearance.boardEvenRowColor : _appearance.boardOddRowColor;
 
@@ -116,13 +114,13 @@ namespace gui
     void DateBarWidget::rebuildScene()
     {
       _scene->clear();
-      auto& appearance = _context->appearance();
+      const auto& appearance = _context->appearance();
 
       // Rebuild the scene
-      auto sceneRect = _context->layout().sceneRect();
-      int left = sceneRect.left();
-      int right = sceneRect.right();
-      int colWidth = _context->layout().dateColumnWidth();
+      const auto sceneRect = _context->layout().sceneRect();
+      const int left = static_cast<int>(sceneRect.left());
+      const int right = static_cast<int>(sceneRect.right());
+      const int colWidth = _context->layout().dateColumnWidth();
 
       auto today = boost::gregorian::day_clock::local_day();
       auto pivotDate = _context->layout().pivotDate();

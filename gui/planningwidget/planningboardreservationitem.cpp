@@ -1,6 +1,6 @@
 #include "gui/planningwidget/planningboardreservationitem.h"
 
-#include <QPainter>
+#include <QtGui/QPainter>
 
 namespace gui
 {
@@ -25,7 +25,7 @@ namespace gui
       setRect(itemRect);
     }
 
-    void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+    void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
     {
       auto renderer = _context->appearance().reservationRenderer();
       auto atom = _reservation->atomAtIndex(_atomIndex);
@@ -41,11 +41,11 @@ namespace gui
 
       // Propagate selection changes to the parent, i.e. the PlanningBoardReservationItem
       if (change == QGraphicsItem::ItemSelectedChange)
-        static_cast<PlanningBoardReservationItem*>(parentItem())->setReservationSelected(value.toBool());
+        dynamic_cast<PlanningBoardReservationItem*>(parentItem())->setReservationSelected(value.toBool());
       return newValue;
     }
 
-    void PlanningBoardAtomItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+    void PlanningBoardAtomItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* /*event*/)
     {
       _context->emitReservationDoubleClicked(*_reservation);
     }
@@ -65,10 +65,10 @@ namespace gui
         _context->removeSelectedReservation(_reservation);
     }
 
-    void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+    void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
     {
       std::vector<QRectF> rects;
-      rects.reserve(childItems().size());
+      rects.reserve(static_cast<std::size_t>(childItems().size()));
       for (auto child : childItems())
         rects.push_back(child->boundingRect());
 
@@ -127,7 +127,7 @@ namespace gui
       for (auto item : childItems())
       {
         assert(dynamic_cast<PlanningBoardAtomItem*>(item) != nullptr);
-        auto atomItem = static_cast<PlanningBoardAtomItem*>(item);
+        auto atomItem = dynamic_cast<PlanningBoardAtomItem*>(item);
         atomItem->updateLayout();
       }
 

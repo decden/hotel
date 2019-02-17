@@ -2,14 +2,14 @@
 
 #include "gui/planningwidget/planningboardreservationitem.h"
 
-#include <QPainter>
+#include <QtGui/QPainter>
 
 namespace gui
 {
   namespace planningwidget
   {
 
-    PlanningBoardWidget::PlanningBoardWidget(Context *context) : QGraphicsView(), _context(context)
+    PlanningBoardWidget::PlanningBoardWidget(Context *context) : _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);

@@ -4,15 +4,13 @@
 #include "hotel/hotel.h"
 #include "hotel/reservation.h"
 
-#include <boost/variant.hpp>
-
 #include <algorithm>
 #include <vector>
+#include <variant>
 
 namespace persistence
 {
-  typedef boost::variant<std::vector<hotel::Hotel>,
-                         std::vector<hotel::Reservation>> StreamableItems;
+  typedef std::variant<std::vector<hotel::Hotel>, std::vector<hotel::Reservation>> StreamableItems;
 
   /**
    * @brief The DataStreamObserver class is the baseclass for all classes who want to listen to datastreams
@@ -39,9 +37,9 @@ namespace persistence
   public:
     virtual ~DataStreamObserverTyped() {}
 
-    virtual void addItems(const StreamableItems& items) final override { addItems(boost::get<std::vector<T>>(items)); }
+    virtual void addItems(const StreamableItems& items) final override { addItems(std::get<std::vector<T>>(items)); }
     virtual void addItems(const std::vector<T>& items) = 0;
-    virtual void updateItems(const StreamableItems& items) final override { updateItems(boost::get<std::vector<T>>(items)); }
+    virtual void updateItems(const StreamableItems& items) final override { updateItems(std::get<std::vector<T>>(items)); }
     virtual void updateItems(const std::vector<T>& items) = 0;
   };
 

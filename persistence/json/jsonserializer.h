@@ -7,7 +7,7 @@
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
-#include "json.hpp"
+#include "extern/nlohmann_json/json.hpp"
 
 #include <boost/optional.hpp>
 

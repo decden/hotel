@@ -6,8 +6,8 @@
 #include "gui/planningwidget/planningboardreservationitem.h"
 #include "gui/planningwidget/tool.h"
 
-#include <QGraphicsRectItem>
-#include <QMouseEvent>
+#include <QtGui/QMouseEvent>
+#include <QtWidgets/QGraphicsRectItem>
 
 #include <boost/date_time.hpp>
 #include <boost/optional.hpp>

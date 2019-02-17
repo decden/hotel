@@ -10,7 +10,7 @@ namespace persistence
 
     StreamableType getStreamableType(const StreamableTypePtr& ptr)
     {
-      return boost::apply_visitor([](const auto& ptr) {
+      return std::visit([](const auto& ptr) {
         using T = typename std::decay<decltype(*ptr)>::type;
         return getStreamableType<T>();
       }, ptr);

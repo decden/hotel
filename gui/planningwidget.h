@@ -14,9 +14,9 @@
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
-#include <QObject>
-#include <QScrollBar>
-#include <QWidget>
+#include <QtCore/QObject>
+#include <QtWidgets/QScrollBar>
+#include <QtWidgets/QWidget>
 
 #include <boost/date_time.hpp>
 #include <boost/signals2.hpp>

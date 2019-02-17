@@ -8,8 +8,8 @@
 #include "hotel/hotelcollection.h"
 #include "hotel/planning.h"
 
-#include <QGraphicsScene>
-#include <QRect>
+#include <QtCore/QRect>
+#include <QtWidgets/QGraphicsScene>
 
 #include <boost/signals2.hpp>
 
@@ -80,7 +80,7 @@ namespace gui
 
     private:
       // Hotel data
-      persistence::Backend* _backend;
+      persistence::Backend* _backend = nullptr;
 
       // Data from streams
       std::vector<std::unique_ptr<hotel::Hotel>> _hotels;
@@ -98,9 +98,9 @@ namespace gui
 
       // Graphics scenes of the individual subwidgets. This information is used by the tools to add custom graphics to
       // the different scenes.
-      QGraphicsScene* _dateBarScene;
-      QGraphicsScene* _roomListScene;
-      QGraphicsScene* _planningBoardScene;
+      QGraphicsScene* _dateBarScene = nullptr;
+      QGraphicsScene* _roomListScene = nullptr;
+      QGraphicsScene* _planningBoardScene = nullptr;
 
       // List of available tools and currently selected tool
       using ToolPtr = std::unique_ptr<Tool>;

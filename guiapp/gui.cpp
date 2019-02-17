@@ -10,11 +10,11 @@
 
 #include "server/netserver.h"
 
-#include <QApplication>
-#include <QGridLayout>
-#include <QWindow>
-#include <QPushButton>
-#include <QScrollBar>
+#include <QtGui/QWindow>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollBar>
 
 #include <memory>
 

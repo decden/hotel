@@ -3,8 +3,8 @@
 
 #include "gui/planningwidget/context.h"
 
-#include <QGraphicsRectItem>
-#include <QGraphicsView>
+#include <QtWidgets/QGraphicsRectItem>
+#include <QtWidgets/QGraphicsView>
 
 namespace gui
 {

@@ -4,8 +4,8 @@
 #include "gui/planningwidget/context.h"
 #include "gui/planningwidget/planningboardlayout.h"
 
-#include <QGraphicsRectItem>
-#include <QGraphicsView>
+#include <QtWidgets/QGraphicsRectItem>
+#include <QtWidgets/QGraphicsView>
 
 #include <boost/date_time.hpp>
 

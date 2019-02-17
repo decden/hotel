@@ -1,11 +1,11 @@
 #include "gui/dialogs/editreservation.h"
 
-#include <QDate>
+#include <QtCore/QDate>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QHBoxLayout>
-#include <QMessageBox>
+#include <QtWidgets/QMessageBox>
 
 namespace gui
 {
@@ -16,23 +16,23 @@ namespace gui
     public:
       struct Resolution {
         T merged;
-        std::vector<int> conflicts;
+        std::vector<std::size_t> conflicts;
       };
 
       static Resolution merge(const T &base, const T &ours, const T &theirs)
       {
         Resolution resolution;
         resolution.merged = base;
-        for (int i = 0; i < static_cast<int>(base.size()); ++i)
+        for (std::size_t i = 0; i < base.size(); ++i)
         {
-          bool oursChanged = base[i] != ours[i];
-          bool theirsChanged = base[i] != theirs[i];
-          if (ours[i] == theirs[i])
-            resolution.merged[i] = ours[i];
+          bool oursChanged = base.at(i) != ours.at(i);
+          bool theirsChanged = base.at(i) != theirs.at(i);
+          if (ours.at(i) == theirs.at(i))
+            resolution.merged.at(i) = ours.at(i);
           else if (oursChanged && !theirsChanged)
-            resolution.merged[i] = ours[i];
+            resolution.merged.at(i) = ours.at(i);
           else if (!oursChanged && theirsChanged)
-            resolution.merged[i] = theirs[i];
+            resolution.merged.at(i) = theirs.at(i);
           else if (oursChanged && theirsChanged)
             resolution.conflicts.push_back(i);
         }
@@ -54,7 +54,7 @@ namespace gui
     std::string valueToStr(const hotel::Reservation::ReservationStatus& val)
     {
       const char* names[] = {"Unknown", "Temporary", "New", "Confirmed", "CheckedIn", "CheckedOut", "Archived"};
-      return names[static_cast<int>(val)];
+      return names[static_cast<std::size_t>(val)];
     }
 
 
@@ -144,12 +144,12 @@ namespace gui
           {
             QMessageBox msgBox;
             msgBox.setWindowTitle(tr("Merge conflict"));
-            auto baseStr = boost::apply_visitor([](auto& value){ return valueToStr(value); }, base[conflict]);
-            auto ourStr = boost::apply_visitor([](auto& value){ return valueToStr(value); }, ours[conflict]);
-            auto theirStr = boost::apply_visitor([](auto& value){ return valueToStr(value); }, theirs[conflict]);
+            auto baseStr = std::visit([](const auto& value){ return valueToStr(value); }, base.at(conflict));
+            auto ourStr = std::visit([](const auto& value){ return valueToStr(value); }, ours.at(conflict));
+            auto theirStr = std::visit([](const auto& value){ return valueToStr(value); }, theirs.at(conflict));
 
             msgBox.setText(tr("Failed to automatically merge a field. Please choose which value to keep:\n\n%1\nBase version: \t%2\nOur version: \t%3\nTheir version: \t%4")
-                           .arg(_form.getWidgets()[conflict].first)
+                           .arg(_form.getWidgets().at(conflict).first)
                            .arg(QString::fromStdString(baseStr))
                            .arg(QString::fromStdString(ourStr))
                            .arg(QString::fromStdString(theirStr)));
@@ -158,9 +158,9 @@ namespace gui
             auto theirVersionButton = msgBox.addButton(tr("Their version"), QMessageBox::RejectRole);
             msgBox.exec();
             if (msgBox.clickedButton() == ourVersionButton)
-              resolution.merged[conflict] = ours[conflict];
+              resolution.merged.at(conflict) = ours.at(conflict);
             if (msgBox.clickedButton() == theirVersionButton)
-              resolution.merged[conflict] = theirs[conflict];
+              resolution.merged.at(conflict) = theirs.at(conflict);
           }
         }
 

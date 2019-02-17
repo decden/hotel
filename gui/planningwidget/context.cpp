@@ -6,7 +6,7 @@ namespace gui
 {
   namespace planningwidget
   {
-    Context::Context() {}
+    Context::Context() = default;
 
     void Context::setDataBackend(persistence::Backend* backend) { _backend = backend; }
     void Context::setDateBarScene(QGraphicsScene* scene) { _dateBarScene = scene; }
@@ -72,22 +72,21 @@ namespace gui
 
     void Context::registerTool(const std::string& toolName, std::unique_ptr<Tool> tool)
     {
-      if (toolName == "")
+      if (toolName.empty())
       {
         std::cerr << "registerTool(): cannot register tool with empty name." << std::endl;
         return;
       }
-      else if (_availableTools.find(toolName) != _availableTools.end())
+
+      if (_availableTools.find(toolName) != _availableTools.end())
       {
         std::cerr << "registerTool(): a tool with the name " << toolName << " has already been registered."
                   << std::endl;
         return;
       }
-      else
-      {
-        tool->init(*this);
-        _availableTools[toolName] = std::move(tool);
-      }
+
+      tool->init(*this);
+      _availableTools[toolName] = std::move(tool);
     }
 
     void Context::activateTool(const std::string& toolName)
@@ -97,7 +96,7 @@ namespace gui
       gui::planningwidget::Tool* newTool = nullptr;
       if (it != _availableTools.end())
         newTool = it->second.get();
-      else if (toolName != "")
+      else if (!toolName.empty())
         std::cerr << "activateTool(): the tool " << toolName << " has not been registered." << std::endl;
 
       if (_activeTool != newTool)

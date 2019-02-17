@@ -21,6 +21,7 @@ namespace persistence
     _backend = that._backend;
     that._backend = nullptr;
     _dataStream = std::move(that._dataStream);
+    return *this;
   }
 
   UniqueDataStreamHandle::~UniqueDataStreamHandle()

@@ -1,6 +1,6 @@
 #include "gui/planningwidget/roomlistwidget.h"
 
-#include <QPainter>
+#include <QtGui/QPainter>
 
 namespace gui
 {

@@ -3,7 +3,7 @@
 
 #include "hotel/reservation.h"
 
-#include <QPainter>
+#include <QtGui/QPainter>
 
 #include <vector>
 

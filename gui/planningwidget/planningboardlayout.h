@@ -8,10 +8,10 @@
 
 #include <boost/date_time.hpp>
 
-#include <QColor>
-#include <QFont>
-#include <QPainter>
-#include <QRect>
+#include <QtCore/QRect>
+#include <QtGui/QColor>
+#include <QtGui/QFont>
+#include <QtGui/QPainter>
 
 namespace gui
 {

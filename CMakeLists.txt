@@ -4,7 +4,7 @@ option(test "Build test application." ON)
 option(build_gui "Build gui libraries and applications." ON)
 
 project (hotel)
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 include_directories(.)
 
 #

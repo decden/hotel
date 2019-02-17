@@ -1,7 +1,7 @@
 #include "gui/statusbar.h"
 
-#include <QPaintEvent>
-#include <QPainter>
+#include <QtGui/QPaintEvent>
+#include <QtGui/QPainter>
 
 namespace
 {

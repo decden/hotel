@@ -4,9 +4,9 @@
 
 #include "persistence/op/operations.h"
 
-#include <QInputDialog>
-#include <QGraphicsScene>
-#include <QPainter>
+#include <QtGui/QPainter>
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QInputDialog>
 
 namespace gui
 {
@@ -15,7 +15,7 @@ namespace gui
     using namespace boost::gregorian;
 
     NewReservationTool::NewReservationTool()
-        : _context(nullptr), _ghosts(), _currentGhost(boost::none)
+        : _context(nullptr), _currentGhost(boost::none)
     {
     }
     void NewReservationTool::init(Context& context) { _context = &context; }
@@ -51,15 +51,13 @@ namespace gui
                     _ghosts.end());
     }
 
-    void NewReservationTool::mousePressEvent(QMouseEvent* event, const QPointF& position)
+    void NewReservationTool::mousePressEvent(QMouseEvent* /*event*/, const QPointF& position)
     {
       auto& layout = _context->layout();
 
       // Get date and row
-      boost::gregorian::date date;
-      int dateXPos;
-      std::tie(date, dateXPos) = layout.getNearestDatePosition(position.x());
-      auto row = layout.getRowGeometryAtPosition(position.y());
+      const auto [date, dateXPos] = layout.getNearestDatePosition(static_cast<int>(position.x()));
+      const auto row = layout.getRowGeometryAtPosition(static_cast<int>(position.y()));
       if (row == nullptr || row->rowType() != PlanningBoardRowGeometry::RoomRow)
         return;
 
@@ -80,7 +78,7 @@ namespace gui
       _context->planningBoardScene()->addItem(_currentGhost->item.get());
     }
 
-    void NewReservationTool::mouseReleaseEvent(QMouseEvent* event, const QPointF& position)
+    void NewReservationTool::mouseReleaseEvent(QMouseEvent* /*event*/, const QPointF& /*position*/)
     {
       if (_currentGhost)
       {
@@ -97,10 +95,10 @@ namespace gui
       {
         date currentDate;
         int dateXPos;
-        std::tie(currentDate, dateXPos) = _context->layout().getNearestDatePosition(position.x());
+        std::tie(currentDate, dateXPos) = _context->layout().getNearestDatePosition(static_cast<int>(position.x()));
 
         // We modify the last atom in the reservation if it has the same room as the current one
-        auto lastAtom = _currentGhost->temporaryReservation->lastAtom();
+        const auto lastAtom = _currentGhost->temporaryReservation->lastAtom();
         auto currentRoomId = lastAtom ? lastAtom->roomId() : _currentGhost->startRoomId;
 
         bool modifyLastAtom = lastAtom != nullptr && lastAtom->roomId() == currentRoomId;
@@ -109,8 +107,8 @@ namespace gui
         // Allow switching to a new room when pressing shift
         if (event->modifiers() & Qt::ShiftModifier)
         {
-          auto& layout = _context->layout();
-          auto row = layout.getRowGeometryAtPosition(position.y());
+          const auto& layout = _context->layout();
+          const auto row = layout.getRowGeometryAtPosition(static_cast<int>(position.y()));
           if (row != nullptr && row->rowType() == PlanningBoardRowGeometry::RoomRow && row->id() != currentRoomId)
           {
             currentRoomId = row->id();
@@ -132,7 +130,7 @@ namespace gui
         if (currentDate > currentMaximumDate)
           currentDate = currentMaximumDate;
 
-        auto newPeriod = date_period(currentStartDate, currentDate);
+        const auto newPeriod = date_period(currentStartDate, currentDate);
 
         // If we are allowed to modify the last atom in the reservation we first remove it, and we later add it back
         // with updated data (if the date range is not empty)

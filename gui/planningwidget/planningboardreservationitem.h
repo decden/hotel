@@ -6,7 +6,7 @@
 
 #include "hotel/reservation.h"
 
-#include <QGraphicsItem>
+#include <QtWidgets/QGraphicsItem>
 
 namespace gui
 {

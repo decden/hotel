@@ -117,20 +117,20 @@ namespace gui
     {
       if (_rows.empty())
         return 0;
-      else
-        return _rows.back().bottom();
+
+      return _rows.back().bottom();
     }
 
     void PlanningBoardLayout::appendRoomRow(bool isEven, int roomId)
     {
       auto type = PlanningBoardRowGeometry::RoomRow;
-      _rows.push_back(PlanningBoardRowGeometry{type, getHeight(), _roomRowHeight, isEven, roomId});
+      _rows.emplace_back(type, getHeight(), _roomRowHeight, isEven, roomId);
     }
 
     void PlanningBoardLayout::appendSeparatorRow(int separatorHeight)
     {
       auto type = PlanningBoardRowGeometry::SeparatorRow;
-      _rows.push_back(PlanningBoardRowGeometry{type, getHeight(), separatorHeight});
+      _rows.emplace_back(type, getHeight(), separatorHeight);
     }
 
     void PlanningBoardAppearance::drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row,
