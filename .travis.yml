@@ -13,9 +13,9 @@ addons:
       - cmake-data
       - sqlite3
 before_install:
-  - sudo add-apt-repository -y ppa:kojoley/boost
+  - sudo add-apt-repository -y universe
   - sudo apt-get -q update
-  - sudo apt-get -y install libboost-{chrono,program-options,date-time,thread,system,filesystem,regex,serialization}1.58{-dev,.0}
+  - sudo apt-get -y install libboost-{chrono,program-options,date-time,thread,system,filesystem,regex,serialization}{-dev,.0}
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="clang++" CC="clang"; fi
 before_script:
