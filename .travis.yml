@@ -1,15 +1,14 @@
 sudo: required
-dist: trusty
+dist: xenial
 language: cpp
 compiler:
-  - gcc
+  - clang
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-6
-      - gcc-6
+      - clang
       - cmake
       - cmake-data
       - sqlite3
@@ -18,7 +17,7 @@ before_install:
   - sudo apt-get -q update
   - sudo apt-get -y install libboost-{chrono,program-options,date-time,thread,system,filesystem,regex,serialization}1.58{-dev,.0}
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="clang++" CC="clang"; fi
 before_script:
   - mkdir build
   - cd build
