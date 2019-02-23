@@ -30,7 +30,7 @@ namespace persistence
     class DataStreamHandler
     {
     public:
-      virtual ~DataStreamHandler() {}
+      virtual ~DataStreamHandler() = default;
       virtual void initialize(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage) = 0;
       virtual void addItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) = 0;
       virtual void updateItems(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, const StreamableItems& items) = 0;
@@ -42,6 +42,7 @@ namespace persistence
     {
     public:
       DataStreamManager();
+      virtual ~DataStreamManager() = default;
 
       /**
        * @note addNewStream must be synchronized!
@@ -109,7 +110,7 @@ namespace persistence
                                                                const std::string& service,
                                                                const nlohmann::json& options) override;
 
-      ChangeQueue& changeQueue() { return _changeQueue; }
+      ChangeQueue& changeQueue() override { return _changeQueue; }
 
     protected:
       virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
