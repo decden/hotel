@@ -15,7 +15,7 @@ namespace gui
     using namespace boost::gregorian;
 
     NewReservationTool::NewReservationTool()
-        : _context(nullptr), _currentGhost(boost::none)
+        : _context(nullptr), _currentGhost(std::nullopt)
     {
     }
     void NewReservationTool::init(Context& context) { _context = &context; }
@@ -45,7 +45,7 @@ namespace gui
       }
 
       if (_currentGhost && item.intersectsWith(*_currentGhost->temporaryReservation))
-        _currentGhost = boost::none;
+        _currentGhost = std::nullopt;
 
       _ghosts.erase(std::remove_if(_ghosts.begin(), _ghosts.end(), [](auto& ghost) { return ghost.item == nullptr; }),
                     _ghosts.end());
@@ -85,13 +85,13 @@ namespace gui
         // Either delete the current ghost, or add it to the list of ghosts
         if (!_currentGhost->temporaryReservation->dateRange().is_null())
           _ghosts.push_back(std::move(*_currentGhost));
-        _currentGhost = boost::none;
+        _currentGhost = std::nullopt;
       }
     }
 
     void NewReservationTool::mouseMoveEvent(QMouseEvent* event, const QPointF& position)
     {
-      if (_currentGhost != boost::none)
+      if (_currentGhost != std::nullopt)
       {
         date currentDate;
         int dateXPos;
@@ -146,7 +146,7 @@ namespace gui
     void NewReservationTool::keyPressEvent(QKeyEvent *event)
     {
       // Ignore key events while manipulating a ghost
-      if (_currentGhost != boost::none)
+      if (_currentGhost != std::nullopt)
         return;
 
       if (event->key() == Qt::Key_Escape)

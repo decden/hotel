@@ -167,7 +167,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ("Empty", emptyReservation.description());
   ASSERT_EQ(0, emptyReservation.numberOfAdults());
   ASSERT_EQ(0, emptyReservation.numberOfChildren());
-  ASSERT_EQ(boost::optional<int>(), emptyReservation.reservationOwnerPersonId());
+  ASSERT_EQ(std::optional<int>(), emptyReservation.reservationOwnerPersonId());
   ASSERT_EQ(0u, emptyReservation.atoms().size());
   ASSERT_EQ(nullptr, emptyReservation.firstAtom());
   ASSERT_EQ(nullptr, emptyReservation.lastAtom());
@@ -180,7 +180,7 @@ TEST(Hotel, Reservation)
   ASSERT_EQ("Valid", reservation.description());
   ASSERT_EQ(0, reservation.numberOfAdults());
   ASSERT_EQ(0, reservation.numberOfChildren());
-  ASSERT_EQ(boost::optional<int>(), reservation.reservationOwnerPersonId());
+  ASSERT_EQ(std::optional<int>(), reservation.reservationOwnerPersonId());
   ASSERT_EQ(1u, reservation.atoms().size());
   ASSERT_NE(nullptr, reservation.firstAtom());
   ASSERT_NE(nullptr, reservation.lastAtom());

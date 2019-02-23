@@ -111,7 +111,7 @@ namespace persistence
       {
         auto id = stream.streamOptions()["id"];
         auto item = storage.loadById<T>(id);
-        if (item != boost::none)
+        if (item != std::nullopt)
         {
           std::vector<T> items({*item});
           changeQueue.push_back({stream.streamId(), DataStreamItemsAdded{std::move(items)}});

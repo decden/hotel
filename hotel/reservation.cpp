@@ -19,7 +19,7 @@ namespace hotel
   void Reservation::setDescription(const std::string& newDescription) { _description = newDescription; }
   void Reservation::setNumberOfAdults(int adults) { _adults = adults; }
   void Reservation::setNumberOfChildren(int children) { _children = children; }
-  void Reservation::setReservationOwnerPerson(boost::optional<int> personId) { _reservationOwnerPersonId = personId; }
+  void Reservation::setReservationOwnerPerson(std::optional<int> personId) { _reservationOwnerPersonId = personId; }
   void Reservation::addAtom(int room, boost::gregorian::date_period dateRange)
   {
     if (dateRange.is_null())
@@ -66,7 +66,7 @@ namespace hotel
   const std::string& Reservation::description() const { return _description; }
   int Reservation::numberOfAdults() const { return _adults; }
   int Reservation::numberOfChildren() const { return _children; }
-  boost::optional<int> Reservation::reservationOwnerPersonId() const { return _reservationOwnerPersonId; }
+  std::optional<int> Reservation::reservationOwnerPersonId() const { return _reservationOwnerPersonId; }
 
   const std::vector<ReservationAtom>& Reservation::atoms() const { return _atoms; }
   std::vector<ReservationAtom>& Reservation::atoms() { return _atoms; }
@@ -98,7 +98,7 @@ namespace hotel
     return false;
   }
 
-  const bool Reservation::isValid() const
+  bool Reservation::isValid() const
   {
     if (_atoms.empty())
       return false;
@@ -118,7 +118,7 @@ namespace hotel
     return true;
   }
 
-  const int Reservation::length() const
+  int Reservation::length() const
   {
     if (_atoms.empty())
       return 0;

@@ -10,6 +10,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
 
+#include <optional>
 #include <variant>
 
 namespace gui
@@ -134,8 +135,8 @@ namespace gui
       persistence::Backend& _backend;
 
       // The reference version to which we are currently editing against
-      boost::optional<hotel::Reservation> _referenceVersion;
-      boost::optional<hotel::Reservation> _newestVersion;
+      std::optional<hotel::Reservation> _referenceVersion;
+      std::optional<hotel::Reservation> _newestVersion;
 
       gui::DataStreamObserverAdapter<hotel::Reservation> _reservationStreamHandle;
 

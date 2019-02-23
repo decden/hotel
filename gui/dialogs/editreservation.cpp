@@ -118,7 +118,7 @@ namespace gui
     void EditReservationDialog::saveClicked()
     {
       assert(_status == Status::Ready);
-      assert(_referenceVersion != boost::none);
+      assert(_referenceVersion != std::nullopt);
 
       _status = Status::Saving;
 
@@ -131,7 +131,7 @@ namespace gui
 
     void EditReservationDialog::mergeChangesClicked()
     {
-      if (_newestVersion != boost::none)
+      if (_newestVersion != std::nullopt)
       {
         auto base = Form::ItemToTuple(*_referenceVersion);
         auto ours = _form.formValues();
@@ -167,7 +167,7 @@ namespace gui
         _form.setFormValues(resolution.merged);
       }
       _referenceVersion = _newestVersion;
-      _newestVersion = boost::none;
+      _newestVersion = std::nullopt;
       updateUI();
     }
 
@@ -183,7 +183,7 @@ namespace gui
     {      
       assert(_status == Status::NotInitialized);
       assert(reservations.size() == 1);
-      assert(_referenceVersion == boost::none);
+      assert(_referenceVersion == std::nullopt);
 
       _referenceVersion = reservations[0];
       _form.setFormValues(Form::ItemToTuple(*_referenceVersion));
@@ -192,7 +192,7 @@ namespace gui
     void EditReservationDialog::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
     {
       assert(reservations.size() == 1);
-      assert(_referenceVersion != boost::none);
+      assert(_referenceVersion != std::nullopt);
 
       auto newVersion = reservations[0];
       assert(newVersion.revision() > _referenceVersion->revision());
@@ -204,16 +204,16 @@ namespace gui
     void EditReservationDialog::reservationsRemoved(const std::vector<int> &ids)
     {
       assert(ids.size() == 1);
-      assert(_referenceVersion != boost::none);
+      assert(_referenceVersion != std::nullopt);
       assert(_referenceVersion->id() == ids[0]);
-      _referenceVersion = boost::none;
+      _referenceVersion = std::nullopt;
       _status = Status::Removed;
       updateUI();
     }
 
     void EditReservationDialog::allReservationsRemoved()
     {
-      _referenceVersion = boost::none;
+      _referenceVersion = std::nullopt;
       _status = Status::Removed;
       updateUI();
     }
@@ -233,15 +233,15 @@ namespace gui
 
     void EditReservationDialog::updateUI()
     {
-      setEnabled(_status == Status::Ready && _referenceVersion != boost::none);
-      _btnSave->setEnabled(_status == Status::Ready && _newestVersion == boost::none);
-      _btnMergeChanges->setVisible(_status == Status::Ready && _newestVersion != boost::none);
+      setEnabled(_status == Status::Ready && _referenceVersion != std::nullopt);
+      _btnSave->setEnabled(_status == Status::Ready && _newestVersion == std::nullopt);
+      _btnMergeChanges->setVisible(_status == Status::Ready && _newestVersion != std::nullopt);
 
-      if (_status == Status::Ready && _newestVersion != boost::none)
+      if (_status == Status::Ready && _newestVersion != std::nullopt)
       {
         _statusBar->showMessage(tr("Newer versions of this item are available"), gui::StatusBar::Error);
       }
-      else if (_status == Status::Ready && _referenceVersion != boost::none)
+      else if (_status == Status::Ready && _referenceVersion != std::nullopt)
       {
         auto description = QString::fromStdString(_referenceVersion->description());
         auto fromDate = _referenceVersion->dateRange().begin();
@@ -250,7 +250,7 @@ namespace gui
         auto toDateText = QDate(toDate.year(), toDate.month(), toDate.day()).toString("dd-MM-yyyy");
         _statusBar->showMessage(tr("%1 - From %2 to %3").arg(description, fromDateText, toDateText), gui::StatusBar::Success);
       }
-      else if (_status == Status::Ready && _referenceVersion == boost::none)
+      else if (_status == Status::Ready && _referenceVersion == std::nullopt)
         _statusBar->showMessage(tr("Could not load data"), gui::StatusBar::Error);
       else if (_status == Status::NotInitialized)
         _statusBar->showMessage(tr("Loading..."), gui::StatusBar::Info);

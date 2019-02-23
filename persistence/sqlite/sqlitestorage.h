@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace persistence
@@ -33,7 +34,7 @@ namespace persistence
       std::vector<T> loadAll();
 
       template<typename T>
-      boost::optional<T> loadById(int id);
+      std::optional<T> loadById(int id);
 
       void storeNewHotel(hotel::Hotel& hotel);
       void storeNewReservationAndAtoms(hotel::Reservation& reservation);

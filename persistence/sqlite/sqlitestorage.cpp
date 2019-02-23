@@ -216,9 +216,9 @@ namespace persistence
     }
 
     template<>
-    boost::optional<hotel::Hotel> SqliteStorage::loadById(int id)
+    std::optional<hotel::Hotel> SqliteStorage::loadById(int id)
     {
-      boost::optional<hotel::Hotel> result;
+      std::optional<hotel::Hotel> result;
 
       // Read hotels
       auto& hotelQuery = query("hotel.by_id");
@@ -275,9 +275,9 @@ namespace persistence
     }
 
     template<>
-    boost::optional<hotel::Reservation> SqliteStorage::loadById(int id)
+    std::optional<hotel::Reservation> SqliteStorage::loadById(int id)
     {
-      boost::optional<hotel::Reservation> result;
+      std::optional<hotel::Reservation> result;
 
       auto& reservationsQuery = query("reservation_and_atoms.by_reservation_id");
       reservationsQuery.execute(id);
@@ -295,7 +295,7 @@ namespace persistence
         reservationsQuery.readRow(reservationRevision, description, reservationStatus, adults, children,
                                   atomId, roomId, dateFrom, dateTo);
 
-        if (result == boost::none)
+        if (result == std::nullopt)
         {
           result = hotel::Reservation(description, roomId, boost::gregorian::date_period(dateFrom, dateTo));
           result->setId(id);

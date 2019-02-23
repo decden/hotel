@@ -5,9 +5,9 @@
 #include "hotel/reservation.h"
 
 #include <boost/date_time.hpp>
-#include <boost/optional.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -55,7 +55,7 @@ namespace hotel
     void setDescription(const std::string& newDescription);
     void setNumberOfAdults(int adults);
     void setNumberOfChildren(int adults);
-    void setReservationOwnerPerson(boost::optional<int> personId);
+    void setReservationOwnerPerson(std::optional<int> personId);
 
     void addAtom(int room, boost::gregorian::date_period dateRange);
     void addAtom(const ReservationAtom& atom);
@@ -67,7 +67,7 @@ namespace hotel
     const std::string& description() const;
     int numberOfAdults() const;
     int numberOfChildren() const;
-    boost::optional<int> reservationOwnerPersonId() const;
+    std::optional<int> reservationOwnerPersonId() const;
 
     const std::vector<ReservationAtom>& atoms() const;
     std::vector<ReservationAtom>& atoms();
@@ -79,14 +79,14 @@ namespace hotel
     bool intersectsWith(const Reservation& other) const;
 
     //! @brief Returns true if the reservation contains at least one atom, and all of the periods are continuous
-    const bool isValid() const;
-    const int length() const;
+    bool isValid() const;
+    int length() const;
 
   private:
     ReservationStatus _status;
     std::string _description;
 
-    boost::optional<int> _reservationOwnerPersonId;
+    std::optional<int> _reservationOwnerPersonId;
 
     int _adults;
     int _children;

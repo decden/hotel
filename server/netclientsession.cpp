@@ -210,7 +210,7 @@ namespace server
     persistence::op::Operations operations;
     for (auto& operationObj : obj["operations"])
     {
-      auto operation = persistence::json::deserialize<boost::optional<persistence::op::Operation>>(operationObj);
+      auto operation = persistence::json::deserialize<std::optional<persistence::op::Operation>>(operationObj);
       if (operation)
         operations.push_back(std::move(*operation));
       else

@@ -9,7 +9,7 @@
 
 #include "extern/nlohmann_json/json.hpp"
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace persistence
 {
@@ -39,7 +39,7 @@ namespace persistence
     template <> hotel::Person deserialize(const nlohmann::json& json);
 
     template <> persistence::op::StreamableType deserialize(const nlohmann::json& json);
-    template <> boost::optional<persistence::op::Operation> deserialize(const nlohmann::json& json);
+    template <> std::optional<persistence::op::Operation> deserialize(const nlohmann::json& json);
 
     template <> nlohmann::json serialize(const op::Operation& operation);
     template <> nlohmann::json serialize(const op::EraseAllData& operation);

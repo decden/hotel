@@ -10,8 +10,8 @@
 #include <QtWidgets/QGraphicsRectItem>
 
 #include <boost/date_time.hpp>
-#include <boost/optional.hpp>
 
+#include <optional>
 #include <vector>
 
 namespace gui
@@ -59,7 +59,7 @@ namespace gui
 
       //! The list of temporary reservation items in the scene
       std::vector<ReservationGhost> _ghosts;
-      boost::optional<ReservationGhost> _currentGhost;
+      std::optional<ReservationGhost> _currentGhost;
     };
 
   } // namespace planningwidget

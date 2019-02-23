@@ -223,7 +223,7 @@ namespace persistence
       throw std::logic_error("Invalid streamable type");
     }
 
-    boost::optional<persistence::op::StreamableTypePtr> deserializeStreamableType(const nlohmann::json& json)
+    std::optional<persistence::op::StreamableTypePtr> deserializeStreamableType(const nlohmann::json& json)
     {
       auto type = deserialize<persistence::op::StreamableType>(json["t"]);
       if (type == persistence::op::StreamableType::Hotel)
@@ -238,11 +238,11 @@ namespace persistence
       }
 
       assert(false);
-      return boost::none;
+      return std::nullopt;
     }
 
     template<>
-    boost::optional<op::Operation> deserialize(const nlohmann::json &json)
+    std::optional<op::Operation> deserialize(const nlohmann::json &json)
     {
       std::string operation = json["op"];
 
@@ -275,7 +275,7 @@ namespace persistence
         assert(false);
       }
 
-      return boost::none;
+      return std::nullopt;
     }
 
   } // namespace json
