@@ -35,7 +35,12 @@ namespace persistence
         _status = Connecting;
         boost::asio::ip::tcp::resolver resolver(_ioService);
         auto endpointIterator = resolver.resolve({_host, std::to_string(_port)});
+#if BOOST_VERSION >= 106600
         boost::asio::async_connect(_socket, endpointIterator, [this](boost::system::error_code ec, boost::asio::ip::tcp::endpoint) { this->socketConnected(ec); });
+#else
+        boost::asio::async_connect(_socket, endpointIterator, [this](boost::system::error_code ec, boost::asio::ip::tcp::resolver::iterator) { this->socketConnected(ec); });
+#endif
+
       }
 
       // Start processing the communication on a separate thread
