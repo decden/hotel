@@ -92,7 +92,7 @@ namespace fas::detail
     mutable std::mutex _mutex;
     struct Empty{};
     struct Canceled{};
-    std::variant<Empty, Canceled, T> _value;
+    std::variant<Empty, Canceled, T> _value = Empty{};
     std::unique_ptr<FutureContinuation> _cont;
   };
 
@@ -186,13 +186,13 @@ namespace fas
     void wait()
     {
       assert(isValid());
-      assert(_sstate->hasValue());
       _sstate->waitReady();
     }
     [[nodiscard]] const T get()
     {
       assert(isValid());
       _sstate->waitReady();
+      assert(_sstate->hasValue());
       return _sstate->extractValue();
     }
 
