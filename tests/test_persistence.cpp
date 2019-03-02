@@ -335,7 +335,7 @@ TEST_F(Persistence, Net)
   server::NetServer server(std::make_unique<persistence::sqlite::SqliteBackend>("test.db"));
   server.start();
 
-  persistence::net::NetClientBackend backend("localhost", 46835);
+  persistence::net::NetClientBackend backend("localhost", 8081);
   persistence::VectorDataStreamObserver<hotel::Hotel> hotels;
   persistence::VectorDataStreamObserver<hotel::Reservation> reservations;
   auto hotelsStreamHandle = backend.createStreamTyped(&hotels);

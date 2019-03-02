@@ -9,7 +9,7 @@
 int main(int argc, char** argv)
 {
   std::cout << "================================================================================" << std::endl;
-  std::cout << " hotel_serverapp (listening on port 46835)                                      " << std::endl;
+  std::cout << " hotel_serverapp (listening on port 8081)                                       " << std::endl;
   std::cout << "================================================================================" << std::endl;
 
   auto dataBackend = std::make_unique<persistence::sqlite::SqliteBackend>("data.db");
