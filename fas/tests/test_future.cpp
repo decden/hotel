@@ -9,17 +9,32 @@
 
 TEST(Future, Promise)
 {
-  auto executor = std::make_shared<fas::QueueExecutor>();
-
   auto [future, promise] = fas::makePromise<int>();
   ASSERT_FALSE(future.isReady());
   ASSERT_TRUE(future.isValid());
-  ASSERT_EQ(0u, executor->jobCount());
 
   promise.resolve(10);
-  ASSERT_EQ(0u, executor->jobCount());
   ASSERT_TRUE(future.isReady());
   ASSERT_EQ(10, future.get());
+}
+
+TEST(Future, ImplicitCancellation)
+{
+  auto executor = std::make_shared<fas::QueueExecutor>();
+  fas::ExecutorPtr<fas::QueueExecutor> executorHandle(executor);
+
+  bool executed1 = false;
+  bool executed2 = false;
+
+  auto [future, promise] = fas::makePromise<int>();
+  future = std::move(future).then(executorHandle, [&](int i) { executed1 = true; return i; });
+  future = std::move(future).then(executorHandle, [&](int i) { executed2 = true; return i; });
+  promise.resolve(10);
+
+  future.reset();
+  executor->run();
+  ASSERT_FALSE(executed1);
+  ASSERT_FALSE(executed2);
 }
 
 TEST(Future, PromiseContinuation)

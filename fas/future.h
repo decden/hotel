@@ -1,10 +1,11 @@
 #pragma once
 
+#include <atomic>
 #include <cassert>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <optional>
+#include <variant>
 #include <type_traits>
 
 namespace fas::detail
@@ -34,6 +35,11 @@ namespace fas::detail
       const std::lock_guard<std::mutex> lock(_mutex);
       return readyImpl();
     }
+    bool hasValue() const
+    {
+      const std::lock_guard<std::mutex> lock(_mutex);
+      return std::holds_alternative<T>(_value);
+    }
     std::unique_ptr<FutureContinuation> next()
     {
       assert(readyImpl());
@@ -58,6 +64,15 @@ namespace fas::detail
       }
       _readyCondition.notify_all();
     }
+    void setCanceled()
+    {
+      {
+        const std::lock_guard<std::mutex> lock(_mutex);
+        assert(!readyImpl());
+        _value = Canceled{};
+      }
+      _readyCondition.notify_all();
+    }
     void waitReady()
     {
       std::unique_lock<std::mutex> lock(_mutex);
@@ -67,16 +82,17 @@ namespace fas::detail
     T extractValue()
     {
       // We don't need to synchronize this, as we know that once the state is ready, it cannot be set again
-      return std::move(*_value);
+      return std::move(std::get<T>(_value));
     }
 
-  protected:
-    virtual bool readyImpl() const { return _value.has_value(); }
-
   private:
+    bool readyImpl() const { return !std::holds_alternative<Empty>(_value); }
+
     std::condition_variable _readyCondition;
     mutable std::mutex _mutex;
-    std::optional<T> _value;
+    struct Empty{};
+    struct Canceled{};
+    std::variant<Empty, Canceled, T> _value;
     std::unique_ptr<FutureContinuation> _cont;
   };
 
@@ -87,23 +103,36 @@ namespace fas::detail
   public:
     using U = std::decay_t<std::invoke_result_t<Fn, T>>;
 
-    FutureContinuationThen(Executor executor, Fn continuation, std::shared_ptr<FutureState<U>> sstateNext)
-        : _executor(std::move(executor)), _continuationFn(std::move(continuation)), _sstateNext(sstateNext)
+    FutureContinuationThen(Executor executor, Fn continuation, std::shared_ptr<FutureState<U>> sstateNext,
+                           std::shared_ptr<std::atomic<bool>> canceled)
+        : _executor(std::move(executor)), _continuationFn(std::move(continuation)), _sstateNext(sstateNext),
+          _canceled(canceled)
     {
     }
 
     std::pair<std::unique_ptr<FutureContinuation>, std::shared_ptr<FutureStateBase>>
     continueWith(FutureStateBase& completedFuture) override
     {
+      // In the case where the future has been canceled, skip to the next continuation
+      if (_canceled->load())
+      {
+        _sstateNext->setCanceled();
+        auto continuation = _sstateNext->next();
+        return {std::move(continuation), std::move(_sstateNext)};
+      }
+
       T val = static_cast<FutureState<T>&>(completedFuture).extractValue();
 
-      _executor.spawn(
-          [sstateNext = std::move(_sstateNext), continuationFn = std::move(_continuationFn), val = std::move(val)]() {
-            sstateNext->setValue(continuationFn(std::move(val)));
+      _executor.spawn([sstateNext = std::move(_sstateNext), continuationFn = std::move(_continuationFn),
+                       val = std::move(val), canceled = _canceled]() {
+        if (!canceled->load())
+          sstateNext->setValue(continuationFn(std::move(val)));
+        else
+          sstateNext->setCanceled();
 
-            auto continuation = sstateNext->next();
-            detail::executeFuture({std::move(continuation), std::move(sstateNext)});
-          });
+        auto continuation = sstateNext->next();
+        detail::executeFuture({std::move(continuation), std::move(sstateNext)});
+      });
       return {nullptr, nullptr};
     }
 
@@ -111,6 +140,7 @@ namespace fas::detail
     Executor _executor;
     Fn _continuationFn;
     std::shared_ptr<FutureState<U>> _sstateNext;
+    std::shared_ptr<std::atomic<bool>> _canceled;
   };
 
 } // namespace fas::detail
@@ -126,16 +156,28 @@ namespace fas
   {
   public:
     Future() : _sstate(nullptr) {}
-    Future(std::shared_ptr<detail::FutureState<T>> sstate) : _sstate(std::move(sstate)) {}
+    Future(std::shared_ptr<detail::FutureState<T>> sstate)
+        : _sstate(std::move(sstate)), _canceled(std::make_shared<std::atomic<bool>>())
+    {
+    }
     Future(const Future&) = delete;
     Future& operator=(const Future&) = delete;
     Future(Future&&) noexcept = default;
     Future& operator=(Future&&) noexcept = default;
 
+    /**
+     * @brief Deletes the future and implicitly calls any pending continuation
+     *
+     * Continuations which have not yet started executing are guaranteed to not be executed.
+     */
     void reset()
     {
-      // TODO: Cancellation
       _sstate = nullptr;
+      if (_canceled)
+      {
+        _canceled->store(true);
+        _canceled = nullptr;
+      }
     }
 
     [[nodiscard]] bool isValid() const { return _sstate != nullptr; }
@@ -144,6 +186,7 @@ namespace fas
     void wait()
     {
       assert(isValid());
+      assert(_sstate->hasValue());
       _sstate->waitReady();
     }
     [[nodiscard]] const T get()
@@ -164,8 +207,9 @@ namespace fas
 
       Future<U> future;
       future._sstate = std::make_shared<detail::FutureState<U>>();
-      auto next = _sstate->chain(
-          std::make_unique<ContinuationT>(std::move(executor), std::forward<Fn>(continuation), future._sstate));
+      future._canceled = std::move(_canceled);
+      auto next = _sstate->chain(std::make_unique<ContinuationT>(std::move(executor), std::forward<Fn>(continuation),
+                                                                 future._sstate, future._canceled));
 
       detail::executeFuture({std::move(next), std::move(_sstate)});
       return future;
@@ -175,6 +219,7 @@ namespace fas
     template <class U> friend class Future;
 
     std::shared_ptr<detail::FutureState<T>> _sstate;
+    std::shared_ptr<std::atomic<bool>> _canceled;
   };
 
   /**
