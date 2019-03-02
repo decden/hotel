@@ -197,8 +197,6 @@ namespace server
         std::cout << " [!] Unknown operation " << operationObj << std::endl;
     }
 
-    // TODO: We might want to have a primitive for this lifetime handling stuff, or provide some guarantees about
-    // cancellation
     auto future =
         _backend.queueOperations(std::move(operations))
             .then(detail::IoServiceExecutor(_socket.get_io_service()),
@@ -212,7 +210,9 @@ namespace server
                     // TODO: Future<void> specialization
                     return 0;
                   });
-    // TODO: Keep future alive
+    _runningOperations.push_back(std::move(future));
+    auto it = std::remove_if(_runningOperations.begin(), _runningOperations.end(), [](const auto& f) { return f.isReady(); });
+    _runningOperations.erase(it, _runningOperations.end());
   }
 
 } // namespace server

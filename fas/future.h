@@ -5,8 +5,8 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <variant>
 #include <type_traits>
+#include <variant>
 
 namespace fas::detail
 {
@@ -90,8 +90,12 @@ namespace fas::detail
 
     std::condition_variable _readyCondition;
     mutable std::mutex _mutex;
-    struct Empty{};
-    struct Canceled{};
+    struct Empty
+    {
+    };
+    struct Canceled
+    {
+    };
     std::variant<Empty, Canceled, T> _value = Empty{};
     std::unique_ptr<FutureContinuation> _cont;
   };
@@ -164,6 +168,7 @@ namespace fas
     Future& operator=(const Future&) = delete;
     Future(Future&&) noexcept = default;
     Future& operator=(Future&&) noexcept = default;
+    ~Future() { reset(); }
 
     /**
      * @brief Deletes the future and implicitly calls any pending continuation

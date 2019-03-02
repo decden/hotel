@@ -131,7 +131,6 @@ namespace gui
 
       auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       Form::SetItemFromTuple(*updatedReservation, _form.formValues());
-      // TODO: Fix lifetime issues
       _saveTask = _backend.queueOperation(persistence::op::Update{std::move(updatedReservation)})
                       .then(detail::QtMainThreadExecutor{}, [this](std::vector<persistence::TaskResult> results) {
                         this->saveTaskUpdated(results);
