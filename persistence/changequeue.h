@@ -3,8 +3,7 @@
 #define PERSISTENCE_RESULTINTEGRATOR_H
 
 #include "persistence/datastream.h"
-#include "persistence/task.h"
-
+#include "persistence/taskresult.h"
 #include "persistence/op/operations.h"
 
 #include "hotel/hotelcollection.h"
@@ -24,19 +23,12 @@ namespace persistence
     DataStreamChange change;
   };
 
-  struct TaskDifferential
-  {
-    int taskId;
-    std::vector<TaskResult> results;
-  };
-
   /**
    * @brief The ChangeList class holds a list of changes to tasks and streams
    */
   struct ChangeList
   {
     std::vector<DataStreamDifferential> streamChanges;
-    std::vector<TaskDifferential> taskChanges;
   };
 
   /**
@@ -60,8 +52,6 @@ namespace persistence
      */
     void addStream(std::shared_ptr<DataStream> dataStream);
 
-    void addTask(std::shared_ptr<Task> task);
-
     /**
      * @brief hasUninitializedStreams returns whethere there are still streams for which the initial data has not yet been set.
      * @return true if at least one stream has not yet received its initial data.
@@ -71,27 +61,21 @@ namespace persistence
     // Methods for applying pending changes in the main thread
 
     void applyStreamChanges();
-    void applyTaskChanges();
 
     // Methods used by backend
 
     void addChanges(ChangeList list);
-    void addTaskChange(int taskId, std::vector<TaskResult> results);
     void addStreamChange(int streamId, DataStreamChange change);
 
-    boost::signals2::connection connectToTaskCompletedSignal(boost::signals2::slot<void()> slot);
     boost::signals2::connection connectToStreamChangesAvailableSignal(boost::signals2::slot<void()> slot);
 
   private:
-
     std::vector<std::shared_ptr<DataStream>> _dataStreams;
-    std::vector<std::shared_ptr<Task>> _tasks;
 
     std::mutex _streamChangesMutex;
     std::mutex _completedTasksMutex;
     ChangeList _changeList;
 
-    boost::signals2::signal<void()> _taskCompletedSignal;
     boost::signals2::signal<void()> _streamChangesAvailableSignal;
   };
 

@@ -61,14 +61,12 @@ namespace persistence
       return _changeQueue;
     }
 
-    UniqueTaskHandle NetClientBackend::queueOperations(op::Operations operations, TaskObserver *observer)
+    fas::Future<std::vector<TaskResult>> NetClientBackend::queueOperations(op::Operations operations)
     {
-      // Create a task
+      auto [future, promise] = fas::makePromise<std::vector<TaskResult>>();
       _nextOperationId++;
-      auto sharedState = std::make_shared<Task>(_nextOperationId);
-      sharedState->connect(observer);
-      _tasks[_nextOperationId] = sharedState;
-      _changeQueue.addTask(sharedState);
+
+      _tasks.emplace(_nextOperationId, std::move(promise));
 
       nlohmann::json obj;
       obj["op"] = "schedule_operations";
@@ -79,7 +77,7 @@ namespace persistence
       obj["operations"]= operationsArray;
       submit(obj.dump());
 
-      return UniqueTaskHandle(this, sharedState);
+      return std::move(future);
     }
 
     persistence::UniqueDataStreamHandle NetClientBackend::createStream(DataStreamObserver* observer,
@@ -110,11 +108,6 @@ namespace persistence
       obj["op"] = "remove_stream";
       obj["id"] = stream->streamId();
       submit(obj.dump());
-    }
-
-    void NetClientBackend::removeTask(std::shared_ptr<Task> task)
-    {
-      // TODO: Remove tasks?
     }
 
     void NetClientBackend::socketConnected(boost::system::error_code ec)
@@ -240,7 +233,7 @@ namespace persistence
         auto it = _tasks.find(id);
         if (it != _tasks.end())
         {
-          _changeQueue.addTaskChange(it->second->taskId(), std::move(items));
+          it->second.resolve(std::move(items));
           _tasks.erase(it);
         }
       }

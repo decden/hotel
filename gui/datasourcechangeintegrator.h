@@ -33,7 +33,7 @@ namespace gui
     void emitResultsAvailable();
 
     std::atomic<bool> _eventScheduled;
-    std::array<boost::signals2::connection, 2> _connections;
+    boost::signals2::connection _connection;
     persistence::Backend* _backend;
   };
 

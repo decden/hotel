@@ -4,7 +4,6 @@
 
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
-#include "persistence/simpletaskobserver.h"
 #include "persistence/sqlite/sqlitebackend.h"
 #include "persistence/op/operations.h"
 #include "persistence/json/jsonserializer.h"
@@ -21,18 +20,7 @@ void waitForStreamInitialization(persistence::Backend& backend)
   while (backend.changeQueue().hasUninitializedStreams())
   {
     backend.changeQueue().applyStreamChanges();
-    backend.changeQueue().applyTaskChanges();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-}
-
-void waitForTask(persistence::Backend& backend, persistence::Task& task)
-{
-  while (!task.isCompleted())
-  {
-    backend.changeQueue().applyStreamChanges();
-    backend.changeQueue().applyTaskChanges();
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
@@ -43,8 +31,8 @@ public:
   {
     // Make sure the database is empty before each test
     persistence::sqlite::SqliteBackend backend("test.db");
-    auto handle = backend.queueOperation(persistence::op::EraseAllData());
-    waitForTask(backend, *handle.task());
+    auto future = backend.queueOperation(persistence::op::EraseAllData());
+    future.wait();
   }
 
   hotel::Hotel makeNewHotel(const std::string& name, const std::string& category, int numberOfRooms)
@@ -68,15 +56,17 @@ public:
   void storeHotel(persistence::Backend& backend, const hotel::Hotel& hotel)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto handle = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Hotel>(hotel) });
-    waitForTask(backend, *handle.task());
+    auto future = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Hotel>(hotel) });
+    future.wait();
+    backend.changeQueue().applyStreamChanges();
   }
 
   void storeReservation(persistence::Backend& backend, const hotel::Reservation& reservation)
   {
     // TODO: Right now this test function only works for storing one instance
-    auto handle = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(reservation) });
-    waitForTask(backend, *handle.task());
+    auto future = backend.queueOperation(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(reservation) });
+    future.wait();
+    backend.changeQueue().applyStreamChanges();
   }
 };
 
@@ -160,19 +150,20 @@ TEST_F(Persistence, VersionConflicts)
   changedHotel1.setName("Changed Hotel Name 1");
   auto changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  persistence::SimpleTaskObserver task1(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
-  persistence::SimpleTaskObserver task2(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
-  waitForTask(backend, *task1.task());
-  waitForTask(backend, *task2.task());
-  ASSERT_EQ(persistence::TaskResultStatus::Successful, task1.results()[0].status);
-  ASSERT_EQ(persistence::TaskResultStatus::Error, task2.results()[0].status);
+  auto task1 = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel1))});
+  auto task2 = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  auto results1 = task1.get();
+  auto results2 = task2.get();
+  ASSERT_EQ(persistence::TaskResultStatus::Successful, results1[0].status);
+  ASSERT_EQ(persistence::TaskResultStatus::Error, results2[0].status);
+  backend.changeQueue().applyStreamChanges();
 
   // Trying to make the same change to the correct revision now works
   changedHotel2 = hotels.items()[0];
   changedHotel2.setName("Changed Hotel Name 2");
-  persistence::SimpleTaskObserver task3(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
-  waitForTask(backend, *task3.task());
-  ASSERT_EQ(persistence::TaskResultStatus::Successful, task3.results()[0].status);
+  auto task3 = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Hotel>(std::move(changedHotel2))});
+  auto results3 = task3.get();
+  ASSERT_EQ(persistence::TaskResultStatus::Successful, results3[0].status);
 }
 
 TEST_F(Persistence, DataStreams)
@@ -199,11 +190,13 @@ TEST_F(Persistence, DataStreams)
   auto updatedReservation = reservations.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
   auto updateTask = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
-  waitForTask(backend, *updateTask.task());
+  updateTask.wait();
+  backend.changeQueue().applyStreamChanges();
   ASSERT_EQ(reservations.items()[0], updatedReservation);
 
   auto task = backend.queueOperation(persistence::op::EraseAllData());
-  waitForTask(backend, *task.task());
+  task.wait();
+  backend.changeQueue().applyStreamChanges();
 
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, reservations.items().size());
@@ -253,12 +246,15 @@ TEST_F(Persistence, DataStreamsServices)
   auto updatedReservation = reservation.items()[0];
   updatedReservation.setDescription("Updated Reservation Description");
   auto updateTask = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
-  waitForTask(backend, *updateTask.task());
+  updateTask.wait();
+  backend.changeQueue().applyStreamChanges();
   ASSERT_EQ(reservation.items()[0], updatedReservation);
 
   // Test that removing all items clears all streams
   auto task = backend.queueOperation(persistence::op::EraseAllData());
-  waitForTask(backend, *task.task());
+  task.wait();
+  backend.changeQueue().applyStreamChanges();
+
   ASSERT_EQ(0u, hotels.items().size());
   ASSERT_EQ(0u, hotel.items().size());
   ASSERT_EQ(0u, reservations.items().size());
@@ -284,12 +280,12 @@ TEST_F(Persistence, FailedTransaction)
     persistence::op::Operations ops;
     ops.push_back(persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
     ops.push_back(persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
+    auto updateTask = backend.queueOperations(std::move(ops));
+    auto updateTaskResults = updateTask.get();
+    backend.changeQueue().applyStreamChanges();
 
-    persistence::SimpleTaskObserver updateTask(backend, std::move(ops));
-    waitForTask(backend, *updateTask.task());
-
-    ASSERT_EQ(persistence::TaskResultStatus::Successful, updateTask.results()[0].status);
-    ASSERT_EQ(persistence::TaskResultStatus::Error, updateTask.results()[1].status);
+    ASSERT_EQ(persistence::TaskResultStatus::Successful, updateTaskResults[0].status);
+    ASSERT_EQ(persistence::TaskResultStatus::Error, updateTaskResults[1].status);
     ASSERT_EQ(1u, hotels.items().size());
     ASSERT_EQ(1u, hotels.items()[0].revision());
     ASSERT_EQ("Hotel 1", hotels.items()[0].name());
@@ -362,12 +358,14 @@ TEST_F(Persistence, Net)
   // Update existing items
   auto updatedHotel = hotels.items()[0];
   updatedHotel.setName("Fancy Hotel 1");
-  persistence::SimpleTaskObserver updateTask1(backend, persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
-  waitForTask(backend, *updateTask1.task());
+  auto updateTask1 = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Hotel>(updatedHotel)});
+  updateTask1.wait();
+  backend.changeQueue().applyStreamChanges();
   auto updatedReservation = reservations.items()[0];
   updatedReservation.setDescription("Hello!");
-  persistence::SimpleTaskObserver updateTask2(backend, persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
-  waitForTask(backend, *updateTask2.task());
+  auto updateTask2 = backend.queueOperation(persistence::op::Update{std::make_unique<hotel::Reservation>(updatedReservation)});
+  updateTask2.wait();
+  backend.changeQueue().applyStreamChanges();
 
   ASSERT_EQ(1u, hotels.items().size());
   // TODO: This does not yet pass, the update process duplicates some of the data (e.g. rooms and categories)

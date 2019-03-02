@@ -29,7 +29,7 @@ namespace persistence
       virtual ~NetClientBackend();
 
       virtual ChangeQueue& changeQueue() override;
-      virtual UniqueTaskHandle queueOperations(op::Operations operations, TaskObserver* observer = nullptr) override;
+      virtual fas::Future<std::vector<TaskResult>> queueOperations(op::Operations operations) override;
 
       virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
                                                                const std::string& service,
@@ -37,7 +37,6 @@ namespace persistence
 
     protected:
       virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
-      virtual void removeTask(std::shared_ptr<persistence::Task> task) override;
 
     private:
       void start();
@@ -58,7 +57,7 @@ namespace persistence
       std::array<char, 4> _headerBuffer;
       std::vector<char> _bodyBuffer;
       std::vector<char> _writeBuffer;
-      std::map<int, std::shared_ptr<Task>> _tasks;
+      std::map<int, fas::Promise<std::vector<TaskResult>>> _tasks;
 
 
       std::string _host;

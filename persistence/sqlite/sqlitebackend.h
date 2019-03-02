@@ -9,6 +9,8 @@
 #include "persistence/changequeue.h"
 #include "persistence/op/operations.h"
 
+#include "fas/threadedexecutor.h"
+
 #include "extern/nlohmann_json/json.hpp"
 
 #include <boost/signals2.hpp>
@@ -104,7 +106,7 @@ namespace persistence
       SqliteBackend(const std::string& databasePath);
       virtual ~SqliteBackend();
 
-      virtual UniqueTaskHandle queueOperations(op::Operations operations, TaskObserver* observer = nullptr) override;
+      virtual fas::Future<std::vector<TaskResult>> queueOperations(op::Operations operations) override;
 
       virtual persistence::UniqueDataStreamHandle createStream(DataStreamObserver* observer, StreamableType type,
                                                                const std::string& service,
@@ -114,7 +116,6 @@ namespace persistence
 
     protected:
       virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) override;
-      virtual void removeTask(std::shared_ptr<persistence::Task> task) override;
 
     private:
       void start();
@@ -145,7 +146,7 @@ namespace persistence
       std::condition_variable _workAvailableCondition;
 
       std::mutex _queueMutex;
-      typedef std::pair<op::Operations, std::shared_ptr<Task>> QueuedOperation;
+      typedef std::pair<op::Operations, fas::Promise<std::vector<TaskResult>>> QueuedOperation;
       std::vector<QueuedOperation> _operationsQueue;
 
       detail::DataStreamManager _dataStreams;

@@ -25,7 +25,7 @@ namespace fas::detail
     continueWith(FutureStateBase& completedFuture) = 0;
   };
 
-  //! @brief Shared state of a task
+  //! @brief Shared state of a future, or intermediate value
   template <class T> class FutureState : public FutureStateBase
   {
   public:
@@ -80,11 +80,7 @@ namespace fas::detail
     std::unique_ptr<FutureContinuation> _cont;
   };
 
-  void executeFuture(std::pair<std::unique_ptr<FutureContinuation>, std::shared_ptr<FutureStateBase>> next)
-  {
-    while (next.first)
-      next = next.first->continueWith(*next.second);
-  }
+  extern void executeFuture(std::pair<std::unique_ptr<FutureContinuation>, std::shared_ptr<FutureStateBase>> next);
 
   template <class T, class Executor, class Fn> class FutureContinuationThen : public FutureContinuation
   {
@@ -133,8 +129,8 @@ namespace fas
     Future(std::shared_ptr<detail::FutureState<T>> sstate) : _sstate(std::move(sstate)) {}
     Future(const Future&) = delete;
     Future& operator=(const Future&) = delete;
-    Future(Future&&) = default;
-    Future& operator=(Future&&) = default;
+    Future(Future&&) noexcept = default;
+    Future& operator=(Future&&) noexcept = default;
 
     void reset()
     {
@@ -142,10 +138,15 @@ namespace fas
       _sstate = nullptr;
     }
 
-    bool isValid() const { return _sstate != nullptr; }
-    bool isReady() const { return _sstate && _sstate->isReady(); }
+    [[nodiscard]] bool isValid() const { return _sstate != nullptr; }
+    [[nodiscard]] bool isReady() const { return _sstate && _sstate->isReady(); }
 
-    const T get()
+    void wait()
+    {
+      assert(isValid());
+      _sstate->waitReady();
+    }
+    [[nodiscard]] const T get()
     {
       assert(isValid());
       _sstate->waitReady();
@@ -153,7 +154,8 @@ namespace fas
     }
 
     template <class Executor, class Fn>
-    Future<std::decay_t<std::invoke_result_t<std::decay_t<Fn>, T>>> then(Executor executor, Fn&& continuation) &&
+    [[nodiscard]] Future<std::decay_t<std::invoke_result_t<std::decay_t<Fn>, T>>> then(Executor executor,
+                                                                                       Fn&& continuation) &&
     {
       assert(isValid());
 
@@ -186,6 +188,10 @@ namespace fas
   {
   public:
     Promise(std::shared_ptr<detail::FutureState<T>> sstate) : _sstate(sstate) {}
+    Promise(const Promise&) = delete;
+    Promise& operator=(const Promise&) = delete;
+    Promise(Promise&&) noexcept = default;
+    Promise& operator=(Promise&&) noexcept = default;
 
     void resolve(T value)
     {

@@ -9,8 +9,7 @@ namespace gui
   {
     connect(this, SIGNAL(resultsAvailable()), this, SLOT(handleAvailableResults()));
 
-    _connections[0] = _backend->changeQueue().connectToTaskCompletedSignal([this]() { this->emitResultsAvailable(); });
-    _connections[1] = _backend->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); });
+    _connection = _backend->changeQueue().connectToStreamChangesAvailableSignal([this]() { this->emitResultsAvailable(); });
 
     // Initial update...
     handleAvailableResults();
@@ -19,7 +18,6 @@ namespace gui
   void ChangeIntegrator::handleAvailableResults() {
     _eventScheduled = false;
     _backend->changeQueue().applyStreamChanges();
-    _backend->changeQueue().applyTaskChanges();
   }
 
   void ChangeIntegrator::emitResultsAvailable() {

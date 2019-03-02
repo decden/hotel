@@ -2,6 +2,7 @@
 
 set(SRC
   fas.cpp
+  future.cpp
 )
 
 set(SRC_INCLUDES

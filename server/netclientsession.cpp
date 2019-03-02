@@ -6,79 +6,63 @@
 #include "persistence/json/jsonserializer.h"
 #include "persistence/net/jsonserializer.h"
 
+namespace server::detail
+{
+  class IoServiceExecutor
+  {
+  public:
+    IoServiceExecutor(boost::asio::io_service& ioService) : _ioService(&ioService) {}
+
+    template <class Fn> void spawn(Fn&& fn) { _ioService->post(std::forward<Fn>(fn)); }
+
+  private:
+    boost::asio::io_service* _ioService;
+  };
+
+  class SessionStreamObserver final : public persistence::DataStreamObserver
+  {
+  public:
+    SessionStreamObserver(MessageSender& sender, int clientStreamId) : _sender(sender), _clientStreamId(clientStreamId)
+    {
+    }
+    virtual ~SessionStreamObserver() {}
+    int clientStreamId() { return _clientStreamId; }
+
+    virtual void addItems(const persistence::StreamableItems& items) override
+    {
+      _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamAddMessage(_clientStreamId, items));
+    }
+
+    virtual void updateItems(const persistence::StreamableItems& items) override
+    {
+      _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamUpdateMessage(_clientStreamId, items));
+    }
+
+    virtual void removeItems(const std::vector<int>& ids) override
+    {
+      _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamRemoveMessage(_clientStreamId, ids));
+    }
+
+    virtual void clear() override
+    {
+      _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamClearMessage(_clientStreamId));
+    }
+
+    virtual void initialized() override
+    {
+      _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamInitializeMessage(_clientStreamId));
+    }
+
+  private:
+    MessageSender& _sender;
+    int _clientStreamId;
+  };
+
+} // namespace server::detail
+
 namespace server
 {
-
-  namespace detail
-  {
-    class SessionStreamObserver final : public persistence::DataStreamObserver
-    {
-    public:
-      SessionStreamObserver(MessageSender& sender, int clientStreamId)
-          : _sender(sender), _clientStreamId(clientStreamId)
-      {
-      }
-      virtual ~SessionStreamObserver() {}
-      int clientStreamId() { return _clientStreamId; }
-
-      virtual void addItems(const persistence::StreamableItems& items) override
-      {
-        _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamAddMessage(_clientStreamId, items));
-      }
-
-      virtual void updateItems(const persistence::StreamableItems& items) override
-      {
-        _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamUpdateMessage(_clientStreamId, items));
-      }
-
-      virtual void removeItems(const std::vector<int>& ids) override
-      {
-        _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamRemoveMessage(_clientStreamId, ids));
-      }
-
-      virtual void clear() override
-      {
-        _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamClearMessage(_clientStreamId));
-      }
-
-      virtual void initialized() override
-      {
-        _sender.sendMessage(persistence::net::JsonSerializer::serializeStreamInitializeMessage(_clientStreamId));
-      }
-
-    private:
-      MessageSender& _sender;
-      int _clientStreamId;
-    };
-
-    /**
-     * @brief The SessionTaskObserver class listens to changes of a single tasks and reports them back to the server
-     */
-    class SessionTaskObserver final : public persistence::TaskObserver
-    {
-    public:
-      SessionTaskObserver(MessageSender& sender, int clientTaskId, persistence::Backend& backend,
-                          persistence::op::Operations ops)
-          : _sender(sender), _clientTaskId(clientTaskId), _handle()
-      {
-        _handle = backend.queueOperations(std::move(ops), this);
-      }
-
-    private:
-      virtual void setResults(const std::vector<persistence::TaskResult>& results) override
-      {
-        auto message = persistence::net::JsonSerializer::serializeTaskResultsMessage(_clientTaskId, results);
-        _sender.sendMessage(message);
-      }
-
-      MessageSender& _sender;
-      int _clientTaskId;
-      persistence::UniqueTaskHandle _handle;
-    };
-
-  }  // namespace detail
-
-  NetClientSession::NetClientSession(boost::asio::io_service& ioService, persistence::Backend &backend)
+  NetClientSession::NetClientSession(boost::asio::io_service& ioService, persistence::Backend& backend)
       : _backend(backend), _socket(ioService)
   {
   }
@@ -89,10 +73,7 @@ namespace server
       std::cout << " [-] Client disconnected " << _socket.remote_endpoint().address().to_string() << std::endl;
   }
 
-  void NetClientSession::start()
-  {
-    doReadHeader();
-  }
+  void NetClientSession::start() { doReadHeader(); }
 
   void NetClientSession::close()
   {
@@ -110,34 +91,34 @@ namespace server
 
   void NetClientSession::doReadHeader()
   {
-    boost::asio::async_read(_socket, boost::asio::buffer(_headerData.data(), _headerData.size()), boost::asio::transfer_exactly(4),
-                            [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
-    {
-      if (!ec)
-      {
-        session->doReadBody();
-      }
-    });
+    boost::asio::async_read(_socket, boost::asio::buffer(_headerData.data(), _headerData.size()),
+                            boost::asio::transfer_exactly(4),
+                            [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
+                              if (!ec)
+                              {
+                                session->doReadBody();
+                              }
+                            });
   }
 
   void NetClientSession::doReadBody()
   {
-    size_t size = static_cast<size_t>(static_cast<unsigned char>(_headerData[0])) <<  0 |
-                  static_cast<size_t>(static_cast<unsigned char>(_headerData[1])) <<  8 |
+    size_t size = static_cast<size_t>(static_cast<unsigned char>(_headerData[0])) << 0 |
+                  static_cast<size_t>(static_cast<unsigned char>(_headerData[1])) << 8 |
                   static_cast<size_t>(static_cast<unsigned char>(_headerData[2])) << 16 |
                   static_cast<size_t>(static_cast<unsigned char>(_headerData[3])) << 24;
 
     _bodyData.resize(size, 0);
-    boost::asio::async_read(_socket, boost::asio::buffer(_bodyData.data(), _bodyData.size()), boost::asio::transfer_exactly(_bodyData.size()),
-                            [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
-    {
-      if (!ec)
-      {
-        std::string message(session->_bodyData.data(), session->_bodyData.size());
-        session->runCommand(nlohmann::json::parse(message));
-        session->doReadHeader();
-      }
-    });
+    boost::asio::async_read(_socket, boost::asio::buffer(_bodyData.data(), _bodyData.size()),
+                            boost::asio::transfer_exactly(_bodyData.size()),
+                            [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
+                              if (!ec)
+                              {
+                                std::string message(session->_bodyData.data(), session->_bodyData.size());
+                                session->runCommand(nlohmann::json::parse(message));
+                                session->doReadHeader();
+                              }
+                            });
   }
 
   void NetClientSession::doSend()
@@ -153,18 +134,17 @@ namespace server
     memcpy(_writeData.data() + 4, message.data(), size);
 
     boost::asio::async_write(_socket, boost::asio::buffer(_writeData.data(), _writeData.size()),
-                             [session=this->shared_from_this()](const boost::system::error_code &ec, size_t length)
-    {
-      if (!ec)
-      {
-        session->_outgoingMessages.pop();
-        if (!session->_outgoingMessages.empty())
-          session->doSend();
-      }
-    });
+                             [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
+                               if (!ec)
+                               {
+                                 session->_outgoingMessages.pop();
+                                 if (!session->_outgoingMessages.empty())
+                                   session->doSend();
+                               }
+                             });
   }
 
-  void NetClientSession::runCommand(const nlohmann::json &obj)
+  void NetClientSession::runCommand(const nlohmann::json& obj)
   {
     std::string operation = obj["op"];
 
@@ -178,7 +158,7 @@ namespace server
       std::cout << " [!] Unknown operation: " << operation << std::endl;
   }
 
-  void NetClientSession::runCreateStream(const nlohmann::json &obj)
+  void NetClientSession::runCreateStream(const nlohmann::json& obj)
   {
     int clientId = obj["id"];
     auto type = static_cast<persistence::StreamableType>((int)obj["type"]);
@@ -189,21 +169,21 @@ namespace server
     _streams.emplace_back(std::move(streamHandle), std::move(observer));
   }
 
-  void NetClientSession::runRemoveStream(const nlohmann::json &obj)
+  void NetClientSession::runRemoveStream(const nlohmann::json& obj)
   {
     int clientId = obj["id"];
-    auto it = std::find_if(_streams.begin(), _streams.end(), [clientId](const auto& pair) {
-      return pair.second->clientStreamId() == clientId;
-    });
+    auto it = std::find_if(_streams.begin(), _streams.end(),
+                           [clientId](const auto& pair) { return pair.second->clientStreamId() == clientId; });
 
     if (it != _streams.end())
     {
-      std::cout << " [R] Removed stream s[" << it->first.stream()->streamId() << "] => c[" << it->second->clientStreamId() << "]" << std::endl;
+      std::cout << " [R] Removed stream s[" << it->first.stream()->streamId() << "] => c["
+                << it->second->clientStreamId() << "]" << std::endl;
       _streams.erase(it);
     }
   }
 
-  void NetClientSession::runScheduleOperations(const nlohmann::json &obj)
+  void NetClientSession::runScheduleOperations(const nlohmann::json& obj)
   {
     std::cout << " [R] Schedule " << obj["operations"].size() << " operation(s)" << std::endl;
 
@@ -217,8 +197,22 @@ namespace server
         std::cout << " [!] Unknown operation " << operationObj << std::endl;
     }
 
-    auto observer = std::make_unique<detail::SessionTaskObserver>(*this, obj["id"], _backend, std::move(operations));
-    _taskObservers.push_back(std::move(observer));
+    // TODO: We might want to have a primitive for this lifetime handling stuff, or provide some guarantees about
+    // cancellation
+    auto future =
+        _backend.queueOperations(std::move(operations))
+            .then(detail::IoServiceExecutor(_socket.get_io_service()),
+                  [weakThis = weak_from_this(), id = obj["id"]](std::vector<persistence::TaskResult> results) {
+                    auto self = weakThis.lock();
+                    if (self != nullptr)
+                    {
+                      auto message = persistence::net::JsonSerializer::serializeTaskResultsMessage(id, results);
+                      self->sendMessage(message);
+                    }
+                    // TODO: Future<void> specialization
+                    return 0;
+                  });
+    // TODO: Keep future alive
   }
 
 } // namespace server

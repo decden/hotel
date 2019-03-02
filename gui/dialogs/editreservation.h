@@ -17,19 +17,20 @@ namespace gui
 {
   namespace dialogs
   {
-    class TaskObserverAdapter : public persistence::TaskObserver
+    // TODO: Adapt this class
+    class TaskObserverAdapter
     {
     public:
-      void connect(persistence::Backend& backend, persistence::op::Operations ops) { _taskHandle = backend.queueOperations(std::move(ops), this); }
-      void connect(persistence::Backend& backend, persistence::op::Operation op) { _taskHandle = backend.queueOperation(std::move(op), this); }
+      void connect(persistence::Backend& backend, persistence::op::Operations ops) { /*TODO*/ }
+      void connect(persistence::Backend& backend, persistence::op::Operation op) { /*TODO*/; }
 
-      virtual void setResults(const std::vector<persistence::TaskResult>& results) override { resultsSetSignal(results); }
+      virtual void setResults(const std::vector<persistence::TaskResult>& results) /*override*/ { resultsSetSignal(results); }
 
       // Public signals
       boost::signals2::signal<void(const std::vector<persistence::TaskResult>&)> resultsSetSignal;
 
     private:
-      persistence::UniqueTaskHandle _taskHandle;
+      //TODO: persistence::UniqueTaskHandle _taskHandle;
     };
 
     class Form
@@ -141,7 +142,8 @@ namespace gui
       gui::DataStreamObserverAdapter<hotel::Reservation> _reservationStreamHandle;
 
       boost::signals2::scoped_connection _saveTaskUpdatedConnection;
-      TaskObserverAdapter _saveTask;
+      // TODO: Lifetime and wrong future type: <int>
+      fas::Future<int> _saveTask;
 
       Form _form;
       StatusBar* _statusBar;

@@ -1,25 +1,39 @@
 #include "gui/dialogs/editreservation.h"
 
 #include <QtCore/QDate>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QVBoxLayout>
+
+namespace gui::detail
+{
+  class QtMainThreadExecutor
+  {
+  public:
+    template <class Fn> void spawn(Fn&& fn)
+    {
+      QMetaObject::invokeMethod(QApplication::instance(), std::forward<Fn>(fn));
+    }
+  };
+} // namespace gui::detail
 
 namespace gui
 {
   namespace dialogs
   {
-    template <class T>
-    class Resolver {
+    template <class T> class Resolver
+    {
     public:
-      struct Resolution {
+      struct Resolution
+      {
         T merged;
         std::vector<std::size_t> conflicts;
       };
 
-      static Resolution merge(const T &base, const T &ours, const T &theirs)
+      static Resolution merge(const T& base, const T& ours, const T& theirs)
       {
         Resolution resolution;
         resolution.merged = base;
@@ -40,25 +54,15 @@ namespace gui
       }
     };
 
-    template <class T>
-    std::string valueToStr(const T& val)
-    {
-      return std::to_string(val);
-    }
-    template <>
-    std::string valueToStr(const std::string& val)
-    {
-      return val;
-    }
-    template <>
-    std::string valueToStr(const hotel::Reservation::ReservationStatus& val)
+    template <class T> std::string valueToStr(const T& val) { return std::to_string(val); }
+    template <> std::string valueToStr(const std::string& val) { return val; }
+    template <> std::string valueToStr(const hotel::Reservation::ReservationStatus& val)
     {
       const char* names[] = {"Unknown", "Temporary", "New", "Confirmed", "CheckedIn", "CheckedOut", "Archived"};
       return names[static_cast<std::size_t>(val)];
     }
 
-
-    EditReservationDialog::EditReservationDialog(persistence::Backend &backend, int objectId)
+    EditReservationDialog::EditReservationDialog(persistence::Backend& backend, int objectId)
         : QDialog(nullptr), _backend(backend)
     {
       setAttribute(Qt::WA_DeleteOnClose);
@@ -66,13 +70,16 @@ namespace gui
       setWindowTitle(tr("Edit Reservation"));
 
       // Connect events
-      _reservationStreamHandle.initializedSignal.connect(boost::bind(&EditReservationDialog::reservationsInitialized, this));
-      _reservationStreamHandle.itemsAddedSignal.connect(boost::bind(&EditReservationDialog::reservationsAdded, this, boost::placeholders::_1));
-      _reservationStreamHandle.itemsUpdatedSignal.connect(boost::bind(&EditReservationDialog::reservationsUpdated, this, boost::placeholders::_1));
-      _reservationStreamHandle.itemsRemovedSignal.connect(boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
-      _reservationStreamHandle.allItemsRemovedSignal.connect(boost::bind(&EditReservationDialog::allReservationsRemoved, this));
-
-      _saveTask.resultsSetSignal.connect(boost::bind(&EditReservationDialog::saveTaskUpdated, this, boost::placeholders::_1));
+      _reservationStreamHandle.initializedSignal.connect(
+          boost::bind(&EditReservationDialog::reservationsInitialized, this));
+      _reservationStreamHandle.itemsAddedSignal.connect(
+          boost::bind(&EditReservationDialog::reservationsAdded, this, boost::placeholders::_1));
+      _reservationStreamHandle.itemsUpdatedSignal.connect(
+          boost::bind(&EditReservationDialog::reservationsUpdated, this, boost::placeholders::_1));
+      _reservationStreamHandle.itemsRemovedSignal.connect(
+          boost::bind(&EditReservationDialog::reservationsRemoved, this, boost::placeholders::_1));
+      _reservationStreamHandle.allItemsRemovedSignal.connect(
+          boost::bind(&EditReservationDialog::allReservationsRemoved, this));
 
       // Connect to data stream
       nlohmann::json options;
@@ -124,7 +131,12 @@ namespace gui
 
       auto updatedReservation = std::make_unique<hotel::Reservation>(*_referenceVersion);
       Form::SetItemFromTuple(*updatedReservation, _form.formValues());
-      _saveTask.connect(_backend, persistence::op::Update{std::move(updatedReservation)});
+      // TODO: Fix lifetime issues
+      _saveTask = _backend.queueOperation(persistence::op::Update{std::move(updatedReservation)})
+                      .then(detail::QtMainThreadExecutor{}, [this](std::vector<persistence::TaskResult> results) {
+                        this->saveTaskUpdated(results);
+                        return 0;
+                      });
 
       updateUI();
     }
@@ -144,15 +156,16 @@ namespace gui
           {
             QMessageBox msgBox;
             msgBox.setWindowTitle(tr("Merge conflict"));
-            auto baseStr = std::visit([](const auto& value){ return valueToStr(value); }, base.at(conflict));
-            auto ourStr = std::visit([](const auto& value){ return valueToStr(value); }, ours.at(conflict));
-            auto theirStr = std::visit([](const auto& value){ return valueToStr(value); }, theirs.at(conflict));
+            auto baseStr = std::visit([](const auto& value) { return valueToStr(value); }, base.at(conflict));
+            auto ourStr = std::visit([](const auto& value) { return valueToStr(value); }, ours.at(conflict));
+            auto theirStr = std::visit([](const auto& value) { return valueToStr(value); }, theirs.at(conflict));
 
-            msgBox.setText(tr("Failed to automatically merge a field. Please choose which value to keep:\n\n%1\nBase version: \t%2\nOur version: \t%3\nTheir version: \t%4")
-                           .arg(_form.getWidgets().at(conflict).first)
-                           .arg(QString::fromStdString(baseStr))
-                           .arg(QString::fromStdString(ourStr))
-                           .arg(QString::fromStdString(theirStr)));
+            msgBox.setText(tr("Failed to automatically merge a field. Please choose which value to keep:\n\n%1\nBase "
+                              "version: \t%2\nOur version: \t%3\nTheir version: \t%4")
+                               .arg(_form.getWidgets().at(conflict).first)
+                               .arg(QString::fromStdString(baseStr))
+                               .arg(QString::fromStdString(ourStr))
+                               .arg(QString::fromStdString(theirStr)));
             msgBox.addButton(tr("Base version"), QMessageBox::RejectRole);
             auto ourVersionButton = msgBox.addButton(tr("Our version"), QMessageBox::AcceptRole);
             auto theirVersionButton = msgBox.addButton(tr("Their version"), QMessageBox::RejectRole);
@@ -179,8 +192,8 @@ namespace gui
       updateUI();
     }
 
-    void EditReservationDialog::reservationsAdded(const std::vector<hotel::Reservation> &reservations)
-    {      
+    void EditReservationDialog::reservationsAdded(const std::vector<hotel::Reservation>& reservations)
+    {
       assert(_status == Status::NotInitialized);
       assert(reservations.size() == 1);
       assert(_referenceVersion == std::nullopt);
@@ -189,7 +202,7 @@ namespace gui
       _form.setFormValues(Form::ItemToTuple(*_referenceVersion));
     }
 
-    void EditReservationDialog::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
+    void EditReservationDialog::reservationsUpdated(const std::vector<hotel::Reservation>& reservations)
     {
       assert(reservations.size() == 1);
       assert(_referenceVersion != std::nullopt);
@@ -201,7 +214,7 @@ namespace gui
       updateUI();
     }
 
-    void EditReservationDialog::reservationsRemoved(const std::vector<int> &ids)
+    void EditReservationDialog::reservationsRemoved(const std::vector<int>& ids)
     {
       assert(ids.size() == 1);
       assert(_referenceVersion != std::nullopt);
@@ -218,7 +231,7 @@ namespace gui
       updateUI();
     }
 
-    void EditReservationDialog::saveTaskUpdated(const std::vector<persistence::TaskResult> &results)
+    void EditReservationDialog::saveTaskUpdated(const std::vector<persistence::TaskResult>& results)
     {
       auto result = results[0];
       if (result.status == persistence::TaskResultStatus::Successful)
@@ -227,7 +240,8 @@ namespace gui
       {
         _status = Status::Ready;
         updateUI();
-        _statusBar->showMessage(tr("Saving was unsuccessful (%1)").arg(QString::fromStdString(result.result["message"])), StatusBar::Error);
+        _statusBar->showMessage(
+            tr("Saving was unsuccessful (%1)").arg(QString::fromStdString(result.result["message"])), StatusBar::Error);
       }
     }
 
@@ -248,7 +262,8 @@ namespace gui
         auto toDate = _referenceVersion->dateRange().end();
         auto fromDateText = QDate(fromDate.year(), fromDate.month(), fromDate.day()).toString("dd-MM-yyyy");
         auto toDateText = QDate(toDate.year(), toDate.month(), toDate.day()).toString("dd-MM-yyyy");
-        _statusBar->showMessage(tr("%1 - From %2 to %3").arg(description, fromDateText, toDateText), gui::StatusBar::Success);
+        _statusBar->showMessage(tr("%1 - From %2 to %3").arg(description, fromDateText, toDateText),
+                                gui::StatusBar::Success);
       }
       else if (_status == Status::Ready && _referenceVersion == std::nullopt)
         _statusBar->showMessage(tr("Could not load data"), gui::StatusBar::Error);

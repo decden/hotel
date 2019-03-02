@@ -16,11 +16,9 @@ namespace server
     {
       _ioService.post([this](){
         _backend->changeQueue().applyStreamChanges();
-        _backend->changeQueue().applyTaskChanges();
       });
     };
     _backend->changeQueue().connectToStreamChangesAvailableSignal(handleChanges);
-    _backend->changeQueue().connectToTaskCompletedSignal(handleChanges);
 
     // Start accepting connections
     doAccept();

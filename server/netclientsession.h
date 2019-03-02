@@ -107,7 +107,6 @@ namespace server
 
     // Observers for open streams/operations
     std::vector<std::pair<persistence::UniqueDataStreamHandle, std::unique_ptr<detail::SessionStreamObserver>>> _streams;
-    std::vector<std::unique_ptr<detail::SessionTaskObserver>> _taskObservers;
 
     // Buffers for reading in the next message
     std::array<char, 4> _headerData;

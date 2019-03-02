@@ -2,7 +2,7 @@
 #define PERSISTENCE_NETCLIENT_ENVELOPE_H
 
 #include "persistence/datastream.h"
-#include "persistence/task.h"
+#include "persistence/taskresult.h"
 
 #include "extern/nlohmann_json/json.hpp"
 

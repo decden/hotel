@@ -11,7 +11,7 @@ namespace persistence
     class DefaultDataStreamHandler : public DataStreamHandler
     {
     public:
-      virtual ~DefaultDataStreamHandler() {}
+      virtual ~DefaultDataStreamHandler() = default;
       virtual void initialize(DataStream& stream, std::vector<DataStreamDifferential>& changeQueue, sqlite::SqliteStorage& storage) override
       {
         switch(stream.streamType())
@@ -236,20 +236,18 @@ namespace persistence
       stopAndJoin();
     }
 
-    UniqueTaskHandle SqliteBackend::queueOperations(op::Operations operations, TaskObserver *observer)
+    fas::Future<std::vector<TaskResult>> SqliteBackend::queueOperations(op::Operations operations)
     {
-      // Create a task
-      auto sharedState = std::make_shared<Task>(_nextOperationId++);
-      _changeQueue.addTask(sharedState);
-      sharedState->connect(observer);
+      auto [future, promise] = fas::makePromise<std::vector<TaskResult>>();
 
-      std::unique_lock<std::mutex> lock(_queueMutex);
-      auto pair = QueuedOperation{std::move(operations), sharedState};
-      _operationsQueue.push_back(std::move(pair));
-      lock.unlock();
+      auto pair = QueuedOperation{std::move(operations), std::move(promise)};
+      {
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _operationsQueue.push_back(std::move(pair));
+      }
       _workAvailableCondition.notify_one();
 
-      return UniqueTaskHandle(this, sharedState);
+      return std::move(future);
     }
 
     void SqliteBackend::start()
@@ -290,11 +288,6 @@ namespace persistence
     void SqliteBackend::removeStream(std::shared_ptr<DataStream> stream)
     {
       _dataStreams.removeStream(stream);
-    }
-
-    void SqliteBackend::removeTask(std::shared_ptr<Task> task)
-    {
-      // TODO: Remove task?
     }
 
     void SqliteBackend::threadMain()
@@ -343,7 +336,7 @@ namespace persistence
             _storage.commitTransaction();
             _changeQueue.addChanges(std::move(transactionChanges));
           }
-          _changeQueue.addTaskChange(operationsMessage.second->taskId(), std::move(results));
+          operationsMessage.second.resolve(std::move(results));
         }
       }
     }

@@ -2,9 +2,10 @@
 #define PERSISTENCE_BACKEND_H
 
 #include "persistence/datastream.h"
-#include "persistence/task.h"
-
 #include "persistence/op/operations.h"
+#include "persistence/taskresult.h"
+
+#include "fas/future.h"
 
 #include "extern/nlohmann_json/json.hpp"
 
@@ -34,25 +35,21 @@ namespace persistence
     /**
      * @brief queueOperation queses a single operation to be executed
      * @param operation the operation to queue.
-     * @param observer the optional observer for the task result
-     * @return The handle to the scheduled task. The return value can be safely ignored if no observer is provided,
-     *         otherwise it has to be kept alive as long as the observer wishes to get notifications.
+     * @return A future which will eventually contain the result of the operation
      */
-    UniqueTaskHandle queueOperation(op::Operation operation, TaskObserver* observer = nullptr)
+    fas::Future<std::vector<TaskResult>> queueOperation(op::Operation operation)
     {
       op::Operations ops;
       ops.emplace_back(std::move(operation));
-      return queueOperations(std::move(ops), observer);
+      return queueOperations(std::move(ops));
     }
 
     /**
      * @brief queueOperations queses an operation to be executed
      * @param operations list of operations to execute. These will be wrapped into a transaction.
-     * @param observer the optional observer for the task result
-     * @return The handle to the scheduled task. The return value can be safely ignored if no observer is provided,
-     *         otherwise it has to be kept alive as long as the observer wishes to get notifications.
+     * @return A future which will eventually contain the result of the operations
      */
-    virtual UniqueTaskHandle queueOperations(op::Operations operations, TaskObserver* observer = nullptr) = 0;
+    virtual fas::Future<std::vector<TaskResult>> queueOperations(op::Operations operations) = 0;
 
     /**
      * @brief Creates a new stream which connects the given observer to the given service endpoint
@@ -81,12 +78,10 @@ namespace persistence
                                                              const std::string& service,
                                                              const nlohmann::json& options) = 0;
 
-  protected :
+  protected:
     friend class persistence::UniqueDataStreamHandle;
-    friend class persistence::UniqueTaskHandle;
 
     virtual void removeStream(std::shared_ptr<persistence::DataStream> stream) = 0;
-    virtual void removeTask(std::shared_ptr<persistence::Task> task) = 0;
   };
 } // namespace persistence
 

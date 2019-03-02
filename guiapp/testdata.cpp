@@ -2,8 +2,6 @@
 
 #include "persistence/backend.h"
 #include "persistence/changequeue.h"
-#include "persistence/simpletaskobserver.h"
-#include "persistence/task.h"
 
 #include "hotel/reservation.h"
 
@@ -146,16 +144,6 @@ namespace guiapp
     return planning;
   }
 
-  void waitForTasks(persistence::Backend& backend, std::vector<std::unique_ptr<persistence::SimpleTaskObserver>>& pendingTasks)
-  {
-    while (!std::all_of(pendingTasks.begin(), pendingTasks.end(), [](auto& task) { return task->isCompleted(); }))
-    {
-      backend.changeQueue().applyStreamChanges();
-      backend.changeQueue().applyTaskChanges();
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-  }
-
   void createTestData(persistence::Backend &backend)
   {
 
@@ -169,26 +157,27 @@ namespace guiapp
 
     // Store hotels
     {
-      std::vector<std::unique_ptr<persistence::SimpleTaskObserver>> pendingTasks;
       persistence::op::Operations ops;
       ops.push_back(persistence::op::EraseAllData());
       auto hotels = createTestHotels(rng);
       for (auto& hotel : hotels)
         ops.push_back(persistence::op::StoreNew{std::move(hotel)});
 
-      pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, std::move(ops)));
-      waitForTasks(backend, pendingTasks);
+      auto task = backend.queueOperations(std::move(ops));
+      task.wait();
+      backend.changeQueue().applyStreamChanges();
     }
 
     // Store reservations
     {
-      persistence::op::Operations operations;
+      persistence::op::Operations ops;
       auto planning = createTestPlanning(rng, hotelsStream.items());
       for (auto& reservation : planning->reservations())
-        operations.push_back(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(*reservation) });
-      std::vector<std::unique_ptr<persistence::SimpleTaskObserver>> pendingTasks;
-      pendingTasks.push_back(std::make_unique<persistence::SimpleTaskObserver>(backend, std::move(operations)));
-      waitForTasks(backend, pendingTasks);
+        ops.push_back(persistence::op::StoreNew{ std::make_unique<hotel::Reservation>(*reservation) });
+
+      auto task = backend.queueOperations(std::move(ops));
+      task.wait();
+      backend.changeQueue().applyStreamChanges();
     }
   }
 
