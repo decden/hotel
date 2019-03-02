@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     server->start();
   }
 
-  persistence::net::NetClientBackend backend("localhost", 46835);
+  persistence::net::NetClientBackend backend("localhost", 8081);
   if (app.arguments().contains("--createTestData"))
     guiapp::createTestData(backend);
 

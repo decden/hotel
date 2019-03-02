@@ -13,6 +13,7 @@
 #include "hotel/hotelcollection.h"
 
 #include <condition_variable>
+#include <chrono>
 #include <thread>
 
 void waitForStreamInitialization(persistence::Backend& backend)

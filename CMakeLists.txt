@@ -36,18 +36,19 @@ endif()
 #
 
 if (test)
-	add_subdirectory(extern/googletest-release-1.8.0)
-	enable_testing()
-	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
-	include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+  add_subdirectory(extern/googletest-release-1.8.0)
+  enable_testing()
+  include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+  include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 
-	add_subdirectory(tests)
+  add_subdirectory(tests)
 endif()
 
 #
 # Subdirectories
 #
 
+add_subdirectory(fas)
 add_subdirectory(hotel)
 add_subdirectory(persistence)
 add_subdirectory(server)

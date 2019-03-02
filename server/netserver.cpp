@@ -8,7 +8,7 @@ namespace server
 {
 
   NetServer::NetServer(std::unique_ptr<persistence::Backend> backend)
-      : _backend(std::move(backend)), _ioService(), _endpoint(boost::asio::ip::tcp::v4(), 46835), _acceptor(_ioService, _endpoint),
+      : _backend(std::move(backend)), _ioService(), _endpoint(boost::asio::ip::tcp::v4(), 8081), _acceptor(_ioService, _endpoint),
         _socket(_ioService)
   {
     // Configure backend to apply changes in the ioservice thread (server thread)
