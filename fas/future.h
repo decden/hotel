@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fas/cancellation.h"
+
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
@@ -108,9 +110,9 @@ namespace fas::detail
     using U = std::decay_t<std::invoke_result_t<Fn, T>>;
 
     FutureContinuationThen(Executor executor, Fn continuation, std::shared_ptr<FutureState<U>> sstateNext,
-                           std::shared_ptr<std::atomic<bool>> canceled)
+                           CancellationToken cancellationToken)
         : _executor(std::move(executor)), _continuationFn(std::move(continuation)), _sstateNext(sstateNext),
-          _canceled(canceled)
+          _cancellationToken(cancellationToken)
     {
     }
 
@@ -118,7 +120,7 @@ namespace fas::detail
     continueWith(FutureStateBase& completedFuture) override
     {
       // In the case where the future has been canceled, skip to the next continuation
-      if (_canceled->load())
+      if (_cancellationToken.isCanceled())
       {
         _sstateNext->setCanceled();
         auto continuation = _sstateNext->next();
@@ -128,8 +130,8 @@ namespace fas::detail
       T val = static_cast<FutureState<T>&>(completedFuture).extractValue();
 
       _executor.spawn([sstateNext = std::move(_sstateNext), continuationFn = std::move(_continuationFn),
-                       val = std::move(val), canceled = _canceled]() {
-        if (!canceled->load())
+                       val = std::move(val), cancellationToken = _cancellationToken]() {
+        if (!cancellationToken.isCanceled())
           sstateNext->setValue(continuationFn(std::move(val)));
         else
           sstateNext->setCanceled();
@@ -144,7 +146,7 @@ namespace fas::detail
     Executor _executor;
     Fn _continuationFn;
     std::shared_ptr<FutureState<U>> _sstateNext;
-    std::shared_ptr<std::atomic<bool>> _canceled;
+    CancellationToken _cancellationToken;
   };
 
 } // namespace fas::detail
@@ -159,9 +161,9 @@ namespace fas
   template <class T> class Future
   {
   public:
-    Future() : _sstate(nullptr) {}
+    Future() : _sstate(nullptr), _cancellationSource() {}
     Future(std::shared_ptr<detail::FutureState<T>> sstate)
-        : _sstate(std::move(sstate)), _canceled(std::make_shared<std::atomic<bool>>())
+        : _sstate(std::move(sstate)), _cancellationSource(makeCancellationSource())
     {
     }
     Future(const Future&) = delete;
@@ -177,13 +179,15 @@ namespace fas
      */
     void reset()
     {
-      _sstate = nullptr;
-      if (_canceled)
+      _sstate.reset();
+      if (_cancellationSource.isValid())
       {
-        _canceled->store(true);
-        _canceled = nullptr;
+        _cancellationSource.cancel();
+        _cancellationSource.reset();
       }
     }
+
+    [[nodiscard]] CancellationToken cancellationToken() { return _cancellationSource.token(); }
 
     [[nodiscard]] bool isValid() const { return _sstate != nullptr; }
     [[nodiscard]] bool isReady() const { return _sstate && _sstate->isReady(); }
@@ -193,7 +197,7 @@ namespace fas
       assert(isValid());
       _sstate->waitReady();
     }
-    [[nodiscard]] const T get()
+    [[nodiscard]] T get()
     {
       assert(isValid());
       _sstate->waitReady();
@@ -212,9 +216,9 @@ namespace fas
 
       Future<U> future;
       future._sstate = std::make_shared<detail::FutureState<U>>();
-      future._canceled = std::move(_canceled);
+      future._cancellationSource = std::move(_cancellationSource);
       auto next = _sstate->chain(std::make_unique<ContinuationT>(std::move(executor), std::forward<Fn>(continuation),
-                                                                 future._sstate, future._canceled));
+                                                                 future._sstate, future._cancellationSource.token()));
 
       detail::executeFuture({std::move(next), std::move(_sstate)});
       return future;
@@ -224,7 +228,7 @@ namespace fas
     template <class U> friend class Future;
 
     std::shared_ptr<detail::FutureState<T>> _sstate;
-    std::shared_ptr<std::atomic<bool>> _canceled;
+    CancellationSource _cancellationSource;
   };
 
   /**

@@ -1,5 +1,6 @@
 set(SRC
   test_future.cpp
+  test_stream.cpp
 )
 
 set(SRC_INCLUDES

@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <mutex>
-#include <queue>
+#include <deque>
 
 namespace fas
 {
@@ -21,7 +21,7 @@ namespace fas
     void spawn(std::function<void()> fn)
     {
       const std::lock_guard<std::mutex> lock(_queueMutex);
-      _jobs.push(fn);
+      _jobs.push_back(fn);
     }
 
     void run()
@@ -34,7 +34,23 @@ namespace fas
           if (_jobs.empty())
             return;
           job = std::move(_jobs.front());
-          _jobs.pop();
+          _jobs.pop_front();
+        }
+        job();
+      }
+    }
+
+    void runWrongOrder()
+    {
+      while (true)
+      {
+        std::function<void()> job;
+        {
+          std::lock_guard<std::mutex> lock(_queueMutex);
+          if (_jobs.empty())
+            return;
+          job = std::move(_jobs.back());
+          _jobs.pop_back();
         }
         job();
       }
@@ -49,6 +65,6 @@ namespace fas
 
   private:
     mutable std::mutex _queueMutex;
-    std::queue<std::function<void()>> _jobs;
+    std::deque<std::function<void()>> _jobs;
   };
-} // namespace fass
+} // namespace fas

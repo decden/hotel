@@ -37,7 +37,30 @@ TEST(Future, ImplicitCancellation)
   ASSERT_FALSE(executed2);
 }
 
-TEST(Future, PromiseContinuation)
+TEST(Future, Cancellation)
+{
+  auto executor = std::make_shared<fas::QueueExecutor>();
+  fas::ExecutorPtr<fas::QueueExecutor> executorHandle(executor);
+
+  auto [future, promise] = fas::makePromise<int>();
+
+  bool canceled = false;
+  auto cancellationToken = future.cancellationToken();
+  cancellationToken.subscribe(executorHandle, [&]() {
+    canceled = true;
+  });
+
+  future.reset();
+
+  ASSERT_TRUE(cancellationToken.isCanceled());
+  ASSERT_FALSE(canceled);
+
+  executor->run();
+  ASSERT_TRUE(cancellationToken.isCanceled());
+  ASSERT_TRUE(canceled);
+}
+
+TEST(Future, Continuation)
 {
   auto executor = std::make_shared<fas::QueueExecutor>();
   fas::ExecutorPtr<fas::QueueExecutor> executorHandle(executor);

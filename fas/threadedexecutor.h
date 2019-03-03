@@ -29,8 +29,8 @@ namespace fas
     {
       bool wakeUpThread = false;
       {
-        wakeUpThread = _jobs.empty();
         const std::lock_guard<std::mutex> lock(_jobsMutex);
+        wakeUpThread = _jobs.empty();
         _jobs.push(fn);
       }
       if (wakeUpThread)
