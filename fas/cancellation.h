@@ -57,7 +57,7 @@ namespace fas::detail
     }
 
   private:
-    std::atomic<bool> _canceled;
+    std::atomic<bool> _canceled = false;
     std::mutex _callbacksMutex;
     std::vector<std::unique_ptr<CancellationCallbackBase>> _callbacks;
   };

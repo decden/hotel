@@ -69,7 +69,50 @@ TEST(Stream, Continuation)
   ASSERT_EQ(std::nullopt, stream2.get());
 }
 
-// TODO: Cancellation
+TEST(Stream, ImplicitCancellation)
+{
+  auto executor = std::make_shared<fas::QueueExecutor>();
+  fas::ExecutorPtr<fas::QueueExecutor> executorHandle(executor);
+
+  bool executed1 = false;
+  bool executed2 = false;
+
+  auto [stream, producer] = fas::makeStreamProducer<int>();
+  stream = std::move(stream).then(executorHandle, [&](int i) { executed1 = true; return i * 2; });
+  stream = std::move(stream).then(executorHandle, [&](int i) { executed2 = true; return i * 2; });
+
+  producer.send(10);
+  producer.send(20);
+  stream.reset();
+
+  executor->run();
+
+  ASSERT_FALSE(executed1);
+  ASSERT_FALSE(executed2);
+}
+
+TEST(Stream, Cancellation)
+{
+  auto executor = std::make_shared<fas::QueueExecutor>();
+  fas::ExecutorPtr<fas::QueueExecutor> executorHandle(executor);
+
+  auto [stream, promise] = fas::makeStreamProducer<int>();
+
+  bool canceled = false;
+  auto cancellationToken = stream.cancellationToken();
+  cancellationToken.subscribe(executorHandle, [&]() {
+    canceled = true;
+  });
+
+  stream.reset();
+
+  ASSERT_TRUE(cancellationToken.isCanceled());
+  ASSERT_FALSE(canceled);
+
+  executor->run();
+  ASSERT_TRUE(cancellationToken.isCanceled());
+  ASSERT_TRUE(canceled);
+}
 
 TEST(Stream, ThreadedExecutor)
 {

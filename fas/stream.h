@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fas/cancellation.h"
+
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
@@ -10,10 +12,12 @@
 #include <type_traits>
 #include <variant>
 
-#include <iostream>
-
 namespace fas::detail
 {
+  struct EndOfStream
+  {
+  };
+
   class StreamStateBase
   {
   public:
@@ -33,7 +37,7 @@ namespace fas::detail
   public:
     bool isFinished() const
     {
-      return _isFinished && (_queue.empty() || std::holds_alternative<std::monostate>(_queue.front()));
+      return _isFinished && (_queue.empty() || std::holds_alternative<EndOfStream>(_queue.front()));
     }
     bool isReady() const
     {
@@ -48,7 +52,7 @@ namespace fas::detail
         _readyCondition.wait(lock);
     }
 
-    [[nodiscard]] std::optional<std::variant<std::monostate, T>> popValue()
+    [[nodiscard]] std::optional<std::variant<EndOfStream, T>> popValue()
     {
       const std::lock_guard<std::mutex> lock(_mutex);
       assert(!_processingPoppedValue);
@@ -90,7 +94,7 @@ namespace fas::detail
         assert(!_isFinished);
         _isFinished = true;
         executeContinuation = _queue.empty() && !_processingPoppedValue && _cont;
-        _queue.push(std::monostate{});
+        _queue.push(EndOfStream{});
       }
       _readyCondition.notify_all();
       return executeContinuation;
@@ -120,7 +124,7 @@ namespace fas::detail
     bool _isFinished = false;
     bool _processingPoppedValue = false;
 
-    std::queue<std::variant<std::monostate, T>> _queue; // Last stream element is std::monostate
+    std::queue<std::variant<EndOfStream, T>> _queue;
     std::unique_ptr<StreamContinuation> _cont;
   };
 
@@ -135,8 +139,10 @@ namespace fas::detail
   public:
     using U = std::decay_t<std::invoke_result_t<Fn, T>>;
 
-    StreamContinuationThen(Executor executor, Fn fn, std::shared_ptr<StreamState<U>> sstateNext)
-        : _executor(executor), _continuationFn(std::move(fn)), _sstateNext(std::move(sstateNext))
+    StreamContinuationThen(Executor executor, Fn fn, std::shared_ptr<StreamState<U>> sstateNext,
+                           CancellationToken canceled)
+        : _executor(executor), _continuationFn(std::move(fn)), _sstateNext(std::move(sstateNext)),
+          _canceled(std::move(canceled))
     {
       assert(_sstateNext != nullptr);
     }
@@ -153,7 +159,7 @@ namespace fas::detail
       }
 
       // Stream has ended?
-      if (std::holds_alternative<std::monostate>(*val))
+      if (std::holds_alternative<EndOfStream>(*val))
       {
         if (_sstateNext->close())
           detail::executeStream({_sstateNext->getContinuation(), _sstateNext});
@@ -163,6 +169,9 @@ namespace fas::detail
 
       _executor.spawn([self = this, readyStream = std::move(readyStream), readyStreamTyped, sstateNext = _sstateNext,
                        continuationFn = _continuationFn, val = std::move(val)]() {
+        if (self->_canceled.isCanceled())
+          return;
+
         // Schedule next continuation (if needed)
         if (sstateNext->pushValue(continuationFn(std::move(std::get<T>(*val)))))
         {
@@ -180,6 +189,7 @@ namespace fas::detail
     Executor _executor;
     Fn _continuationFn;
     std::shared_ptr<StreamState<U>> _sstateNext;
+    CancellationToken _canceled;
   };
 
 } // namespace fas::detail
@@ -189,12 +199,32 @@ namespace fas
   template <class T> class Stream
   {
   public:
-    Stream(std::shared_ptr<detail::StreamState<T>> sstate) : _sstate(std::move(sstate)) {}
-    Stream() : _sstate(nullptr) {}
+    Stream(std::shared_ptr<detail::StreamState<T>> sstate)
+        : _sstate(std::move(sstate)), _cancellationSource(makeCancellationSource())
+    {
+    }
+    Stream() : _sstate(nullptr), _cancellationSource(nullptr) {}
+    Stream(const Stream&) = delete;
+    Stream& operator=(const Stream&) = delete;
+    Stream(Stream&&) = default;
+    Stream& operator=(Stream&&) = default;
+    ~Stream() { reset(); }
+
+    void reset()
+    {
+      _sstate.reset();
+      if (_cancellationSource.isValid())
+      {
+        _cancellationSource.cancel();
+        _cancellationSource.reset();
+      }
+    }
+
 
     [[nodiscard]] bool isValid() const { return _sstate != nullptr; }
     [[nodiscard]] bool isReady() const { return _sstate && _sstate->isReady(); }
     [[nodiscard]] bool isFinished() const { return _sstate && _sstate->isFinished(); }
+    [[nodiscard]] CancellationToken cancellationToken() { return _cancellationSource.token(); }
 
     [[nodiscard]] std::optional<T> get()
     {
@@ -202,7 +232,7 @@ namespace fas
       _sstate->waitReady();
       auto value = _sstate->popValue();
       bool _ = _sstate->finishedProcessingPoppedValue();
-      if (!value.has_value() || std::holds_alternative<std::monostate>(*value))
+      if (!value.has_value() || std::holds_alternative<detail::EndOfStream>(*value))
         return std::nullopt;
       else
         return std::move(std::get<T>(*value));
@@ -219,9 +249,9 @@ namespace fas
 
       Stream<U> stream;
       stream._sstate = std::make_shared<detail::StreamState<U>>();
-      //      stream._canceled = std::move(_canceled);
-      auto next = _sstate->chain(
-          std::make_unique<ContinuationT>(std::move(executor), std::forward<Fn>(continuation), stream._sstate));
+      stream._cancellationSource = std::move(_cancellationSource);
+      auto next = _sstate->chain(std::make_unique<ContinuationT>(std::move(executor), std::forward<Fn>(continuation),
+                                                                 stream._sstate, stream._cancellationSource.token()));
 
       detail::executeStream({next, std::move(_sstate)});
       return stream;
@@ -231,6 +261,7 @@ namespace fas
     template <class U> friend class Stream;
 
     std::shared_ptr<detail::StreamState<T>> _sstate;
+    CancellationSource _cancellationSource;
   };
 
   template <class T> class StreamProducer
