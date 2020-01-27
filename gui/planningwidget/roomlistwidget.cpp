@@ -7,8 +7,7 @@ namespace gui
   namespace planningwidget
   {
 
-    RoomListRoomItem::RoomListRoomItem(const Context *context, const hotel::HotelRoom* room,
-                                       QGraphicsItem* parent)
+    RoomListRoomItem::RoomListRoomItem(const Context* context, const hotel::HotelRoom* room, QGraphicsItem* parent)
         : QGraphicsRectItem(parent), _context(context), _room(room)
     {
       updateLayout();
@@ -23,7 +22,8 @@ namespace gui
         setRect(0, 0, 0, 0);
     }
 
-    void RoomListRoomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
+    void RoomListRoomItem::paint(QPainter* painter, [[maybe_unused]] const QStyleOptionGraphicsItem* option,
+                                 [[maybe_unused]] QWidget* widget)
     {
       auto& appearance = _context->appearance();
       auto itemRect = rect().adjusted(0, 0, 0, 0);
@@ -49,8 +49,7 @@ namespace gui
       painter->restore();
     }
 
-    RoomListWidget::RoomListWidget(Context *context, QWidget* parent)
-        : QGraphicsView(parent), _context(context)
+    RoomListWidget::RoomListWidget(Context* context, QWidget* parent) : QGraphicsView(parent), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -90,10 +89,7 @@ namespace gui
       _scene->addItem(item);
     }
 
-    void RoomListWidget::clear()
-    {
-      _scene->clear();
-    }
+    void RoomListWidget::clear() { _scene->clear(); }
 
     void RoomListWidget::updateLayout()
     {

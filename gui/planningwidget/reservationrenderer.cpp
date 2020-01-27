@@ -106,7 +106,8 @@ namespace gui
     }
 
     QColor ReservationRenderer::getAtomBackgroundColor(const Context& context, const hotel::Reservation& reservation,
-                                                       const hotel::ReservationAtom& atom, bool isSelected) const
+                                                       [[maybe_unused]] const hotel::ReservationAtom& atom,
+                                                       bool isSelected) const
     {
       using ReservationStatus = hotel::Reservation::ReservationStatus;
       auto& appearance = context.appearance();
@@ -152,7 +153,7 @@ namespace gui
     }
 
     QString ReservationRenderer::getAtomText(const hotel::Reservation& reservation, const hotel::ReservationAtom& atom,
-                                             bool isSelected) const
+                                             [[maybe_unused]] bool isSelected) const
     {
       using ReservationStatus = hotel::Reservation::ReservationStatus;
 
@@ -186,8 +187,9 @@ namespace gui
     }
 
     QColor PrivacyReservationRenderer::getAtomBackgroundColor(const Context& context,
-                                                              const hotel::Reservation& reservation,
-                                                              const hotel::ReservationAtom& atom, bool isSelected) const
+                                                              [[maybe_unused]] const hotel::Reservation& reservation,
+                                                              [[maybe_unused]] const hotel::ReservationAtom& atom,
+                                                              bool isSelected) const
     {
       auto& appearance = context.appearance();
       return isSelected ? appearance.atomSelectedColor : appearance.atomDefaultColor;
@@ -206,16 +208,17 @@ namespace gui
                                                              const hotel::Reservation& reservation,
                                                              const hotel::ReservationAtom& atom, bool isSelected) const
     {
-      auto color = ReservationRenderer::getAtomBackgroundColor(context, reservation, atom, isSelected);
-      color = mix(color, context.appearance().atomDefaultColor);
+      const auto baseColor = ReservationRenderer::getAtomBackgroundColor(context, reservation, atom, isSelected);
+      const auto mutedColorV = baseColor.red() / 3 + baseColor.green() / 3 + baseColor.blue() / 3;
+      const auto mutedColor = mix(baseColor, QColor(mutedColorV, mutedColorV, mutedColorV));
 
       bool isHighlighted = atom.dateRange().begin() == context.layout().pivotDate();
       if (isHighlighted)
-        color = color.lighter(120);
+        return baseColor;
       if (isSelected)
-        color = context.appearance().atomSelectedColor;
+        return context.appearance().atomSelectedColor;
 
-      return color;
+      return mutedColor;
     }
 
   } // namespace planningwidget

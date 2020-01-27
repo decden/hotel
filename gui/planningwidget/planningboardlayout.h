@@ -13,6 +13,8 @@
 #include <QtGui/QFont>
 #include <QtGui/QPainter>
 
+#include <memory>
+
 namespace gui
 {
   namespace planningwidget
@@ -62,11 +64,6 @@ namespace gui
       QFont headerFont = QFont("Arial", 10);
       QFont boldHeaderFont = QFont("Arial", 10, QFont::Bold);
 
-      // Reservation renderers
-      ReservationRenderer reservationRendererDefault;
-      PrivacyReservationRenderer reservationRendererPrivacy;
-      HighlightArrivalsRenderer reservationRendererArrivals;
-
       // Atom constants
       int atomConnectionHandleSize = 3;
       int atomConnectionOverhang = 10;
@@ -104,8 +101,15 @@ namespace gui
       // Room list fonts
       QFont roomListCategoryFont = QFont("Arial", 8);
 
+      // Reservation renderers
+      std::unique_ptr<ReservationRenderer> _reservationRenderer = std::make_unique<ReservationRenderer>();
+      void setReservationRenderer(std::unique_ptr<ReservationRenderer> renderer)
+      {
+        _reservationRenderer = std::move(renderer);
+      }
+
       // Utility functions for rendering
-      const ReservationRenderer* reservationRenderer() const { return &reservationRendererDefault; }
+      const ReservationRenderer* reservationRenderer() const { return _reservationRenderer.get(); }
       void drawRowBackground(QPainter* painter, const PlanningBoardRowGeometry& row, const QRect& rect) const;
 
       // Utility functions for text
@@ -135,7 +139,7 @@ namespace gui
        * @param hotels the list of hotels to include in the layout
        * @param layoutType indicates how to position the rows
        */
-      void initializeLayout(const std::vector<std::unique_ptr<hotel::Hotel>> &hotels, LayoutType layoutType);
+      void initializeLayout(const std::vector<std::unique_ptr<hotel::Hotel>>& hotels, LayoutType layoutType);
 
       void setSceneRect(const QRectF& rect) { _sceneRect = rect; }
       QRectF sceneRect() const { return _sceneRect; }
@@ -170,7 +174,6 @@ namespace gui
     private:
       int _roomRowHeight;
       int _dateColumnWidth;
-
 
       // Scene rect
       QRectF _sceneRect;

@@ -53,16 +53,16 @@ namespace gui
 
       // Data modification callbacks
 
-      virtual void reservationAdded(const hotel::Reservation& item) {}
-      virtual void reservationRemoved(const int id) {}
+      virtual void reservationAdded(const hotel::Reservation&) {}
+      virtual void reservationRemoved([[maybe_unused]] const int id) {}
 
       // Event handling routines
 
-      virtual void mousePressEvent(QMouseEvent* event, const QPointF& position) {}
-      virtual void mouseReleaseEvent(QMouseEvent* event, const QPointF& position) {}
-      virtual void mouseMoveEvent(QMouseEvent* event, const QPointF& position) {}
-      virtual void contextMenuEvent(QContextMenuEvent* event) {}
-      virtual void keyPressEvent(QKeyEvent* event) {}
+      virtual void mousePressEvent(QMouseEvent*, const QPointF&) {}
+      virtual void mouseReleaseEvent(QMouseEvent*, const QPointF&) {}
+      virtual void mouseMoveEvent(QMouseEvent*, const QPointF&) {}
+      virtual void contextMenuEvent(QContextMenuEvent*) {}
+      virtual void keyPressEvent(QKeyEvent*) {}
     };
 
   } // namespace planningwidget

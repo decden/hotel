@@ -165,9 +165,10 @@ namespace persistence
     void NetClientBackend::doReadNextMessageHeader()
     {
       boost::asio::async_read(_socket, boost::asio::buffer(_headerBuffer.data(), _headerBuffer.size()),
-                              [this](boost::system::error_code ec, std::size_t length){
+                              [this](boost::system::error_code ec, [[maybe_unused]] std::size_t length){
         if (!ec)
         {
+          assert(length == _headerBuffer.size());
           size_t size = static_cast<size_t>(static_cast<unsigned char>(_headerBuffer[0])) <<  0 |
                         static_cast<size_t>(static_cast<unsigned char>(_headerBuffer[1])) <<  8 |
                         static_cast<size_t>(static_cast<unsigned char>(_headerBuffer[2])) << 16 |
@@ -184,9 +185,10 @@ namespace persistence
     {
       _bodyBuffer.resize(size);
       boost::asio::async_read(_socket, boost::asio::buffer(_bodyBuffer.data(), _bodyBuffer.size()),
-                              [this](boost::system::error_code ec, std::size_t length){
+                              [this](boost::system::error_code ec, [[maybe_unused]] std::size_t length){
         if (!ec)
         {
+          assert(length == _bodyBuffer.size());
           std::string msg(_bodyBuffer.data(), _bodyBuffer.size());
           this->processMessage(nlohmann::json::parse(msg));
           this->doReadNextMessageHeader();

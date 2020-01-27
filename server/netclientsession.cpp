@@ -63,7 +63,7 @@ namespace server::detail
 namespace server
 {
   NetClientSession::NetClientSession(boost::asio::io_service& ioService, persistence::Backend& backend)
-      : _backend(backend), _socket(ioService)
+      : _backend(backend), _ioService(ioService), _socket(ioService)
   {
   }
 
@@ -91,14 +91,14 @@ namespace server
 
   void NetClientSession::doReadHeader()
   {
-    boost::asio::async_read(_socket, boost::asio::buffer(_headerData.data(), _headerData.size()),
-                            boost::asio::transfer_exactly(4),
-                            [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
-                              if (!ec)
-                              {
-                                session->doReadBody();
-                              }
-                            });
+    boost::asio::async_read(
+        _socket, boost::asio::buffer(_headerData.data(), _headerData.size()), boost::asio::transfer_exactly(4),
+        [session = this->shared_from_this()](const boost::system::error_code& ec, [[maybe_unused]] size_t length) {
+          if (!ec)
+          {
+            session->doReadBody();
+          }
+        });
   }
 
   void NetClientSession::doReadBody()
@@ -109,16 +109,17 @@ namespace server
                   static_cast<size_t>(static_cast<unsigned char>(_headerData[3])) << 24;
 
     _bodyData.resize(size, 0);
-    boost::asio::async_read(_socket, boost::asio::buffer(_bodyData.data(), _bodyData.size()),
-                            boost::asio::transfer_exactly(_bodyData.size()),
-                            [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
-                              if (!ec)
-                              {
-                                std::string message(session->_bodyData.data(), session->_bodyData.size());
-                                session->runCommand(nlohmann::json::parse(message));
-                                session->doReadHeader();
-                              }
-                            });
+    boost::asio::async_read(
+        _socket, boost::asio::buffer(_bodyData.data(), _bodyData.size()),
+        boost::asio::transfer_exactly(_bodyData.size()),
+        [session = this->shared_from_this()](const boost::system::error_code& ec, [[maybe_unused]] size_t length) {
+          if (!ec)
+          {
+            std::string message(session->_bodyData.data(), session->_bodyData.size());
+            session->runCommand(nlohmann::json::parse(message));
+            session->doReadHeader();
+          }
+        });
   }
 
   void NetClientSession::doSend()
@@ -133,15 +134,16 @@ namespace server
     _writeData[3] = (size >> 24) & 0xff;
     memcpy(_writeData.data() + 4, message.data(), size);
 
-    boost::asio::async_write(_socket, boost::asio::buffer(_writeData.data(), _writeData.size()),
-                             [session = this->shared_from_this()](const boost::system::error_code& ec, size_t length) {
-                               if (!ec)
-                               {
-                                 session->_outgoingMessages.pop();
-                                 if (!session->_outgoingMessages.empty())
-                                   session->doSend();
-                               }
-                             });
+    boost::asio::async_write(
+        _socket, boost::asio::buffer(_writeData.data(), _writeData.size()),
+        [session = this->shared_from_this()](const boost::system::error_code& ec, [[maybe_unused]] size_t length) {
+          if (!ec)
+          {
+            session->_outgoingMessages.pop();
+            if (!session->_outgoingMessages.empty())
+              session->doSend();
+          }
+        });
   }
 
   void NetClientSession::runCommand(const nlohmann::json& obj)
@@ -199,7 +201,7 @@ namespace server
 
     auto future =
         _backend.queueOperations(std::move(operations))
-            .then(detail::IoServiceExecutor(_socket.get_io_service()),
+            .then(detail::IoServiceExecutor(_ioService),
                   [weakThis = weak_from_this(), id = obj["id"]](std::vector<persistence::TaskResult> results) {
                     auto self = weakThis.lock();
                     if (self != nullptr)
@@ -211,7 +213,8 @@ namespace server
                     return 0;
                   });
     _runningOperations.push_back(std::move(future));
-    auto it = std::remove_if(_runningOperations.begin(), _runningOperations.end(), [](const auto& f) { return f.isReady(); });
+    auto it =
+        std::remove_if(_runningOperations.begin(), _runningOperations.end(), [](const auto& f) { return f.isReady(); });
     _runningOperations.erase(it, _runningOperations.end());
   }
 

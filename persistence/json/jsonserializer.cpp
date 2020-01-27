@@ -152,8 +152,10 @@ namespace persistence
       return hotel::Reservation::Unknown;
     }
 
-    template <> nlohmann::json serialize(const hotel::Person& item)
+    template <> nlohmann::json serialize([[maybe_unused]]const hotel::Person& item)
     {
+      // TODO: Implement this
+      std::cout << "STUB: This functionality has not yet been implemented..." << std::endl;
       return {{"Person", "Person"}};
     }
 
@@ -165,7 +167,7 @@ namespace persistence
       }, operation);
     }
 
-    template <> nlohmann::json serialize(const op::EraseAllData& operation)
+    template <> nlohmann::json serialize([[maybe_unused]] const op::EraseAllData& operation)
     {
       nlohmann::json obj;
       obj["op"] = "erase_all_data";

@@ -18,8 +18,7 @@ namespace hotel
    *
    * The PlanningBoard essentially holds a list of Reservation, which themselves hold a list of ReservationAtom, which
    * in turn represents a room, which is occupied over a given date period. Each atom holds additional information
-   * needed
-   * for display.
+   * needed for display.
    *
    * @see Reservation
    * @see ReservationAtom

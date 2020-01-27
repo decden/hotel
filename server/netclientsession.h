@@ -48,7 +48,7 @@ namespace server
      * @param ioService The boost asio IO service which will be managing I/O operations
      * @param backend The "real" backend which will execute all of the operations and will provide the data streams.
      */
-    NetClientSession(boost::asio::io_service &ioService, persistence::Backend& backend);
+    NetClientSession(boost::asio::io_service& ioService, persistence::Backend& backend);
     ~NetClientSession();
 
     void start();
@@ -103,6 +103,7 @@ namespace server
 
 
     persistence::Backend& _backend;
+    boost::asio::io_service& _ioService;
     boost::asio::ip::tcp::socket _socket;
 
     // Observers for open streams/operations

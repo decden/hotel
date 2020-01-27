@@ -67,12 +67,10 @@ namespace gui
         return;
 
       // Create a new reservation atom (note: the associated reservation is initially empty!)
-      _currentGhost = ReservationGhost{nullptr, nullptr};
+      _currentGhost = ReservationGhost{nullptr, nullptr, row->id(), date};
       _currentGhost->temporaryReservation = std::make_unique<hotel::Reservation>("new");
       _currentGhost->temporaryReservation->setStatus(hotel::Reservation::Temporary);
       _currentGhost->item = std::make_unique<PlanningBoardReservationItem>(_context, _currentGhost->temporaryReservation.get());
-      _currentGhost->startRoomId = row->id();
-      _currentGhost->startDate = date;
       _currentGhost->item->updateLayout();
 
       _context->planningBoardScene()->addItem(_currentGhost->item.get());

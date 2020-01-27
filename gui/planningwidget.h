@@ -26,6 +26,8 @@
 
 namespace gui
 {
+  class ReservationRenderer;
+
   /**
    * @brief The PlanningWidget class displays a list of reservations
    *
@@ -40,6 +42,8 @@ namespace gui
 
     void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
     void activateTool(const std::string& toolName);
+
+    void setReservationRenderer(std::unique_ptr<gui::planningwidget::ReservationRenderer> renderer);
 
   public slots:
     void setPivotDate(boost::gregorian::date pivotDate);

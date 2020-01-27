@@ -82,8 +82,8 @@ namespace persistence
     void applyChange(const DataStreamItemsAdded& op) { _observer->addItems(op.newItems); }
     void applyChange(const DataStreamItemsUpdated& op) { _observer->updateItems(op.updatedItems); }
     void applyChange(const DataStreamItemsRemoved& op) { _observer->removeItems(op.removedItems); }
-    void applyChange(const DataStreamInitialized& op) { _isInitialized = true; _observer->initialized(); }
-    void applyChange(const DataStreamCleared& op) { _observer->clear(); }
+    void applyChange([[maybe_unused]] const DataStreamInitialized& op) { _isInitialized = true; _observer->initialized(); }
+    void applyChange([[maybe_unused]] const DataStreamCleared& op) { _observer->clear(); }
 
     int _streamId;
     StreamableType _streamType;

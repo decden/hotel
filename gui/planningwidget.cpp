@@ -64,6 +64,12 @@ namespace gui
 
   void PlanningWidget::activateTool(const std::string& toolName) { _context.activateTool(toolName); }
 
+  void PlanningWidget::setReservationRenderer(std::unique_ptr<gui::planningwidget::ReservationRenderer> renderer)
+  {
+    _context.appearance().setReservationRenderer(std::move(renderer));
+    updateLayout();
+  }
+
   void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
   {
     // TODO: This should not update the whole layout!

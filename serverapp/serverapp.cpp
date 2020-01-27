@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-int main(int argc, char** argv)
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
   std::cout << "================================================================================" << std::endl;
   std::cout << " hotel_serverapp (listening on port 8081)                                       " << std::endl;

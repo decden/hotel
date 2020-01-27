@@ -385,7 +385,7 @@ namespace persistence
     }
 
     template<>
-    bool SqliteStorage::update<hotel::Person>(hotel::Person& value)
+    bool SqliteStorage::update<hotel::Person>([[maybe_unused]] hotel::Person& value)
     {
       // TODO: Not yet implemented
       return false;
