@@ -16,14 +16,42 @@ namespace gui
     class DateBarWidget;
 
     /**
+     * @brief The DateBarPeriodIndicatorItem highlights a given period on the date bar
+     */
+    class DateBarPeriodIndicatorItem : public QGraphicsRectItem
+    {
+    public:
+      DateBarPeriodIndicatorItem(DateBarWidget* parent, const PlanningBoardAppearance& appearance,
+                                 boost::gregorian::date_period period)
+          : QGraphicsRectItem(), _parent(parent), _appearance(appearance), _period(period)
+      {
+        setZValue(2);
+      }
+
+      void paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/) override
+      {
+        auto itemRect = rect().adjusted(1, rect().height() - 5, 0, 0);
+        painter->save();
+        painter->fillRect(itemRect, _appearance.selectionColor);
+        painter->restore();
+      }
+
+    private:
+      DateBarWidget* _parent;
+      const PlanningBoardAppearance& _appearance;
+      boost::gregorian::date_period _period;
+    };
+
+    /**
      * @brief The DateBarDayItem class is a graphics item showing one single day in the day bar
      */
     class DateBarDayItem : public QGraphicsRectItem
     {
     public:
-      DateBarDayItem(DateBarWidget* parent, const PlanningBoardAppearance& appearance, boost::gregorian::date date, bool isPivot, bool isToday);
+      DateBarDayItem(DateBarWidget* parent, const PlanningBoardAppearance& appearance, boost::gregorian::date date,
+                     bool isPivot, bool isToday);
 
-      virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+      void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
     private:
       DateBarWidget* _parent;
@@ -34,7 +62,7 @@ namespace gui
       bool _isToday;
 
     protected:
-      virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+      virtual void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     };
 
     class DateBarMonthItem : public QGraphicsRectItem

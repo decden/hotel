@@ -25,7 +25,7 @@ namespace gui
     class PlanningBoardAtomItem : public QGraphicsRectItem
     {
     public:
-      PlanningBoardAtomItem(const Context* context, const hotel::Reservation* reservation, int atomIndex,
+      PlanningBoardAtomItem(Context* context, const hotel::Reservation* reservation, int atomIndex,
                             QGraphicsItem* parent = nullptr);
 
       // QGraphicsRectItem interface
@@ -35,12 +35,15 @@ namespace gui
 
     protected:
       //! @brief Reacts on selection changes and propagates them to the parent PlanningBoardReservationItem
-      virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
+      QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
-      virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+      void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+      void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+      void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+      void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
 
     private:
-      const Context* _context;
+      Context* _context;
       const hotel::Reservation* _reservation;
       int _atomIndex;
     };

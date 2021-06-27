@@ -4,6 +4,8 @@
 #include "hotel/hotel.h"
 #include "hotel/reservation.h"
 
+#include <Qt>
+
 class QContextMenuEvent;
 class QGraphicsScene;
 class QKeyEvent;
@@ -63,6 +65,17 @@ namespace gui
       virtual void mouseMoveEvent(QMouseEvent*, const QPointF&) {}
       virtual void contextMenuEvent(QContextMenuEvent*) {}
       virtual void keyPressEvent(QKeyEvent*) {}
+
+      virtual void atomMousePressEvent(const hotel::Reservation&, const hotel::ReservationAtom&, const QPointF&) {}
+      virtual void atomMouseReleaseEvent(const hotel::Reservation&, const hotel::ReservationAtom&, const QPointF&) {}
+
+      // Callbacks
+
+      virtual Qt::CursorShape getReservationAtomCursor(const hotel::ReservationAtom&) const
+      {
+        return Qt::PointingHandCursor;
+      }
+
     };
 
   } // namespace planningwidget

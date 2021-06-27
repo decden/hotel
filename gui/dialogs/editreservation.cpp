@@ -213,7 +213,7 @@ namespace gui
       updateUI();
     }
 
-    void EditReservationDialog::reservationsRemoved(const std::vector<int>& ids)
+    void EditReservationDialog::reservationsRemoved([[maybe_unused]] const std::vector<int>& ids)
     {
       assert(ids.size() == 1);
       assert(_referenceVersion != std::nullopt);

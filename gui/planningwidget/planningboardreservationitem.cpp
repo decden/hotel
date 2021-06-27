@@ -1,17 +1,20 @@
 #include "gui/planningwidget/planningboardreservationitem.h"
+#include "gui/planningwidget/tool.h"
 
+#include <QCursor>
+#include <QGraphicsSceneMouseEvent>
 #include <QtGui/QPainter>
 
 namespace gui
 {
   namespace planningwidget
   {
-    PlanningBoardAtomItem::PlanningBoardAtomItem(const Context* context, const hotel::Reservation* reservation,
+    PlanningBoardAtomItem::PlanningBoardAtomItem(Context* context, const hotel::Reservation* reservation,
                                                  int atomIndex, QGraphicsItem* parent)
         : QGraphicsRectItem(parent), _context(context), _reservation(reservation), _atomIndex(atomIndex)
     {
       setFlag(QGraphicsItem::ItemIsSelectable);
-      updateLayout();
+      setAcceptHoverEvents(true);
     }
 
     void PlanningBoardAtomItem::updateLayout()
@@ -25,7 +28,8 @@ namespace gui
       setRect(itemRect);
     }
 
-    void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
+    void PlanningBoardAtomItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/,
+                                      QWidget* /*widget*/)
     {
       auto renderer = _context->appearance().reservationRenderer();
       auto atom = _reservation->atomAtIndex(_atomIndex);
@@ -50,12 +54,41 @@ namespace gui
       _context->emitReservationDoubleClicked(*_reservation);
     }
 
-    PlanningBoardReservationItem::PlanningBoardReservationItem(Context *context,
-                                                               const hotel::Reservation *reservation,
+    void PlanningBoardAtomItem::mousePressEvent(QGraphicsSceneMouseEvent* event)
+    {
+      QGraphicsRectItem::mousePressEvent(event);
+
+      auto tool = _context->activeTool();
+      if (tool)
+        tool->atomMousePressEvent(*_reservation, *_reservation->atomAtIndex(_atomIndex), event->scenePos());
+    }
+    void PlanningBoardAtomItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+    {
+      QGraphicsRectItem::mouseReleaseEvent(event);
+
+      auto tool = _context->activeTool();
+      if (tool)
+        tool->atomMouseReleaseEvent(*_reservation, *_reservation->atomAtIndex(_atomIndex), event->scenePos());
+    }
+
+    void PlanningBoardAtomItem::hoverEnterEvent(QGraphicsSceneHoverEvent* /*event*/)
+    {
+      auto cursor = Qt::PointingHandCursor;
+      auto tool = _context->activeTool();
+      if (tool)
+      {
+        auto atom = _reservation->atomAtIndex(_atomIndex);
+        cursor = tool->getReservationAtomCursor(*atom);
+      }
+      setCursor(cursor);
+    }
+
+    PlanningBoardReservationItem::PlanningBoardReservationItem(Context* context, const hotel::Reservation* reservation,
                                                                QGraphicsItem* parent)
         : QGraphicsItem(parent), _context(context), _reservation(reservation), _isSelected(false),
           _isUpdatingSelection(false)
     {
+      setAcceptHoverEvents(true);
       updateLayout();
     }
 
@@ -65,7 +98,8 @@ namespace gui
         _context->removeSelectedReservation(_reservation);
     }
 
-    void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/, QWidget* /*widget*/)
+    void PlanningBoardReservationItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /*option*/,
+                                             QWidget* /*widget*/)
     {
       std::vector<QRectF> rects;
       rects.reserve(static_cast<std::size_t>(childItems().size()));
@@ -73,7 +107,8 @@ namespace gui
         rects.push_back(child->boundingRect());
 
       auto renderer = _context->appearance().reservationRenderer();
-      renderer->paintReservationConnections(painter, *_context, rects, _isSelected || _reservation->status() == hotel::Reservation::Temporary);
+      renderer->paintReservationConnections(painter, *_context, rects,
+                                            _isSelected || _reservation->status() == hotel::Reservation::Temporary);
     }
 
     QRectF PlanningBoardReservationItem::boundingRect() const { return childrenBoundingRect(); }
@@ -109,7 +144,7 @@ namespace gui
 
     void PlanningBoardReservationItem::updateLayout()
     {
-      int numberOfAtoms = _reservation->atoms().size();
+      auto numberOfAtoms = _reservation->atoms().size();
       prepareGeometryChange();
 
       // Remove items if there are too many children
@@ -130,7 +165,6 @@ namespace gui
         auto atomItem = dynamic_cast<PlanningBoardAtomItem*>(item);
         atomItem->updateLayout();
       }
-
     }
 
   } // namespace planningwidget

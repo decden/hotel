@@ -137,7 +137,7 @@ namespace persistence
       auto &data = _unsubmittedMessages.front();
 
       // Make a message...
-      int messageSize = data.size();
+      auto messageSize = data.size();
       _writeBuffer.resize(messageSize + 4);
       _writeBuffer[0] = (messageSize >>  0) & 0xff;
       _writeBuffer[1] = (messageSize >>  8) & 0xff;

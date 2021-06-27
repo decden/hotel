@@ -44,6 +44,7 @@ namespace gui
     void activateTool(const std::string& toolName);
 
     void setReservationRenderer(std::unique_ptr<gui::planningwidget::ReservationRenderer> renderer);
+    void setPlanningBoardLayout(gui::planningwidget::PlanningBoardLayout::LayoutType layout);
 
   public slots:
     void setPivotDate(boost::gregorian::date pivotDate);
@@ -80,6 +81,7 @@ namespace gui
 
     // Shared widget state
     planningwidget::Context _context;
+    gui::planningwidget::PlanningBoardLayout::LayoutType _layoutType;
 
     void updateDateRange();
 

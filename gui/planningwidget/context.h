@@ -47,6 +47,8 @@ namespace gui
       // Event handling
       boost::signals2::signal<void(const hotel::Reservation&)>& reservationDoubleClickedSignal() { return _reservationDoubleClickedSignal; }
       void emitReservationDoubleClicked(const hotel::Reservation& reservation) const { _reservationDoubleClickedSignal(reservation); }
+      boost::signals2::signal<void()>& selectedReservationsChangedSignal() { return _selectedReservationsChangedSignal; }
+      boost::signals2::signal<void()>& highlightedPeriodsChangedSignal() { return _highlightedPeriodsChangedSignal; }
 
       // Modifying data calls
       void addHotel(const hotel::Hotel& hotel);
@@ -73,6 +75,7 @@ namespace gui
       const Tool* activeTool() const { return _activeTool; }
 
       void setPivotDate(const boost::gregorian::date date);
+      void setHighlightedPeriods(const std::vector<boost::gregorian::date_period>& periods);
       void initializeLayout(PlanningBoardLayout::LayoutType layoutType);
 
       void registerTool(const std::string& toolName, std::unique_ptr<gui::planningwidget::Tool> tool);
@@ -90,6 +93,8 @@ namespace gui
 
       // Events
       boost::signals2::signal<void(const hotel::Reservation&)> _reservationDoubleClickedSignal;
+      boost::signals2::signal<void()> _selectedReservationsChangedSignal;
+      boost::signals2::signal<void()> _highlightedPeriodsChangedSignal;
 
       // Object with information on how to layout the individual elements in the planning widget, such as e.g.
       // reservations and rooms.

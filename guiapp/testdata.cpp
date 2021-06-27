@@ -53,19 +53,19 @@ namespace guiapp
   {
     // std::uniform_int_distribution<> dayDist(0, period.length().days());
     std::normal_distribution<> dayDist(period.length().days() / 4, period.length().days() / 2);
-    std::uniform_int_distribution<> roomDist(0, hotel.rooms().size() - 1);
+    std::uniform_int_distribution<> roomDist(0, static_cast<int>(hotel.rooms().size() - 1));
     std::uniform_int_distribution<> lengthDist(3, 21);
     std::uniform_int_distribution<> percentageDist(0, 100);
 
     for (auto i : boost::irange(0, count))
     {
-      auto day = dayDist(rng);
+      auto day = static_cast<int>(dayDist(rng));
       auto length = lengthDist(rng);
       if (percentageDist(rng) < 70)
       {
         // Snap to whole weeks
-        day = std::floor(day / 7) * 7;
-        length = std::ceil(length / 7.0) * 7;
+        day = static_cast<int>(std::floor(day / 7) * 7);
+        length = static_cast<int>(std::ceil(length / 7.0) * 7);
       }
 
       auto startDate = period.begin() + boost::gregorian::days(day);
@@ -90,7 +90,7 @@ namespace guiapp
 
       auto reservation = std::make_unique<hotel::Reservation>("Reservation " + std::to_string(i), roomId, resPeriod);
       // Fill in any missing days by changing rooms (10 attempts)
-      for (int i = 0; i < 10; ++i)
+      for (int j = 0; j < 10; ++j)
       {
         startDate = endDate;
         if (additionalDays == 0)
@@ -139,7 +139,7 @@ namespace guiapp
     auto planning = std::make_unique<hotel::PlanningBoard>();
 
     for (auto& hotel : hotels)
-      addRandomReservations(rng, hotel, *planning, 20 * hotel.rooms().size(), period);
+      addRandomReservations(rng, hotel, *planning, static_cast<int>(20 * hotel.rooms().size()), period);
 
     return planning;
   }

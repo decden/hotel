@@ -33,10 +33,7 @@ namespace hotel
       throw std::logic_error("Cannot add atom because the date range is not contiguous to the previous atom");
   }
 
-  void Reservation::addAtom(const ReservationAtom& atom)
-  {
-    addAtom(atom.roomId(), atom.dateRange());
-  }
+  void Reservation::addAtom(const ReservationAtom& atom) { addAtom(atom.roomId(), atom.dateRange()); }
 
   void Reservation::addContinuation(int room, boost::gregorian::date date)
   {
@@ -51,16 +48,30 @@ namespace hotel
     _atoms.push_back(atom);
   }
 
+  void Reservation::joinAdjacentAtoms()
+  {
+    if (_atoms.size() < 2)
+      return;
+
+    for (std::size_t i = 1; i < _atoms.size(); ++i)
+    {
+      if (_atoms[i - 1].roomId() == _atoms[i].roomId())
+      {
+        auto joinedRange = _atoms[i - 1].dateRange().span(_atoms[i].dateRange());
+        _atoms[i - 1].setDateRange(joinedRange);
+        _atoms.erase(_atoms.begin() + i);
+        i -= 1; // Revisit the same item again, as it might need to be joined again
+      }
+    }
+  }
+
   void Reservation::removeLastAtom()
   {
     if (!_atoms.empty())
       _atoms.pop_back();
   }
 
-  void Reservation::removeAllAtoms()
-  {
-    _atoms.clear();
-  }
+  void Reservation::removeAllAtoms() { _atoms.clear(); }
 
   Reservation::ReservationStatus Reservation::status() const { return _status; }
   const std::string& Reservation::description() const { return _description; }
@@ -71,7 +82,7 @@ namespace hotel
   const std::vector<ReservationAtom>& Reservation::atoms() const { return _atoms; }
   std::vector<ReservationAtom>& Reservation::atoms() { return _atoms; }
 
-  const ReservationAtom *Reservation::atomAtIndex(int i) const
+  const ReservationAtom* Reservation::atomAtIndex(int i) const
   {
     if (i >= 0 && i < static_cast<int>(_atoms.size()))
       return &_atoms[i];
@@ -88,7 +99,7 @@ namespace hotel
     return date_period(_atoms.front().dateRange().begin(), _atoms.back().dateRange().end());
   }
 
-  bool Reservation::intersectsWith(const Reservation &other) const
+  bool Reservation::intersectsWith(const Reservation& other) const
   {
     for (auto& thisAtom : _atoms)
       for (auto& otherAtom : other._atoms)
@@ -140,7 +151,7 @@ namespace hotel
   {
   }
 
-  bool ReservationAtom::intersectsWith(const ReservationAtom &other) const
+  bool ReservationAtom::intersectsWith(const ReservationAtom& other) const
   {
     return roomId() == other.roomId() && dateRange().intersects(other.dateRange());
   }

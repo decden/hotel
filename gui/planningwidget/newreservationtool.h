@@ -36,12 +36,13 @@ namespace gui
 
       virtual void reservationAdded(const hotel::Reservation& item) override;
 
-      virtual void mousePressEvent(QMouseEvent *event, const QPointF &position) override;
-      virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &position) override;
-      virtual void mouseMoveEvent(QMouseEvent *event, const QPointF& position) override;
+      virtual void mousePressEvent(QMouseEvent* event, const QPointF& position) override;
+      virtual void mouseReleaseEvent(QMouseEvent* event, const QPointF& position) override;
+      virtual void mouseMoveEvent(QMouseEvent* event, const QPointF& position) override;
       virtual void keyPressEvent(QKeyEvent* event) override;
 
     private:
+      void updateHighlightedPeriods();
       boost::gregorian::date computeMaximumDate(int roomId, boost::gregorian::date fromDate);
 
       //! Information needed to draw on the planning widget

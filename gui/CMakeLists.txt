@@ -14,6 +14,7 @@ set(SRC
     planningwidget/roomlistwidget.cpp
     planningwidget/tool.cpp
     planningwidget/newreservationtool.cpp
+    planningwidget/movereservationtool.cpp
 )
 
 set(SRC_INCLUDES
@@ -33,6 +34,7 @@ set(SRC_INCLUDES
     planningwidget/roomlistwidget.h
     planningwidget/tool.h
     planningwidget/newreservationtool.h
+    planningwidget/movereservationtool.h
 )
 
 set(CMAKE_AUTOMOC ON)

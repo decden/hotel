@@ -9,12 +9,13 @@ namespace gui
   namespace planningwidget
   {
 
-    PlanningBoardWidget::PlanningBoardWidget(Context *context) : _context(context)
+    PlanningBoardWidget::PlanningBoardWidget(Context* context) : _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
       setFrameStyle(QFrame::Plain);
       setCacheMode(QGraphicsView::CacheBackground);
+      setMouseTracking(true);
 
       _scene = new QGraphicsScene;
       _scene->setSceneRect(_context->layout().sceneRect());
@@ -26,7 +27,7 @@ namespace gui
       setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
 
-    void PlanningBoardWidget::addReservation(const hotel::Reservation *reservation)
+    void PlanningBoardWidget::addReservation(const hotel::Reservation* reservation)
     {
       assert(_context != nullptr);
       auto item = new PlanningBoardReservationItem(_context, reservation);
@@ -96,7 +97,7 @@ namespace gui
       painter->fillRect(todayRect, lineColor);
     }
 
-    void PlanningBoardWidget::mousePressEvent(QMouseEvent *event)
+    void PlanningBoardWidget::mousePressEvent(QMouseEvent* event)
     {
       QGraphicsView::mousePressEvent(event);
 
@@ -109,17 +110,20 @@ namespace gui
       }
     }
 
-    void PlanningBoardWidget::mouseReleaseEvent(QMouseEvent *event)
+    void PlanningBoardWidget::mouseReleaseEvent(QMouseEvent* event)
     {
       QGraphicsView::mouseReleaseEvent(event);
+
       auto pos = mapToScene(event->pos());
       auto tool = _context->activeTool();
       if (tool)
         tool->mouseReleaseEvent(event, pos);
     }
 
-    void PlanningBoardWidget::mouseMoveEvent(QMouseEvent *event)
+    void PlanningBoardWidget::mouseMoveEvent(QMouseEvent* event)
     {
+      QGraphicsView::mouseMoveEvent(event);
+
       auto pos = mapToScene(event->pos());
       auto tool = _context->activeTool();
       if (tool)
@@ -152,7 +156,6 @@ namespace gui
           }
         }
       }
-
     }
 
     void PlanningBoardWidget::removeReservations(const std::vector<const hotel::Reservation*>& reservations)

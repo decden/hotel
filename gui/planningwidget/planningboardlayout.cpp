@@ -49,8 +49,8 @@ namespace gui
             bool isEven = true;
 
             std::vector<hotel::HotelRoom*> roomsInCategory;
-            for (auto& hotel : hotels)
-              for (auto& room : hotel->rooms())
+            for (auto& hotelInner : hotels)
+              for (auto& room : hotelInner->rooms())
                 if (room->category()->id() == category->id())
                   roomsInCategory.push_back(room.get());
 

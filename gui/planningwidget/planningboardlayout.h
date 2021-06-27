@@ -147,6 +147,12 @@ namespace gui
       void setPivotDate(const boost::gregorian::date date) { _pivotDate = date; }
       boost::gregorian::date pivotDate() const { return _pivotDate; }
 
+      void setHighlightedPeriods(const std::vector<boost::gregorian::date_period>& periods)
+      {
+        _highlightedPeriods = periods;
+      }
+      const std::vector<boost::gregorian::date_period>& highlightedPeriods() const { return _highlightedPeriods; }
+
       //! @brief getAtomRect produces the rectangle for the given room and date on the virtual planning board
       //! If the room does not exist, a zero height rectangle is returned
       QRectF getAtomRect(int roomId, boost::gregorian::date_period dateRange) const;
@@ -183,6 +189,7 @@ namespace gui
 
       // The currently selected date
       boost::gregorian::date _pivotDate;
+      std::vector<boost::gregorian::date_period> _highlightedPeriods;
 
       // The date which will correspond to the x=0 line. This value does not represent the currently selected date, it
       // is only used for setting a coordinate system, in which to place the reservations.

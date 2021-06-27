@@ -14,10 +14,7 @@ namespace gui
   {
     using namespace boost::gregorian;
 
-    NewReservationTool::NewReservationTool()
-        : _context(nullptr), _currentGhost(std::nullopt)
-    {
-    }
+    NewReservationTool::NewReservationTool() : _context(nullptr), _currentGhost(std::nullopt) {}
     void NewReservationTool::init(Context& context) { _context = &context; }
     void NewReservationTool::load() {}
 
@@ -25,6 +22,7 @@ namespace gui
     {
       _ghosts.clear();
       _currentGhost.reset();
+      _context->setHighlightedPeriods({});
     }
 
     void NewReservationTool::updateLayout()
@@ -70,10 +68,13 @@ namespace gui
       _currentGhost = ReservationGhost{nullptr, nullptr, row->id(), date};
       _currentGhost->temporaryReservation = std::make_unique<hotel::Reservation>("new");
       _currentGhost->temporaryReservation->setStatus(hotel::Reservation::Temporary);
-      _currentGhost->item = std::make_unique<PlanningBoardReservationItem>(_context, _currentGhost->temporaryReservation.get());
+      _currentGhost->item =
+          std::make_unique<PlanningBoardReservationItem>(_context, _currentGhost->temporaryReservation.get());
       _currentGhost->item->updateLayout();
 
       _context->planningBoardScene()->addItem(_currentGhost->item.get());
+
+      updateHighlightedPeriods();
     }
 
     void NewReservationTool::mouseReleaseEvent(QMouseEvent* /*event*/, const QPointF& /*position*/)
@@ -139,9 +140,10 @@ namespace gui
 
         _currentGhost->item->updateLayout();
       }
+      updateHighlightedPeriods();
     }
 
-    void NewReservationTool::keyPressEvent(QKeyEvent *event)
+    void NewReservationTool::keyPressEvent(QKeyEvent* event)
     {
       // Ignore key events while manipulating a ghost
       if (_currentGhost != std::nullopt)
@@ -170,7 +172,7 @@ namespace gui
           std::vector<std::unique_ptr<hotel::Reservation>> reservations;
           for (auto& ghost : _ghosts)
           {
-            ghost.item.reset();\
+            ghost.item.reset();
             ghost.temporaryReservation->setStatus(hotel::Reservation::New);
             ghost.temporaryReservation->setDescription(reservationName.toStdString());
             reservations.push_back(std::move(ghost.temporaryReservation));
@@ -182,6 +184,23 @@ namespace gui
             _context->dataBackend().queueOperation(op::StoreNew{std::move(reservation)});
         }
       }
+
+      updateHighlightedPeriods();
+    }
+
+    void NewReservationTool::updateHighlightedPeriods()
+    {
+      std::vector<boost::gregorian::date_period> highlights;
+      for (const auto& ghost : _ghosts)
+      {
+        if (ghost.temporaryReservation->isValid())
+          highlights.emplace_back(ghost.temporaryReservation->dateRange());
+      }
+      if (_currentGhost && _currentGhost->temporaryReservation->isValid())
+      {
+        highlights.emplace_back(_currentGhost->temporaryReservation->dateRange());
+      }
+      _context->setHighlightedPeriods(std::move(highlights));
     }
 
     date NewReservationTool::computeMaximumDate(int roomId, date fromDate)

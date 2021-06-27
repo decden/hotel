@@ -150,6 +150,7 @@ namespace persistence
       {
         // Unknown type...
         assert(false);
+        return StreamableItems();
       }
     }
 

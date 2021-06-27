@@ -225,12 +225,12 @@ namespace persistence
       hotelQuery.execute(id);
       if (hotelQuery.hasResultRow())
       {
-        int id;
+        int hotelId;
         int revision;
         std::string name;
-        hotelQuery.readRow(id, revision, name);
+        hotelQuery.readRow(hotelId, revision, name);
         result = hotel::Hotel(name);
-        result->setId(id);
+        result->setId(hotelId);
         result->setRevision(revision);
       }
 
@@ -242,12 +242,12 @@ namespace persistence
         categoriesQuery.execute(result->id());
         while (categoriesQuery.hasResultRow())
         {
-          int id;
+          int categoryId;
           std::string short_code;
           std::string name;
-          categoriesQuery.readRow(id, short_code, name);
+          categoriesQuery.readRow(categoryId, short_code, name);
           auto category = std::make_unique<hotel::RoomCategory>(short_code, name);
-          category->setId(id);
+          category->setId(categoryId);
           result->addRoomCategory(std::move(category));
         }
 
@@ -256,12 +256,12 @@ namespace persistence
         roomsQuery.execute(result->id());
         while (roomsQuery.hasResultRow())
         {
-          int id;
+          int roomId;
           int category_id;
           std::string name;
-          roomsQuery.readRow(id, category_id, name);
+          roomsQuery.readRow(roomId, category_id, name);
           auto room = std::make_unique<hotel::HotelRoom>(name);
-          room->setId(id);
+          room->setId(roomId);
           auto category = result->getCategoryById(category_id);
           if (category)
             result->addRoom(std::move(room), category->shortCode());
@@ -369,19 +369,26 @@ namespace persistence
     template <>
     bool SqliteStorage::update<hotel::Reservation>(hotel::Reservation& value)
     {
-      auto& q = query("reservation.update");
-      q.execute(value.description(), serializeReservationStatus(value.status()), value.numberOfAdults(),
+      auto& q1 = query("reservation.update");
+      q1.execute(value.description(), serializeReservationStatus(value.status()), value.numberOfAdults(),
                 value.numberOfChildren(), value.id(), value.revision());
 
-      // TODO, we need to update also the atoms!
-
       int updatedRows = sqlite3_changes(_db);
-      if (updatedRows == 1)
+      if (updatedRows != 1)
+        return false;
+
+      auto& q2 = query("reservation.delete_atoms");
+      q2.execute(value.id());
+
+      for (auto& atom : value.atoms())
       {
-        value.setRevision(value.revision() + 1);
-        return true;
+        auto& q3 = query("reservation_atom.insert");
+        q3.execute(value.id(), atom.roomId(), atom.dateRange().begin(), atom.dateRange().end());
+        atom.setId(static_cast<int>(lastInsertId()));
       }
-      return false;
+      
+      value.setRevision(value.revision() + 1);
+      return true;
     }
 
     template<>
@@ -438,8 +445,10 @@ namespace persistence
                           SqliteStatement(_db, "INSERT INTO h_reservation (description, status, adults, children) VALUES (?, ?, ?, ?);"));
       _statements.emplace("reservation.update",
                           SqliteStatement(_db, "UPDATE h_reservation SET description=?, status=?, adults=?, children=?, revision=revision+1 WHERE id = ? AND revision = ?;"));
+      _statements.emplace("reservation.delete_atoms",
+                          SqliteStatement(_db, "DELETE FROM h_reservation_atom WHERE reservation_id = ?;"));
       _statements.emplace("reservation.delete",
-                          SqliteStatement(_db, "DELETE FROM h_reservation_atom where reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
+                          SqliteStatement(_db, "DELETE FROM h_reservation_atom WHERE reservation_id = ?; DELETE FROM h_reservation WHERE reservation_id = ?;"));
       _statements.emplace("reservation_atom.insert",
                           SqliteStatement(_db, "INSERT INTO h_reservation_atom (reservation_id, room_id, "
                                                "date_from, date_to) VALUES (?, ?, ?, ?);"));

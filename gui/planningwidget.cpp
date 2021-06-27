@@ -1,18 +1,19 @@
 #include "planningwidget.h"
 
-#include <QtWidgets/QGridLayout>
 #include <QtGui/QKeyEvent>
+#include <QtWidgets/QGridLayout>
 
 namespace gui
 {
-  PlanningWidget::PlanningWidget(persistence::Backend &backend)
+  PlanningWidget::PlanningWidget(persistence::Backend& backend)
   {
     // Assign the data
     _context.setDataBackend(&backend);
 
     // Initialize the layout object with the above data
     _context.setPivotDate(boost::gregorian::day_clock::local_day());
-    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    _layoutType = planningwidget::PlanningBoardLayout::GroupedByHotel;
+    _context.initializeLayout(_layoutType);
 
     updateDateRange();
 
@@ -35,15 +36,21 @@ namespace gui
 
     // Wire up events
     connect(_dateBar, SIGNAL(dateClicked(boost::gregorian::date)), this, SLOT(setPivotDate(boost::gregorian::date)));
-    _reservationsStream.itemsAddedSignal.connect(boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
-    _reservationsStream.itemsUpdatedSignal.connect(boost::bind(&PlanningWidget::reservationsUpdated, this, boost::placeholders::_1));
-    _reservationsStream.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
+    _reservationsStream.itemsAddedSignal.connect(
+        boost::bind(&PlanningWidget::reservationsAdded, this, boost::placeholders::_1));
+    _reservationsStream.itemsUpdatedSignal.connect(
+        boost::bind(&PlanningWidget::reservationsUpdated, this, boost::placeholders::_1));
+    _reservationsStream.itemsRemovedSignal.connect(
+        boost::bind(&PlanningWidget::reservationsRemoved, this, boost::placeholders::_1));
     _reservationsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allReservationsRemoved, this));
     _hotelsStream.itemsAddedSignal.connect(boost::bind(&PlanningWidget::hotelsAdded, this, boost::placeholders::_1));
-    _hotelsStream.itemsUpdatedSignal.connect(boost::bind(&PlanningWidget::hotelsUpdated, this, boost::placeholders::_1));
-    _hotelsStream.itemsRemovedSignal.connect(boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
+    _hotelsStream.itemsUpdatedSignal.connect(
+        boost::bind(&PlanningWidget::hotelsUpdated, this, boost::placeholders::_1));
+    _hotelsStream.itemsRemovedSignal.connect(
+        boost::bind(&PlanningWidget::hotelsRemoved, this, boost::placeholders::_1));
     _hotelsStream.allItemsRemovedSignal.connect(boost::bind(&PlanningWidget::allHotelsRemoved, this));
-    _context.reservationDoubleClickedSignal().connect(boost::bind(&PlanningWidget::emitReservationDoubleClicked, this, boost::placeholders::_1));
+    _context.reservationDoubleClickedSignal().connect(
+        boost::bind(&PlanningWidget::emitReservationDoubleClicked, this, boost::placeholders::_1));
 
     // Connect to streams
     _hotelsStream.connect(backend);
@@ -70,6 +77,13 @@ namespace gui
     updateLayout();
   }
 
+  void PlanningWidget::setPlanningBoardLayout(gui::planningwidget::PlanningBoardLayout::LayoutType layout)
+  {
+    _layoutType = layout;
+    _context.initializeLayout(_layoutType);
+    updateLayout();
+  }
+
   void PlanningWidget::setPivotDate(boost::gregorian::date pivotDate)
   {
     // TODO: This should not update the whole layout!
@@ -81,9 +95,9 @@ namespace gui
   void PlanningWidget::keyPressEvent(QKeyEvent* event)
   {
     if (event->key() == Qt::Key_F1)
-      _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+      setPlanningBoardLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
     if (event->key() == Qt::Key_F2)
-      _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
+      setPlanningBoardLayout(planningwidget::PlanningBoardLayout::GroupedByRoomCategory);
 
     if (event->key() == Qt::Key_Delete)
     {
@@ -93,15 +107,12 @@ namespace gui
       _context.dataBackend().queueOperations(std::move(removals));
     }
 
-    if (event->key() == Qt::Key_F1 || event->key() == Qt::Key_F2)
-      updateLayout();
-
     auto tool = _context.activeTool();
     if (tool)
       tool->keyPressEvent(event);
   }
 
-  void PlanningWidget::reservationsAdded(const std::vector<hotel::Reservation> &reservations)
+  void PlanningWidget::reservationsAdded(const std::vector<hotel::Reservation>& reservations)
   {
     for (auto& reservation : reservations)
     {
@@ -111,7 +122,7 @@ namespace gui
     updateDateRange();
   }
 
-  void PlanningWidget::reservationsUpdated(const std::vector<hotel::Reservation> &reservations)
+  void PlanningWidget::reservationsUpdated(const std::vector<hotel::Reservation>& reservations)
   {
     for (auto& reservation : reservations)
     {
@@ -123,7 +134,7 @@ namespace gui
     updateDateRange();
   }
 
-  void PlanningWidget::reservationsRemoved(const std::vector<int> &ids)
+  void PlanningWidget::reservationsRemoved(const std::vector<int>& ids)
   {
     for (auto reservationId : ids)
     {
@@ -135,7 +146,7 @@ namespace gui
 
   void PlanningWidget::allReservationsRemoved() { _planningBoard->removeAllReservations(); }
 
-  void PlanningWidget::hotelsAdded(const std::vector<hotel::Hotel> &hotels)
+  void PlanningWidget::hotelsAdded(const std::vector<hotel::Hotel>& hotels)
   {
     _roomList->clear();
     for (auto& hotel : hotels)
@@ -143,11 +154,11 @@ namespace gui
     for (auto& hotel : _context.hotels())
       for (auto& room : hotel->rooms())
         _roomList->addRoomItem(room.get());
-    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    _context.initializeLayout(_layoutType);
     updateLayout();
   }
 
-  void PlanningWidget::hotelsUpdated(const std::vector<hotel::Hotel> &hotels)
+  void PlanningWidget::hotelsUpdated(const std::vector<hotel::Hotel>& hotels)
   {
     _roomList->clear();
     for (auto& hotel : hotels)
@@ -158,11 +169,11 @@ namespace gui
     for (auto& hotel : _context.hotels())
       for (auto& room : hotel->rooms())
         _roomList->addRoomItem(room.get());
-    _context.initializeLayout(planningwidget::PlanningBoardLayout::GroupedByHotel);
+    _context.initializeLayout(_layoutType);
     updateLayout();
   }
 
-  void PlanningWidget::hotelsRemoved(const std::vector<int> &ids)
+  void PlanningWidget::hotelsRemoved(const std::vector<int>& ids)
   {
     _roomList->clear();
     for (auto& hotelId : ids)

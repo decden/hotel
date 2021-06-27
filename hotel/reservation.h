@@ -60,6 +60,7 @@ namespace hotel
     void addAtom(int room, boost::gregorian::date_period dateRange);
     void addAtom(const ReservationAtom& atom);
     void addContinuation(int room, boost::gregorian::date date);
+    void joinAdjacentAtoms(); // Joins adjacent atoms on the same room
     void removeLastAtom();
     void removeAllAtoms();
 
@@ -113,6 +114,7 @@ namespace hotel
 
     //! Returns true if two items overlap
     bool intersectsWith(const ReservationAtom& other) const;
+
   private:
     int _roomId;
     boost::gregorian::date_period _dateRange;

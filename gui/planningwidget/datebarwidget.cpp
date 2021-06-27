@@ -31,7 +31,8 @@ namespace gui
       else if (_isPivot && !_isToday)
         backgroundColor = _appearance.boardPivotColor;
       else
-        backgroundColor = (dayOfWeek == 0 || dayOfWeek == 6) ? _appearance.boardOddRowColor : _appearance.boardEvenRowColor;
+        backgroundColor =
+            (dayOfWeek == 0 || dayOfWeek == 6) ? _appearance.boardOddRowColor : _appearance.boardEvenRowColor;
 
       auto borderColor = _isPivot ? _appearance.boardPivotTodayColor.darker() : _appearance.boardWeekdayColumnColor;
       auto textColor = _isPivot ? _appearance.atomLightTextColor : _appearance.atomDarkTextColor;
@@ -70,8 +71,7 @@ namespace gui
       painter->restore();
     }
 
-    DateBarWidget::DateBarWidget(Context* context, QWidget* parent)
-        : QGraphicsView(parent), _context(context)
+    DateBarWidget::DateBarWidget(Context* context, QWidget* parent) : QGraphicsView(parent), _context(context)
     {
       setAlignment(Qt::AlignLeft | Qt::AlignTop);
       setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -84,6 +84,8 @@ namespace gui
       _scene = new QGraphicsScene;
       setScene(_scene);
       _context->setRoomListScene(_scene);
+      _context->highlightedPeriodsChangedSignal().connect([this]() { this->updateLayout(); });
+      _context->selectedReservationsChangedSignal().connect([this]() { this->updateLayout(); });
 
       // Set scene size
       auto sceneRect = _context->layout().sceneRect();
@@ -138,6 +140,24 @@ namespace gui
         date += boost::gregorian::days(1);
       }
 
+      // Add the highlighted periods
+      auto periods = _context->layout().highlightedPeriods();
+      for (const auto& reservation : _context->selectedReservations())
+      {
+        periods.push_back(reservation->dateRange());
+      }
+      for (const auto& highlightedPeriod : periods)
+      {
+        auto l = _context->layout().getDatePositionX(highlightedPeriod.begin()) - colWidth / 2 - 1;
+        auto w = ((highlightedPeriod.end() - highlightedPeriod.begin()).days() + 1) * colWidth;
+        l += colWidth / 2;
+        w -= colWidth;
+
+        auto item = new DateBarPeriodIndicatorItem(this, _context->appearance(), highlightedPeriod);
+        item->setRect(QRect(l, appearance.monthBarHeight, w, appearance.daysBarHeight));
+        _scene->addItem(item);
+      }
+
       // Add the month items
       std::tie(date, positionX) = _context->layout().getNearestDatePosition(left - colWidth);
       positionX -= colWidth / 2 - 1;            // Dates are centered above the dateline
@@ -155,9 +175,6 @@ namespace gui
       }
     }
 
-    void DateBarWidget::dateItemClicked(boost::gregorian::date date)
-    {
-      emit dateClicked(date);
-    }
+    void DateBarWidget::dateItemClicked(boost::gregorian::date date) { emit dateClicked(date); }
   } // namespace planningwidget
 } // namespace gui
